@@ -26,26 +26,26 @@ export function PathSearchBar({ onSearch, loading }: PathSearchBarProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Find Path Between Two Tax IDs</CardTitle>
+        <CardTitle> Encontrar relación entre dos CUITs</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
           <Input
             value={from}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFrom(e.target.value)}
-            placeholder="From Tax ID"
+            placeholder="Desde CUIT"
             disabled={loading}
           />
           <Input
             value={to}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTo(e.target.value)}
-            placeholder="To Tax ID"
+            placeholder="Hasta CUIT"
             disabled={loading}
           />
           <Input
             value={maxDepth}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxDepth(e.target.value)}
-            placeholder="Max depth"
+            placeholder="Profundidad"
             type="number"
             min={1}
             max={10}
@@ -56,7 +56,7 @@ export function PathSearchBar({ onSearch, loading }: PathSearchBarProps) {
             type="submit"
             disabled={loading || !from.trim() || !to.trim() || from.trim() === to.trim()}
           >
-            {loading ? "Searching..." : "Find Path"}
+            {loading ? "Buscando..." : "Encontrar"}
           </Button>
         </form>
       </CardContent>

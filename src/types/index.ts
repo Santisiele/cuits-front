@@ -2,6 +2,7 @@
  * Represents a single search result from the API
  */
 export interface SearchResult {
+  cuit: string
   source: string
   file: string
   data: {
@@ -22,7 +23,7 @@ export interface CuitSearchResponse {
 }
 
 /**
- * Represents a single node in a graph path
+ * Represents a single node in a graph path (used in cuit search)
  */
 export interface PathNode {
   taxId: string
@@ -32,11 +33,29 @@ export interface PathNode {
 }
 
 /**
+ * Represents a node in a path segment
+ */
+export interface PathNodeInfo {
+  taxId: string
+  businessName: string
+  inMyBase: boolean
+}
+
+/**
+ * Represents a segment between two nodes with all their relationships
+ */
+export interface PathSegment {
+  from: PathNodeInfo
+  to: PathNodeInfo
+  relationships: string[]
+}
+
+/**
  * Represents the response from GET /graph/path
  */
 export interface PathResponse {
   found: boolean
-  path: PathNode[]
+  path: PathSegment[]
 }
 
 /**

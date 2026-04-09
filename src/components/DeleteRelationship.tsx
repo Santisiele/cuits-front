@@ -57,7 +57,7 @@ export function DeleteRelationship({ onSuccess }: DeleteRelationshipProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={fromTaxId}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFromTaxId(e.target.value)}

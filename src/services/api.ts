@@ -79,3 +79,71 @@ export async function deleteRelationship(
     throw new Error(error.message ?? "Failed to delete relationship")
   }
 }
+
+export async function getNode(taxId: string): Promise<Record<string, unknown>> {
+  const response = await fetch(`${API_URL}/graph/node/${taxId}`)
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message ?? "Failed to get node")
+  }
+
+  return response.json()
+}
+
+export async function updateNode(
+  taxId: string,
+  fields: { phone?: string; email?: string; birthday?: string }
+): Promise<void> {
+  const response = await fetch(`${API_URL}/graph/node/${taxId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message ?? "Failed to update node")
+  }
+}
+
+export async function getNodeRelationships(
+  taxId: string,
+  maxDepth = 3
+): Promise<CuitSearchResponse> {
+  const response = await fetch(
+    `${API_URL}/graph/node/${taxId}/relationships?maxDepth=${maxDepth}`
+  )
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message ?? "Failed to get relationships")
+  }
+
+  const data = await response.json()
+
+  return {
+    cuit: taxId,
+    found: data.found,
+    results: data.results,
+  }
+}
+
+export interface BaseNode {
+  taxId: string
+  businessName: string
+  source: string
+  relationshipCount: number
+}
+
+export async function getMyBaseNodes(): Promise<BaseNode[]> {
+  const response = await fetch(`${API_URL}/graph/nodes`)
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message ?? "Failed to get nodes")
+  }
+
+  const data = await response.json()
+  return data.nodes
+}

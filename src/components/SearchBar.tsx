@@ -13,7 +13,7 @@ interface SearchBarProps {
 /**
  * Single CUIT search bar component
  */
-export function SearchBar({ onSearch, loading, title, placeholder = "Enter Tax ID" }: SearchBarProps) {
+export function SearchBar({ onSearch, loading, title, placeholder = "Ingresar CUIT" }: SearchBarProps) {
   const [taxId, setTaxId] = useState("")
   const [maxDepth, setMaxDepth] = useState("3")
 
@@ -29,7 +29,7 @@ export function SearchBar({ onSearch, loading, title, placeholder = "Enter Tax I
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
           <Input
             value={taxId}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTaxId(e.target.value)}
@@ -39,15 +39,15 @@ export function SearchBar({ onSearch, loading, title, placeholder = "Enter Tax I
           <Input
             value={maxDepth}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxDepth(e.target.value)}
-            placeholder="Max depth"
+            placeholder="Profundidad"
             type="number"
             min={1}
             max={10}
-            className="w-28"
+            className="w-32"
             disabled={loading}
           />
           <Button type="submit" disabled={loading || !taxId.trim()}>
-            {loading ? "Searching..." : "Search"}
+            {loading ? "Buscando..." : "Buscar "}
           </Button>
         </form>
       </CardContent>

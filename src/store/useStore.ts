@@ -20,6 +20,11 @@ interface AppState {
   setPathResult: (result: PathResponse | null) => void
   setPathLoading: (loading: boolean) => void
   setPathError: (error: string | null) => void
+
+  activeTab: string
+  setActiveTab: (tab: string) => void
+  editTaxId: string | null
+  setEditTaxId: (taxId: string | null) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -27,7 +32,6 @@ export const useStore = create<AppState>((set) => ({
   toggleTheme: () =>
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 
-  // CUIT search
   cuitResult: null,
   cuitLoading: false,
   cuitError: null,
@@ -35,11 +39,15 @@ export const useStore = create<AppState>((set) => ({
   setCuitLoading: (loading) => set({ cuitLoading: loading }),
   setCuitError: (error) => set({ cuitError: error }),
 
-  // Path search
   pathResult: null,
   pathLoading: false,
   pathError: null,
   setPathResult: (result) => set({ pathResult: result }),
   setPathLoading: (loading) => set({ pathLoading: loading }),
   setPathError: (error) => set({ pathError: error }),
+
+  activeTab: "search",
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  editTaxId: null,
+  setEditTaxId: (taxId) => set({ editTaxId: taxId }),
 }))
