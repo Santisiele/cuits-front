@@ -1,5 +1,17 @@
 /**
- * Represents a single search result from the API
+ * A single node along the path from a searched CUIT to a base node.
+ * Used inside {@link SearchResult}.
+ */
+export interface PathNode {
+  taxId: string
+  businessName: string
+  relationshipType: string
+  inMyBase: boolean
+}
+
+/**
+ * A single result returned by the CUIT search endpoint.
+ * Each result represents one source file / database that matched the query.
  */
 export interface SearchResult {
   cuit: string
@@ -14,7 +26,7 @@ export interface SearchResult {
 }
 
 /**
- * Represents the response from GET /graph/cuit/:taxId
+ * Response shape for `GET /graph/cuit/:taxId`.
  */
 export interface CuitSearchResponse {
   cuit: string
@@ -23,17 +35,7 @@ export interface CuitSearchResponse {
 }
 
 /**
- * Represents a single node in a graph path (used in cuit search)
- */
-export interface PathNode {
-  taxId: string
-  businessName: string
-  relationshipType: string
-  inMyBase: boolean
-}
-
-/**
- * Represents a node in a path segment
+ * Minimal node information used inside a {@link PathSegment}.
  */
 export interface PathNodeInfo {
   taxId: string
@@ -42,7 +44,8 @@ export interface PathNodeInfo {
 }
 
 /**
- * Represents a segment between two nodes with all their relationships
+ * A directed segment between two consecutive nodes in a path,
+ * including all relationship types connecting them.
  */
 export interface PathSegment {
   from: PathNodeInfo
@@ -51,7 +54,7 @@ export interface PathSegment {
 }
 
 /**
- * Represents the response from GET /graph/path
+ * Response shape for `GET /graph/path`.
  */
 export interface PathResponse {
   found: boolean
@@ -59,7 +62,7 @@ export interface PathResponse {
 }
 
 /**
- * Represents a node in the graph visualization
+ * A node in the React Flow graph visualization.
  */
 export interface GraphNode {
   id: string
@@ -68,11 +71,43 @@ export interface GraphNode {
 }
 
 /**
- * Represents an edge in the graph visualization
+ * An edge in the React Flow graph visualization.
  */
 export interface GraphEdge {
   id: string
   source: string
   target: string
   label: string
+}
+
+/**
+ * Full detail of a single node as returned by `GET /graph/node/:taxId`.
+ */
+export interface NodeData {
+  taxId: string
+  businessName: string | null
+  phone: string | null
+  email: string | null
+  birthday: string | null
+  inMyBase: boolean
+  source: string | null
+}
+
+/**
+ * Fields that can be updated via `PATCH /graph/node/:taxId`.
+ */
+export interface NodeUpdateFields {
+  phone?: string
+  email?: string
+  birthday?: string
+}
+
+/**
+ * A node listed in the "my base" table.
+ */
+export interface BaseNode {
+  taxId: string
+  businessName: string
+  source: string
+  relationshipCount: number
 }

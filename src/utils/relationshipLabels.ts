@@ -1,6 +1,6 @@
 /**
- * Maps relationship type names from English to Spanish.
- * Add new types as they are discovered.
+ * Maps English relationship type names returned by the API to Spanish display labels.
+ * Extend this record as new relationship types are discovered.
  */
 export const RELATIONSHIP_LABELS: Record<string, string> = {
   "Principal": "Principal",
@@ -16,12 +16,17 @@ export const RELATIONSHIP_LABELS: Record<string, string> = {
   "Deputy Administrator": "Administrador Suplente",
   "Child": "Hijo/a",
   "Parent": "Padre/madre",
+  "Former President": "Ex Presidente",
   "Brother": "Hermano",
   "Sister": "Hermana",
   "Cousin": "Primo/a",
   "Friend": "Amigo/a",
 }
 
+/**
+ * Maps numeric relationship type codes (as used by the API) to Spanish display labels.
+ * Used to populate relationship selectors in forms.
+ */
 export const RELATIONSHIP_OPTIONS: Record<number, string> = {
   1: "Principal",
   4: "Firmante de Cheques",
@@ -43,9 +48,13 @@ export const RELATIONSHIP_OPTIONS: Record<number, string> = {
 }
 
 /**
- * Returns the Spanish label for a relationship type.
- * Falls back to the original name if not found.
- * @param type - Relationship type in English
+ * Returns the Spanish display label for a given English relationship type string.
+ * Falls back to the original value if no mapping exists.
+ *
+ * @param type - Relationship type string as returned by the API
+ * @example
+ * getRelationshipLabel("President") // → "Presidente"
+ * getRelationshipLabel("Unknown")   // → "Unknown"
  */
 export function getRelationshipLabel(type: string): string {
   return RELATIONSHIP_LABELS[type] ?? type

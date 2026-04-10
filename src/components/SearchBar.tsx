@@ -1,27 +1,41 @@
 import { useState } from "react"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface SearchBarProps {
-  onSearch: (taxId: string, maxDepth: number) => void
-  loading: boolean
+  /** Card title displayed above the search form. */
   title: string
+  /** Callback invoked when the user submits a valid search. */
+  onSearch: (taxId: string, maxDepth: number) => void
+  /** Whether a search is currently in progress. */
+  loading: boolean
+  /** Input placeholder text. Defaults to "Ingresar CUIT". */
   placeholder?: string
 }
 
 /**
- * Single CUIT search bar component
+ * Single-CUIT search bar with configurable depth.
+ *
+ * Handles its own input state and delegates the actual
+ * search call to the parent via {@link SearchBarProps.onSearch}.
  */
-export function SearchBar({ onSearch, loading, title, placeholder = "Ingresar CUIT" }: SearchBarProps) {
+export function SearchBar({
+  title,
+  onSearch,
+  loading,
+  placeholder = "Ingresar CUIT",
+}: SearchBarProps) {
   const [taxId, setTaxId] = useState("")
   const [maxDepth, setMaxDepth] = useState("3")
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
     if (!taxId.trim()) return
     onSearch(taxId.trim(), Number(maxDepth))
   }
+
+  const isDisabled = loading || !taxId.trim()
 
   return (
     <Card>
@@ -46,8 +60,8 @@ export function SearchBar({ onSearch, loading, title, placeholder = "Ingresar CU
             className="w-32"
             disabled={loading}
           />
-          <Button type="submit" disabled={loading || !taxId.trim()}>
-            {loading ? "Buscando..." : "Buscar "}
+          <Button type="submit" disabled={isDisabled}>
+            {loading ? "Buscando..." : "Buscar"}
           </Button>
         </form>
       </CardContent>

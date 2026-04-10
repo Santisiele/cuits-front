@@ -1,26 +1,32 @@
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
-import { Badge } from "./ui/badge"
-import { Input } from "./ui/input"
-import { getMyBaseNodes, type BaseNode } from "../services/api"
-import { useStore } from "../store/useStore"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { GraphService } from "@/services/api"
+import { useStore } from "@/store/useStore"
+import type { BaseNode } from "@/types"
 
 /**
- * Table showing all nodes with inMyBase = true
+ * Table that lists all nodes belonging to "my base" (inMyBase = true).
+ *
+ * Features:
+ * - Free-text search by business name or Tax ID
+ * - Source filter chips (multi-select)
+ * - Clicking a CUIT navigates to the Edit Node tab pre-populated with that node
  */
 export function NodeTable() {
+  const { setActiveTab, setEditTaxId } = useStore()
+
   const [nodes, setNodes] = useState<BaseNode[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
-  const { setActiveTab, setEditTaxId } = useStore()
-
   useEffect(() => {
-    async function load() {
+    async function load(): Promise<void> {
       try {
-        const data = await getMyBaseNodes()
+        const data = await GraphService.getMyBaseNodes()
         setNodes(data)
       } catch {
         setError("Error al cargar los nodos")
@@ -28,31 +34,33 @@ export function NodeTable() {
         setLoading(false)
       }
     }
-    load()
+    void load()
   }, [])
 
+  /** Unique source values extracted from the loaded nodes. */
   const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
 
-  function toggleSource(source: string) {
+  /** Toggles a source filter chip on/off. */
+  function toggleSource(source: string): void {
     setSelectedSources((prev) => {
       const next = new Set(prev)
-      if (next.has(source)) next.delete(source)
-      else next.add(source)
+      next.has(source) ? next.delete(source) : next.add(source)
       return next
     })
   }
 
-  function handleCuitClick(taxId: string) {
+  /** Navigates to the Edit Node tab and pre-loads the given Tax ID. */
+  function handleCuitClick(taxId: string): void {
     setEditTaxId(taxId)
     setActiveTab("edit")
   }
 
-  const filtered = nodes.filter((n) => {
+  const filtered = nodes.filter((node) => {
     const matchesSearch =
-      n.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      n.taxId.includes(search)
+      node.businessName.toLowerCase().includes(search.toLowerCase()) ||
+      node.taxId.includes(search)
     const matchesSource =
-      selectedSources.size === 0 || selectedSources.has(n.source)
+      selectedSources.size === 0 || selectedSources.has(node.source)
     return matchesSearch && matchesSource
   })
 
@@ -73,7 +81,10 @@ export function NodeTable() {
           <div className="flex gap-2 flex-wrap pt-2">
             {sources.map((source) => (
               <button key={source} onClick={() => toggleSource(source)} className="focus:outline-none">
-                <Badge variant={selectedSources.has(source) ? "default" : "outline"} className="cursor-pointer">
+                <Badge
+                  variant={selectedSources.has(source) ? "default" : "outline"}
+                  className="cursor-pointer"
+                >
                   {source}
                 </Badge>
               </button>
@@ -100,7 +111,10 @@ export function NodeTable() {
               </thead>
               <tbody>
                 {filtered.map((node) => (
-                  <tr key={node.taxId} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                  <tr
+                    key={node.taxId}
+                    className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                  >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
                         onClick={() => handleCuitClick(node.taxId)}

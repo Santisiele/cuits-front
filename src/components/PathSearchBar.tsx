@@ -1,32 +1,40 @@
 import { useState } from "react"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface PathSearchBarProps {
+  /** Callback invoked when the user submits a valid path search. */
   onSearch: (from: string, to: string, maxDepth: number) => void
+  /** Whether a search is currently in progress. */
   loading: boolean
 }
 
 /**
- * Two-CUIT path search bar component
+ * Two-CUIT path search bar with configurable depth.
+ *
+ * Validates that both CUITs are filled in and distinct before
+ * calling {@link PathSearchBarProps.onSearch}.
  */
 export function PathSearchBar({ onSearch, loading }: PathSearchBarProps) {
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [maxDepth, setMaxDepth] = useState("3")
 
-  function handleSubmit(e: React.FormEvent) {
+  const fromTrimmed = from.trim()
+  const toTrimmed = to.trim()
+  const isDisabled = loading || !fromTrimmed || !toTrimmed || fromTrimmed === toTrimmed
+
+  function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
-    if (!from.trim() || !to.trim()) return
-    if (from.trim() === to.trim()) return
-    onSearch(from.trim(), to.trim(), Number(maxDepth))
+    if (isDisabled) return
+    onSearch(fromTrimmed, toTrimmed, Number(maxDepth))
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle> Encontrar relación entre dos CUITs</CardTitle>
+        <CardTitle>Encontrar relación entre dos CUITs</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
@@ -52,10 +60,7 @@ export function PathSearchBar({ onSearch, loading }: PathSearchBarProps) {
             className="w-28"
             disabled={loading}
           />
-          <Button
-            type="submit"
-            disabled={loading || !from.trim() || !to.trim() || from.trim() === to.trim()}
-          >
+          <Button type="submit" disabled={isDisabled}>
             {loading ? "Buscando..." : "Encontrar"}
           </Button>
         </form>

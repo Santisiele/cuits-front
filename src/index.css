@@ -75,9 +75,15 @@
   * {
     @apply border-border;
   }
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+  }
   body {
     @apply bg-background text-foreground;
-    margin: 0;
   }
   html {
     @apply font-mono;
