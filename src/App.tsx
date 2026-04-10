@@ -1,4 +1,5 @@
 import "./App.css"
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
@@ -11,7 +12,10 @@ import { NodeTable } from "@/components/NodeTable"
 import { useStore } from "@/store/useStore"
 import type { TabId } from "@/store/useStore"
 import { GraphService } from "@/services/api"
-import { getErrorMessage, translateApiError } from "@/lib/errors"
+import { getErrorMessage } from "@/lib/errors"
+import { LoginModal } from "@/components/LoginModal"
+import { useAuthStore } from "@/store/useAuthStore"
+import { Button } from "@/components/ui/button"
 
 /**
  * Root application component.
@@ -20,6 +24,9 @@ import { getErrorMessage, translateApiError } from "@/lib/errors"
  * to tab-specific child components.
  */
 export default function App() {
+  const [loginOpen, setLoginOpen] = useState(false)
+  const { isAuthenticated, username, clearAuth } = useAuthStore()
+
   const {
     theme,
     toggleTheme,
@@ -48,7 +55,7 @@ export default function App() {
       const result = await GraphService.searchCuit(taxId, maxDepth)
       setCuitResult(result)
     } catch (error) {
-      setCuitError(translateApiError(getErrorMessage(error)))
+      setCuitError(getErrorMessage(error))
     } finally {
       setCuitLoading(false)
     }
@@ -63,7 +70,7 @@ export default function App() {
       const result = await GraphService.findPath(from, to, maxDepth)
       setPathResult(result)
     } catch (error) {
-      setPathError(translateApiError(getErrorMessage(error)))
+      setPathError(getErrorMessage(error))
     } finally {
       setPathLoading(false)
     }
@@ -84,6 +91,14 @@ export default function App() {
               {theme === "dark" ? "Dark" : "Light"}
             </span>
             <Switch checked={theme === "light"} onCheckedChange={toggleTheme} />
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground hidden sm:inline">{username}</span>
+                <Button variant="outline" size="sm" onClick={clearAuth}>Salir</Button>
+              </div>
+            ) : (
+              <Button size="sm" onClick={() => setLoginOpen(true)}>Iniciar sesión</Button>
+            )}
           </div>
         </header>
 
@@ -149,6 +164,7 @@ export default function App() {
         </Tabs>
 
       </div>
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} theme={theme} />
     </div>
   )
 }

@@ -5,22 +5,46 @@ import type {
   NodeUpdateFields,
   BaseNode,
 } from "@/types"
+import { useAuthStore } from "@/store/useAuthStore"
+import { translateApiError } from "@/lib/errors"
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 /**
- * Performs a fetch request and throws an `Error` with the API's message
- * if the response is not OK.
- *
- * @param url - Full URL to fetch
- * @param options - Standard `RequestInit` options
+ * Returns the Authorization header with the current JWT token.
+ * Throws if no token is available (should not happen in normal flow).
+ */
+function authHeader(): Record<string, string> {
+  const token = useAuthStore.getState().token
+  if (!token) throw new Error("Not authenticated")
+  return { Authorization: `Bearer ${token}` }
+}
+
+/**
+ * Performs a fetch request with the JWT token attached.
+ * Throws an `Error` with the API's message if the response is not OK.
+ * Clears auth and redirects to login on 401.
  */
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options)
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      ...authHeader(),
+    },
+  })
+
+  if (response.status === 401) {
+    useAuthStore.getState().clearAuth()
+    window.location.href = "/login"
+    throw new Error("Session expired")
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new Error(body.message ?? `HTTP ${response.status}`)
+    throw new Error(translateApiError(body.message ?? `HTTP ${response.status}`))
   }
 
   return response.json() as Promise<T>
@@ -35,108 +59,79 @@ function jsonOptions(method: string, body: unknown): RequestInit {
   }
 }
 
+// ─── Auth service ─────────────────────────────────────────────────────────────
+
+/**
+ * Authentication API calls — these do NOT include the JWT header
+ * since they are public endpoints.
+ */
+export class AuthApiService {
+  /**
+   * Logs in with username and password.
+   * Returns the JWT token and username on success.
+   * Throws on invalid credentials.
+   */
+  static async login(username: string, password: string): Promise<{ token: string; username: string }> {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(translateApiError(body.message ?? "Login failed"))
+    }
+
+    return response.json()
+  }
+}
+
+// ─── Graph service ────────────────────────────────────────────────────────────
+
 /**
  * Service class encapsulating all graph-related API calls.
- * Centralises the base URL and error handling strategy.
+ * All methods include the JWT token in the Authorization header.
  */
 export class GraphService {
   private static base = `${API_URL}/graph`
 
-  /**
-   * Searches for a Tax ID in the graph database and returns its connections.
-   *
-   * @param taxId - The CUIT to search for
-   * @param maxDepth - Maximum traversal depth (default: 3)
-   */
   static searchCuit(taxId: string, maxDepth = 3): Promise<CuitSearchResponse> {
     return apiFetch(`${this.base}/cuit/${taxId}?maxDepth=${maxDepth}`)
   }
 
-  /**
-   * Finds the shortest path between two Tax IDs.
-   *
-   * @param from - Origin CUIT
-   * @param to - Destination CUIT
-   * @param maxDepth - Maximum traversal depth (default: 3)
-   */
   static findPath(from: string, to: string, maxDepth = 3): Promise<PathResponse> {
     return apiFetch(`${this.base}/path?from=${from}&to=${to}&maxDepth=${maxDepth}`)
   }
 
-  /**
-   * Retrieves full detail for a single node.
-   *
-   * @param taxId - The CUIT of the node to retrieve
-   */
   static getNode(taxId: string): Promise<NodeData> {
     return apiFetch(`${this.base}/node/${taxId}`)
   }
 
-  /**
-   * Updates editable fields on a node.
-   *
-   * @param taxId - The CUIT of the node to update
-   * @param fields - Fields to update (phone, email, birthday)
-   */
   static updateNode(taxId: string, fields: NodeUpdateFields): Promise<void> {
     return apiFetch(`${this.base}/node/${taxId}`, jsonOptions("PATCH", fields))
   }
 
-  /**
-   * Returns the graph relationships of a node up to a given depth,
-   * normalised into the {@link CuitSearchResponse} shape.
-   *
-   * @param taxId - The CUIT whose relationships to fetch
-   * @param maxDepth - Maximum traversal depth (default: 3)
-   */
-  static async getNodeRelationships(
-    taxId: string,
-    maxDepth = 3
-  ): Promise<CuitSearchResponse> {
+  static async getNodeRelationships(taxId: string, maxDepth = 3): Promise<CuitSearchResponse> {
     const data = await apiFetch<{ found: boolean; results: CuitSearchResponse["results"] }>(
       `${this.base}/node/${taxId}/relationships?maxDepth=${maxDepth}`
     )
     return { cuit: taxId, found: data.found, results: data.results }
   }
 
-  /**
-   * Retrieves all nodes that belong to "my base" (inMyBase = true).
-   */
   static async getMyBaseNodes(): Promise<BaseNode[]> {
     const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/nodes`)
     return data.nodes
   }
 
-  /**
-   * Adds a directed relationship between two nodes.
-   *
-   * @param fromTaxId - Origin CUIT
-   * @param toTaxId - Destination CUIT
-   * @param relationshipType - Numeric relationship type code
-   */
-  static addRelationship(
-    fromTaxId: string,
-    toTaxId: string,
-    relationshipType: number
-  ): Promise<void> {
+  static addRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
     return apiFetch(
       `${this.base}/relationship`,
       jsonOptions("POST", { fromTaxId, toTaxId, relationshipType })
     )
   }
 
-  /**
-   * Deletes an existing relationship between two nodes.
-   *
-   * @param fromTaxId - Origin CUIT
-   * @param toTaxId - Destination CUIT
-   * @param relationshipType - Numeric relationship type code
-   */
-  static deleteRelationship(
-    fromTaxId: string,
-    toTaxId: string,
-    relationshipType: number
-  ): Promise<void> {
+  static deleteRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
     return apiFetch(
       `${this.base}/relationship`,
       jsonOptions("DELETE", { fromTaxId, toTaxId, relationshipType })
