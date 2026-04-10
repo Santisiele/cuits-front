@@ -59,31 +59,31 @@ function jsonOptions(method: string, body: unknown): RequestInit {
   }
 }
 
-// ─── Auth service ─────────────────────────────────────────────────────────────
+// ─── Auth service (logout) ───────────────────────────────────────────────────
 
-/**
- * Authentication API calls — these do NOT include the JWT header
- * since they are public endpoints.
- */
 export class AuthApiService {
-  /**
-   * Logs in with username and password.
-   * Returns the JWT token and username on success.
-   * Throws on invalid credentials.
-   */
   static async login(username: string, password: string): Promise<{ token: string; username: string }> {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     })
-
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
       throw new Error(translateApiError(body.message ?? "Login failed"))
     }
-
     return response.json()
+  }
+
+  /** Notifies the server of logout so it can log the event. */
+  static async logout(): Promise<void> {
+    const token = useAuthStore.getState().token
+    if (!token) return
+    await fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {}) // Fire and forget — don't block the UI
+    useAuthStore.getState().clearAuth()
   }
 }
 

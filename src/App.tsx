@@ -16,6 +16,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { LoginModal } from "@/components/LoginModal"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
+import { AuthApiService } from "@/services/api"
 
 /**
  * Root application component.
@@ -25,7 +26,7 @@ import { Button } from "@/components/ui/button"
  */
 export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
-  const { isAuthenticated, username, clearAuth } = useAuthStore()
+  const { isAuthenticated, username } = useAuthStore()
 
   const {
     theme,
@@ -94,7 +95,7 @@ export default function App() {
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground hidden sm:inline">{username}</span>
-                <Button variant="outline" size="sm" onClick={clearAuth}>Salir</Button>
+                <Button variant="outline" size="sm" onClick={() => void AuthApiService.logout()}>Salir</Button>
               </div>
             ) : (
               <Button size="sm" onClick={() => setLoginOpen(true)}>Iniciar sesión</Button>
