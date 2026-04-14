@@ -17,6 +17,7 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   "From and To Tax IDs must be different": "Los dos CUITs deben ser distintos",
   "already exists": "Esta relación ya existe entre los dos CUITs",
   "not found": "Uno o ambos CUITs no existen en el grafo",
+  "Invalid username or password": "Usuario o contraseña incorrectos"
 }
 
 /**

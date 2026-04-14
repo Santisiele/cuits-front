@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { GraphService } from "@/services/api"
 import { useStore } from "@/store/useStore"
-import type { BaseNode } from "@/types"
+import { useMyBaseNodes } from "@/hooks/useGraphQueries"
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 /**
  * Table that lists all nodes belonging to "my base" (inMyBase = true).
@@ -13,29 +14,14 @@ import type { BaseNode } from "@/types"
  * - Free-text search by business name or Tax ID
  * - Source filter chips (multi-select)
  * - Clicking a CUIT navigates to the Edit Node tab pre-populated with that node
+ * - Results are cached via React Query — re-navigating won't re-fetch within TTL
  */
 export function NodeTable() {
   const { setActiveTab, setEditTaxId } = useStore()
 
-  const [nodes, setNodes] = useState<BaseNode[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: nodes = [], isLoading: loading, error } = useMyBaseNodes()
   const [search, setSearch] = useState("")
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    async function load(): Promise<void> {
-      try {
-        const data = await GraphService.getMyBaseNodes()
-        setNodes(data)
-      } catch {
-        setError("Error al cargar los nodos")
-      } finally {
-        setLoading(false)
-      }
-    }
-    void load()
-  }, [])
 
   /** Unique source values extracted from the loaded nodes. */
   const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
@@ -67,13 +53,13 @@ export function NodeTable() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <CardTitle>Mi base ({nodes.length})</CardTitle>
           <Input
             value={search}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o CUIT..."
-            className="w-64"
+            className="w-full sm:w-64"
           />
         </div>
 
@@ -97,10 +83,11 @@ export function NodeTable() {
         {loading ? (
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : error ? (
-          <p className="text-destructive text-sm">{error}</p>
+          <p className="text-destructive text-sm">Error al cargar los nodos</p>
         ) : (
           <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
-            <table className="w-full text-sm">
+            {/* Desktop table */}
+            <table className="hidden sm:table w-full text-sm">
               <thead className="sticky top-0 bg-background">
                 <tr className="border-b border-slate-700">
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">CUIT</th>
@@ -141,6 +128,33 @@ export function NodeTable() {
                 )}
               </tbody>
             </table>
+
+            {/* Mobile list */}
+            <div className="sm:hidden divide-y divide-slate-800">
+              {filtered.map((node) => (
+                <div
+                  key={node.taxId}
+                  className="py-3 px-1 hover:bg-slate-800/50 transition-colors"
+                >
+                  <button
+                    onClick={() => handleCuitClick(node.taxId)}
+                    className="font-mono text-xs text-cyan-400 hover:text-cyan-300 transition-colors mb-1"
+                  >
+                    {node.taxId}
+                  </button>
+                  <p className="text-sm font-medium">{node.businessName || "—"}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">{node.source || "—"}</Badge>
+                    <span className="text-xs text-muted-foreground">{node.relationshipCount} relaciones</span>
+                  </div>
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <p className="py-4 text-center text-muted-foreground text-sm">
+                  No se encontraron resultados
+                </p>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

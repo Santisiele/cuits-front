@@ -1,4 +1,5 @@
 import "./App.css"
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
@@ -10,64 +11,49 @@ import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
 import { useStore } from "@/store/useStore"
 import type { TabId } from "@/store/useStore"
-import { GraphService } from "@/services/api"
-import { getErrorMessage, translateApiError } from "@/lib/errors"
+import { AuthApiService } from "@/services/api"
+import { LoginModal } from "@/components/LoginModal"
+import { useAuthStore } from "@/store/useAuthStore"
+import { Button } from "@/components/ui/button"
+import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
+import type { CuitSearchResponse, PathResponse } from "@/types"
 
 /**
  * Root application component.
  *
- * Owns the top-level search handlers and delegates rendering
- * to tab-specific child components.
+ * Search state is managed locally with React Query hooks.
+ * The global store only holds UI state (theme, active tab, editTaxId).
  */
 export default function App() {
-  const {
-    theme,
-    toggleTheme,
-    cuitResult,
-    cuitLoading,
-    cuitError,
-    setCuitResult,
-    setCuitLoading,
-    setCuitError,
-    pathResult,
-    pathLoading,
-    pathError,
-    setPathResult,
-    setPathLoading,
-    setPathError,
-    activeTab,
-    setActiveTab,
-  } = useStore()
+  const [loginOpen, setLoginOpen] = useState(false)
+  const { isAuthenticated, username } = useAuthStore()
 
-  /** Searches for a CUIT and stores the result (or error) in the global store. */
-  async function handleCuitSearch(taxId: string, maxDepth: number): Promise<void> {
-    setCuitLoading(true)
-    setCuitError(null)
-    setCuitResult(null)
-    try {
-      const result = await GraphService.searchCuit(taxId, maxDepth)
-      setCuitResult(result)
-    } catch (error) {
-      setCuitError(translateApiError(getErrorMessage(error)))
-    } finally {
-      setCuitLoading(false)
-    }
+  const { theme, toggleTheme, activeTab, setActiveTab } = useStore()
+
+  // ─── CUIT search state ────────────────────────────────────────────────────
+  const [cuitInput, setCuitInput] = useState({ taxId: "", maxDepth: 3, enabled: false })
+  const cuitQuery = useCuitSearch(cuitInput.taxId, cuitInput.maxDepth, cuitInput.enabled)
+
+  function handleCuitSearch(taxId: string, maxDepth: number): void {
+    setCuitInput({ taxId, maxDepth, enabled: true })
   }
 
-  /** Finds the shortest path between two CUITs and stores the result in the global store. */
-  async function handlePathSearch(from: string, to: string, maxDepth: number): Promise<void> {
-    setPathLoading(true)
-    setPathError(null)
-    setPathResult(null)
-    try {
-      const result = await GraphService.findPath(from, to, maxDepth)
-      setPathResult(result)
-    } catch (error) {
-      setPathError(translateApiError(getErrorMessage(error)))
-    } finally {
-      setPathLoading(false)
-    }
+  // ─── Path search state ────────────────────────────────────────────────────
+  const [pathInput, setPathInput] = useState({ from: "", to: "", maxDepth: 3, enabled: false })
+  const pathQuery = usePathSearch(pathInput.from, pathInput.to, pathInput.maxDepth, pathInput.enabled)
+
+  function handlePathSearch(from: string, to: string, maxDepth: number): void {
+    setPathInput({ from, to, maxDepth, enabled: true })
   }
+
+  // ─── Derived values ───────────────────────────────────────────────────────
+  const cuitResult = cuitQuery.data as CuitSearchResponse | undefined
+  const cuitLoading = cuitQuery.isFetching
+  const cuitError = cuitQuery.error ? (cuitQuery.error as Error).message : null
+
+  const pathResult = pathQuery.data as PathResponse | undefined
+  const pathLoading = pathQuery.isFetching
+  const pathError = pathQuery.error ? (pathQuery.error as Error).message : null
 
   return (
     <div className={`${theme} h-screen flex flex-col bg-background overflow-hidden`}>
@@ -76,7 +62,7 @@ export default function App() {
         {/* Header */}
         <header className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-bold truncate">Buscador de CUIT</h1>
+            <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
             <p className="text-muted-foreground text-xs sm:text-sm">Buscar y explorar relaciones entre CUITs</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -84,6 +70,14 @@ export default function App() {
               {theme === "dark" ? "Dark" : "Light"}
             </span>
             <Switch checked={theme === "light"} onCheckedChange={toggleTheme} />
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground hidden sm:inline">{username}</span>
+                <Button variant="outline" size="sm" onClick={() => void AuthApiService.logout()}>Salir</Button>
+              </div>
+            ) : (
+              <Button size="sm" onClick={() => setLoginOpen(true)}>Iniciar sesión</Button>
+            )}
           </div>
         </header>
 
@@ -107,9 +101,7 @@ export default function App() {
                 onSearch={handleCuitSearch}
                 loading={cuitLoading}
               />
-              {cuitError && (
-                <p className="text-destructive text-sm">{cuitError}</p>
-              )}
+              {cuitError && <p className="text-destructive text-sm">{cuitError}</p>}
             </div>
             {cuitResult
               ? <GraphView cuitResult={cuitResult} />
@@ -121,9 +113,7 @@ export default function App() {
           <TabsContent value="path" className="flex flex-col flex-1 min-h-0 gap-4">
             <div className="shrink-0 space-y-2">
               <PathSearchBar onSearch={handlePathSearch} loading={pathLoading} />
-              {pathError && (
-                <p className="text-destructive text-sm">{pathError}</p>
-              )}
+              {pathError && <p className="text-destructive text-sm">{pathError}</p>}
             </div>
             {pathResult
               ? <GraphView pathResult={pathResult} />
@@ -149,6 +139,7 @@ export default function App() {
         </Tabs>
 
       </div>
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} theme={theme} />
     </div>
   )
 }

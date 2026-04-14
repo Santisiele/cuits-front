@@ -1,12 +1,10 @@
 import { RelationshipForm } from "@/components/RelationshipForm"
-import { GraphService } from "@/services/api"
+import { useAddRelationship } from "@/hooks/useGraphQueries"
 
 interface AddRelationshipProps {
-  /** Optional callback invoked after a relationship is created successfully. */
   onSuccess?: () => void
 }
 
-/** Status messages shown after a submission attempt. */
 const STATUS_MESSAGES = {
   idle: null,
   loading: null,
@@ -18,17 +16,13 @@ const STATUS_MESSAGES = {
 
 /**
  * Form to manually add a directed relationship between two Tax IDs.
- *
- * Delegates rendering and local state to {@link RelationshipForm}
- * and provides the add-specific API call and status messages.
+ * Uses React Query mutation — invalidates my-base cache on success.
  */
 export function AddRelationship({ onSuccess }: AddRelationshipProps) {
-  async function handleSubmit(
-    fromTaxId: string,
-    toTaxId: string,
-    relationshipType: number
-  ): Promise<void> {
-    await GraphService.addRelationship(fromTaxId, toTaxId, relationshipType)
+  const mutation = useAddRelationship()
+
+  async function handleSubmit(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
+    await mutation.mutateAsync({ fromTaxId, toTaxId, relationshipType })
   }
 
   return (
