@@ -1,18 +1,15 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { GraphView } from "@/components/GraphView"
-import { GraphService } from "@/services/api"
 import { useStore } from "@/store/useStore"
-import { getErrorMessage } from "@/lib/errors"
-import type { NodeData, CuitSearchResponse } from "@/types"
+import { useNode, useNodeRelationships, useUpdateNode } from "@/hooks/useGraphQueries"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type SearchStatus = "idle" | "loading" | "found" | "not_found" | "error"
-type SaveStatus = "idle" | "loading" | "success" | "error"
+type SearchStatus = "idle" | "found" | "not_found" | "error"
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -20,88 +17,73 @@ type SaveStatus = "idle" | "loading" | "success" | "error"
  * Tab panel that lets the user search for a node by CUIT,
  * view and edit its contact fields, and visualise its relationships.
  *
- * Can be pre-populated by setting `editTaxId` in the global store
- * before navigating to the "edit" tab (e.g. from the node table).
+ * Uses React Query hooks for caching — repeated lookups of the same
+ * CUIT won't re-fetch within the configured TTL.
  */
 export function EditNode() {
   const { editTaxId, setEditTaxId } = useStore()
 
   const [taxId, setTaxId] = useState("")
-  const [maxDepth, setMaxDepth] = useState("1")
-  const [node, setNode] = useState<NodeData | null>(null)
-  const [graphResult, setGraphResult] = useState<CuitSearchResponse | null>(null)
+  const [maxDepth] = useState(1)
+  const [searchedId, setSearchedId] = useState("")
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle")
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle")
 
-  // Editable contact fields — kept separate from `node` so partial edits
-  // don't mutate the canonical node data before saving.
+  // Editable contact fields
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [birthday, setBirthday] = useState("")
 
-  /** Fetches node data and its graph relationships by Tax ID. */
-  const fetchNode = useCallback(async (id: string): Promise<void> => {
-    setSearchStatus("loading")
-    setNode(null)
-    setGraphResult(null)
-    setSaveStatus("idle")
+  // React Query hooks — only fetch when searchedId is set
+  const nodeQuery = useNode(searchedId, !!searchedId)
+  const relationshipsQuery = useNodeRelationships(searchedId, maxDepth, !!searchedId)
+  const updateMutation = useUpdateNode(searchedId)
 
-    try {
-      const result = await GraphService.getNode(id)
-      setNode(result)
-      setPhone(result.phone ?? "")
-      setEmail(result.email ?? "")
-      setBirthday(result.birthday ?? "")
+  // Sync form fields when node data loads
+  useEffect(() => {
+    if (nodeQuery.data) {
+      setPhone(nodeQuery.data.phone ?? "")
+      setEmail(nodeQuery.data.email ?? "")
+      setBirthday(nodeQuery.data.birthday ?? "")
       setSearchStatus("found")
-
-      // Graph relationships are optional — not finding them is not an error.
-      try {
-        const graph = await GraphService.getNodeRelationships(id, 1)
-        setGraphResult(graph)
-      } catch {
-        // Silently ignore — graph view is supplementary
-      }
-    } catch (error) {
-      const message = getErrorMessage(error)
+    } else if (nodeQuery.isError) {
+      const message = (nodeQuery.error as Error).message
       setSearchStatus(message.includes("not found") ? "not_found" : "error")
     }
-  }, [])
+  }, [nodeQuery.data, nodeQuery.isError, nodeQuery.error])
 
-  // Auto-search when the store pre-loads a Tax ID (e.g. from NodeTable).
+  // Auto-search when navigating from NodeTable
   useEffect(() => {
     if (!editTaxId) return
     setTaxId(editTaxId)
-    setMaxDepth("1")
+    setSearchedId(editTaxId)
     setEditTaxId(null)
-    void fetchNode(editTaxId)
-  }, [editTaxId, setEditTaxId, fetchNode])
+    setSearchStatus("idle")
+  }, [editTaxId, setEditTaxId])
 
-  async function handleSearch(e: React.FormEvent<HTMLFormElement>): Promise<void> {
+  function handleSearch(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault()
     const trimmed = taxId.trim()
     if (!trimmed) return
-    await fetchNode(trimmed)
+    setSearchStatus("idle")
+    setSearchedId(trimmed)
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
-    if (!node) return
-
-    setSaveStatus("loading")
-    try {
-      await GraphService.updateNode(node.taxId, {
-        phone: phone || undefined,
-        email: email || undefined,
-        birthday: birthday || undefined,
-      })
-      setSaveStatus("success")
-    } catch {
-      setSaveStatus("error")
-    }
+    if (!nodeQuery.data) return
+    await updateMutation.mutateAsync({
+      phone: phone || undefined,
+      email: email || undefined,
+      birthday: birthday || undefined,
+    })
   }
 
+  const node = nodeQuery.data
+  const graphResult = relationshipsQuery.data ?? null
+  const isSearching = nodeQuery.isFetching
+
   return (
-    <div className="flex flex-col gap-4 flex-1 min-h-0">
+    <div className="flex flex-col gap-4">
 
       {/* Search form */}
       <Card className="shrink-0">
@@ -114,26 +96,12 @@ export function EditNode() {
               value={taxId}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTaxId(e.target.value)}
               placeholder="CUIT"
-              disabled={searchStatus === "loading"}
+              disabled={isSearching}
             />
-            <Input
-              value={maxDepth}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxDepth(e.target.value)}
-              placeholder="Profundidad"
-              type="number"
-              min={1}
-              max={10}
-              className="w-28"
-              disabled={searchStatus === "loading"}
-            />
-            <Button
-              type="submit"
-              disabled={searchStatus === "loading" || !taxId.trim()}
-            >
-              {searchStatus === "loading" ? "Buscando..." : "Buscar"}
+            <Button type="submit" disabled={isSearching || !taxId.trim()}>
+              {isSearching ? "Buscando..." : "Buscar"}
             </Button>
           </form>
-
           {searchStatus === "not_found" && (
             <p className="text-destructive text-sm mt-2">CUIT no encontrado en el grafo</p>
           )}
@@ -193,13 +161,13 @@ export function EditNode() {
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={saveStatus === "loading"}>
-                  {saveStatus === "loading" ? "Guardando..." : "Guardar"}
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Guardando..." : "Guardar"}
                 </Button>
-                {saveStatus === "success" && (
+                {updateMutation.isSuccess && (
                   <Badge variant="default">Guardado exitosamente</Badge>
                 )}
-                {saveStatus === "error" && (
+                {updateMutation.isError && (
                   <Badge variant="destructive">Error al guardar</Badge>
                 )}
               </div>
@@ -210,12 +178,14 @@ export function EditNode() {
 
       {/* Relationship graph */}
       {graphResult && (
-        <Card className="flex flex-col flex-1 min-h-0">
-          <CardHeader className="shrink-0">
+        <Card className="shrink-0">
+          <CardHeader>
             <CardTitle>Relaciones</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col flex-1 min-h-0">
-            <GraphView nodeResult={graphResult} />
+          <CardContent>
+            <div style={{ height: "50vh", minHeight: "300px" }}>
+              <GraphView nodeResult={graphResult} nodeRootName={node?.businessName ?? undefined} />
+            </div>
           </CardContent>
         </Card>
       )}

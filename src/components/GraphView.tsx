@@ -16,11 +16,18 @@ import { CuitNode } from "@/components/CuitNode"
 import { GraphService } from "@/services/api"
 import { getRelationshipLabel } from "@/utils/relationshipLabels"
 import type { CuitSearchResponse, PathResponse } from "@/types"
+import { useStore } from "@/store/useStore"
+import { useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/hooks/useGraphQueries"
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const NODE_TYPES = { cuitNode: CuitNode }
 
 const NODE_WIDTH = 200
 const NODE_HEIGHT = 60
+
+// ─── Node roles & styles ─────────────────────────────────────────────────────
 
 /**
  * Visual role of a node in the graph — determines its color and border.
@@ -97,6 +104,8 @@ function getRole(inMyBase: boolean, isStart: boolean, isEnd: boolean): NodeRole 
   return "default"
 }
 
+// ─── Layout ──────────────────────────────────────────────────────────────────
+
 /**
  * Applies a top-to-bottom Dagre layout to a set of React Flow nodes and edges.
  * Returns a new nodes array with updated `position` values.
@@ -120,6 +129,8 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
     return { ...node, position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 } }
   })
 }
+
+// ─── Graph builder ───────────────────────────────────────────────────────────
 
 /**
  * Builds the React Flow `nodes` and `edges` arrays from the three possible
@@ -153,11 +164,14 @@ class GraphBuilder {
 
   /**
    * Adds a directed edge between two nodes, skipping self-loops and duplicates.
+   * The edge ID is based only on source+target so that multiple calls with
+   * different labels don't create duplicate edges — use the accumulator pattern
+   * in the build methods to combine labels before calling this.
    * @param label - Already-translated display label (use getRelationshipLabel before calling)
    */
   private addEdge(source: string, target: string, label: string): void {
     if (source === target) return
-    const edgeId = `${source}-${target}-${label}`
+    const edgeId = `${source}-${target}`
     if (this.edgeIds.has(edgeId)) return
     this.edgeIds.add(edgeId)
     this.edges.push({
@@ -175,14 +189,15 @@ class GraphBuilder {
 
   /** Populates the graph from a CUIT search result.
    *
-   * The API may return multiple results for the same CUIT when there are
-   * multiple relationship types between the same pair of nodes (e.g. a person
-   * who is both Director and President of the same company). Each result shares
-   * the same pathToBase structure but differs in relationshipType per hop.
+   * The API returns one result per path from the searched CUIT to an inMyBase node.
+   * Multiple results can share the same nodes but differ in relationshipType.
+   * Some paths may include the searched CUIT as an intermediate node (not just start).
    *
-   * To avoid duplicate overlapping edges, we first collect all relationship
-   * labels per (source, target) pair across all results, then emit a single
-   * combined edge per pair — matching the behaviour of buildFromPathResult.
+   * Strategy:
+   * - Skip any path where the searched CUIT appears as an intermediate hop
+   *   (not at position 0 as start) to avoid creating reverse/duplicate edges.
+   * - Accumulate all relationship labels per (source, target) pair.
+   * - Emit a single combined edge per pair.
    */
   private buildFromCuitResult(result: CuitSearchResponse): void {
     const edgeLabels = new Map<string, Set<string>>()
@@ -195,6 +210,12 @@ class GraphBuilder {
 
       const path = item.data.pathToBase
       if (!path) continue
+
+      // Skip paths where the searched CUIT appears as an intermediate node
+      const searchedCuitAppearsMiddle = path.slice(0, -1).some(
+        (n, i) => i > 0 && n.taxId === result.cuit
+      )
+      if (searchedCuitAppearsMiddle) continue
 
       this.addNode(result.cuit, item.data.businessName ?? result.cuit, "start")
 
@@ -215,6 +236,7 @@ class GraphBuilder {
       }
     }
 
+    // Emit one edge per (source, target) pair with all labels combined
     for (const [key, labels] of edgeLabels) {
       const [source, target] = key.split("→") as [string, string]
       const combinedLabel = [...labels].map((r) => getRelationshipLabel(r)).join(" / ")
@@ -241,11 +263,21 @@ class GraphBuilder {
     }
   }
 
-  /** Populates the graph from a node relationships result. */
-  private buildFromNodeResult(result: CuitSearchResponse): void {
-    const firstPath = result.results[0]?.data.pathToBase
-    const rootName = firstPath?.[0]?.businessName ?? result.cuit
+  /** Populates the graph from a node relationships result.
+   *
+   * Groups multiple relationship types between the same pair of nodes
+   * into a single combined edge label (e.g. "Director / Presidente"),
+   * matching the behaviour of buildFromCuitResult.
+   *
+   * @param rootBusinessName - Optional override for the root node label,
+   *   used when the result has no items (node with 0 relationships).
+   */
+  private buildFromNodeResult(result: CuitSearchResponse, rootBusinessName?: string): void {
+    const rootName = rootBusinessName ?? result.results[0]?.data.businessName ?? result.cuit
     this.addNode(result.cuit, rootName, "start")
+
+    // Accumulate relationship labels keyed by "sourceId→targetId"
+    const edgeLabels = new Map<string, Set<string>>()
 
     for (const item of result.results) {
       const path = item.data.pathToBase
@@ -258,8 +290,19 @@ class GraphBuilder {
         this.addNode(node.taxId, node.businessName, node.inMyBase ? "inMyBase" : "default")
 
         const prevId = i === 0 ? result.cuit : path[i - 1]?.taxId
-        if (prevId) this.addEdge(prevId, node.taxId, getRelationshipLabel(node.relationshipType))
+        if (!prevId || !node.relationshipType) continue
+
+        const key = `${prevId}→${node.taxId}`
+        if (!edgeLabels.has(key)) edgeLabels.set(key, new Set())
+        edgeLabels.get(key)!.add(node.relationshipType)
       }
+    }
+
+    // Emit one edge per (source, target) pair with all labels combined
+    for (const [key, labels] of edgeLabels) {
+      const [source, target] = key.split("→") as [string, string]
+      const combinedLabel = [...labels].map((r) => getRelationshipLabel(r)).join(" / ")
+      this.addEdge(source, target, combinedLabel)
     }
   }
 
@@ -274,10 +317,11 @@ class GraphBuilder {
     cuitResult?: CuitSearchResponse | null,
     pathResult?: PathResponse | null,
     nodeResult?: CuitSearchResponse | null,
+    nodeRootName?: string,
   ): { nodes: Node[]; edges: Edge[] } {
     if (cuitResult?.results) this.buildFromCuitResult(cuitResult)
     if (pathResult?.path) this.buildFromPathResult(pathResult)
-    if (nodeResult?.results) this.buildFromNodeResult(nodeResult)
+    if (nodeResult) this.buildFromNodeResult(nodeResult, nodeRootName)
 
     return {
       nodes: applyDagreLayout(this.nodes, this.edges),
@@ -285,6 +329,8 @@ class GraphBuilder {
     }
   }
 }
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
 
 interface TooltipState {
   nodeId: string
@@ -307,9 +353,10 @@ function NodeTooltip({ tooltip }: NodeTooltipProps) {
         <p className="text-slate-400">Cargando...</p>
       ) : tooltip.info ? (
         <div className="space-y-1">
-          <p className="font-medium text-white mb-2">
+          <p className="font-medium text-white mb-1">
             {String(tooltip.info["businessName"] ?? tooltip.nodeId)}
           </p>
+          <p className="font-mono text-slate-400 text-xs mb-2">{tooltip.nodeId}</p>
           {tooltip.info["phone"] && (
             <p><span className="text-slate-400">Tel:</span> {String(tooltip.info["phone"])}</p>
           )}
@@ -336,6 +383,8 @@ function NodeTooltip({ tooltip }: NodeTooltipProps) {
   )
 }
 
+// ─── MiniMap helper ──────────────────────────────────────────────────────────
+
 /** Returns the background color for a node in the MiniMap. */
 function miniMapNodeColor(node: Node): string {
   const bg = (node.data as { nodeStyle?: { background?: string } }).nodeStyle?.background
@@ -345,6 +394,8 @@ function miniMapNodeColor(node: Node): string {
   return "#334155"
 }
 
+// ─── Component ───────────────────────────────────────────────────────────────
+
 interface GraphViewProps {
   /** Result from a CUIT search. */
   cuitResult?: CuitSearchResponse | null
@@ -352,6 +403,8 @@ interface GraphViewProps {
   pathResult?: PathResponse | null
   /** Result from a node relationship query (used in the Edit Node tab). */
   nodeResult?: CuitSearchResponse | null
+  /** Override label for the root node — used when nodeResult has no items. */
+  nodeRootName?: string
 }
 
 /**
@@ -361,26 +414,44 @@ interface GraphViewProps {
  * renders them as a directed, auto-laid-out graph. Hovering over a
  * node fetches and displays additional details in a tooltip.
  */
-export function GraphView({ cuitResult, pathResult, nodeResult }: GraphViewProps) {
+export function GraphView({ cuitResult, pathResult, nodeResult, nodeRootName }: GraphViewProps) {
+  const { setEditTaxId, setActiveTab } = useStore()
+
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => new GraphBuilder().build(cuitResult, pathResult, nodeResult),
-    [cuitResult, pathResult, nodeResult]
+    () => new GraphBuilder().build(cuitResult, pathResult, nodeResult, nodeRootName),
+    [cuitResult, pathResult, nodeResult, nodeRootName]
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
+  // Re-build the graph whenever the input data changes.
   useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = new GraphBuilder().build(cuitResult, pathResult, nodeResult)
+    const { nodes: newNodes, edges: newEdges } = new GraphBuilder().build(cuitResult, pathResult, nodeResult, nodeRootName)
     setNodes(newNodes)
     setEdges(newEdges)
-  }, [cuitResult, pathResult, nodeResult, setNodes, setEdges])
+  }, [cuitResult, pathResult, nodeResult, nodeRootName, setNodes, setEdges])
+
+  function handleNodeClick(_: React.MouseEvent, node: Node): void {
+    setEditTaxId(node.id)
+    setActiveTab("edit")
+  }
+
+  const queryClient = useQueryClient()
 
   async function handleNodeMouseEnter(_: React.MouseEvent, node: Node): Promise<void> {
     setTooltip({ nodeId: node.id, info: null, loading: true })
     try {
+      // Check cache first before hitting the network
+      const cached = queryClient.getQueryData(queryKeys.node(node.id))
+      if (cached) {
+        setTooltip((prev) => prev ? { ...prev, info: cached as Record<string, string | boolean | null>, loading: false } : null)
+        return
+      }
       const info = await GraphService.getNode(node.id) as unknown as Record<string, string | boolean | null>
+      // Store in cache for future hovers
+      queryClient.setQueryData(queryKeys.node(node.id), info)
       setTooltip((prev) => prev ? { ...prev, info, loading: false } : null)
     } catch {
       setTooltip((prev) => prev ? { ...prev, loading: false } : null)
@@ -420,6 +491,7 @@ export function GraphView({ cuitResult, pathResult, nodeResult }: GraphViewProps
           nodeTypes={NODE_TYPES}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onNodeClick={handleNodeClick}
           onNodeMouseEnter={handleNodeMouseEnter}
           onNodeMouseLeave={handleNodeMouseLeave}
           fitView

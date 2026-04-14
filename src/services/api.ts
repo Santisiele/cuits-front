@@ -37,9 +37,9 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   })
 
   if (response.status === 401) {
+    // clearAuth also clears the React Query cache
     useAuthStore.getState().clearAuth()
-    window.location.href = "/login"
-    throw new Error("Session expired")
+    throw new Error("Sesión expirada")
   }
 
   if (!response.ok) {
