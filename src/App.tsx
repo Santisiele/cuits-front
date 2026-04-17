@@ -1,6 +1,5 @@
 import "./App.css"
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
 import { PathSearchBar } from "@/components/PathSearchBar"
@@ -11,50 +10,83 @@ import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
 import { CompanyTable } from "@/components/CompanyTable"
 import { useStore } from "@/store/useStore"
-import type { TabId } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
+import { useState } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
-/**
- * Root application component.
- *
- * Search state is managed locally with React Query hooks.
- * The global store only holds UI state (theme, active tab, editTaxId).
- */
-export default function App() {
-  const [loginOpen, setLoginOpen] = useState(false)
-  const { isAuthenticated, username } = useAuthStore()
+// ─── Nav link styles ─────────────────────────────────────────────────────────
 
-  const { theme, toggleTheme, activeTab, setActiveTab } = useStore()
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  `inline-flex flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs sm:text-sm font-medium transition-all ${
+    isActive
+      ? "bg-background text-foreground shadow"
+      : "text-muted-foreground hover:text-foreground"
+  }`
 
-  // ─── CUIT search state ────────────────────────────────────────────────────
+// ─── Search tab (keeps its own state so it persists across navigation) ────────
+
+function SearchTab() {
   const [cuitInput, setCuitInput] = useState({ taxId: "", maxDepth: 3, enabled: false })
   const cuitQuery = useCuitSearch(cuitInput.taxId, cuitInput.maxDepth, cuitInput.enabled)
 
-  function handleCuitSearch(taxId: string, maxDepth: number): void {
+  function handleSearch(taxId: string, maxDepth: number): void {
     setCuitInput({ taxId, maxDepth, enabled: true })
   }
 
-  // ─── Path search state ────────────────────────────────────────────────────
+  const result = cuitQuery.data as CuitSearchResponse | undefined
+  const error = cuitQuery.error ? (cuitQuery.error as Error).message : null
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
+      <div className="shrink-0 space-y-2">
+        <SearchBar title="Buscar un CUIT" onSearch={handleSearch} loading={cuitQuery.isFetching} />
+        {error && <p className="text-destructive text-sm">{error}</p>}
+      </div>
+      {result ? <GraphView cuitResult={result} /> : <div className="flex-1" />}
+    </div>
+  )
+}
+
+// ─── Path tab ────────────────────────────────────────────────────────────────
+
+function PathTab() {
   const [pathInput, setPathInput] = useState({ from: "", to: "", maxDepth: 3, enabled: false })
   const pathQuery = usePathSearch(pathInput.from, pathInput.to, pathInput.maxDepth, pathInput.enabled)
 
-  function handlePathSearch(from: string, to: string, maxDepth: number): void {
+  function handleSearch(from: string, to: string, maxDepth: number): void {
     setPathInput({ from, to, maxDepth, enabled: true })
   }
 
-  // ─── Derived values ───────────────────────────────────────────────────────
-  const cuitResult = cuitQuery.data as CuitSearchResponse | undefined
-  const cuitLoading = cuitQuery.isFetching
-  const cuitError = cuitQuery.error ? (cuitQuery.error as Error).message : null
+  const result = pathQuery.data as PathResponse | undefined
+  const error = pathQuery.error ? (pathQuery.error as Error).message : null
 
-  const pathResult = pathQuery.data as PathResponse | undefined
-  const pathLoading = pathQuery.isFetching
-  const pathError = pathQuery.error ? (pathQuery.error as Error).message : null
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
+      <div className="shrink-0 space-y-2">
+        <PathSearchBar onSearch={handleSearch} loading={pathQuery.isFetching} />
+        {error && <p className="text-destructive text-sm">{error}</p>}
+      </div>
+      {result ? <GraphView pathResult={result} /> : <div className="flex-1" />}
+    </div>
+  )
+}
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [loginOpen, setLoginOpen] = useState(false)
+  const { isAuthenticated, username } = useAuthStore()
+  const { theme, toggleTheme } = useStore()
+  const navigate = useNavigate()
+
+  function handleNodeNavigate(taxId: string): void {
+    useStore.getState().setEditTaxId(taxId)
+    void navigate("/edit")
+  }
 
   return (
     <div className={`${theme} h-screen flex flex-col bg-background overflow-hidden`}>
@@ -82,68 +114,47 @@ export default function App() {
           </div>
         </header>
 
-        {/* Navigation tabs */}
-        <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as TabId)} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-x-auto pb-1 mb-2 shrink-0">
-            <TabsList className="w-max min-w-full">
-              <TabsTrigger value="search" className="text-xs sm:text-sm">Buscar CUIT</TabsTrigger>
-              <TabsTrigger value="path" className="text-xs sm:text-sm">Buscar relación</TabsTrigger>
-              <TabsTrigger value="add" className="text-xs sm:text-sm">Manejar relación</TabsTrigger>
-              <TabsTrigger value="edit" className="text-xs sm:text-sm">Editar persona</TabsTrigger>
-              <TabsTrigger value="base" className="text-xs sm:text-sm">Mi base</TabsTrigger>
-              <TabsTrigger value="companies" className="text-xs sm:text-sm">Empresas a buscar</TabsTrigger>
-            </TabsList>
+        {/* Nav */}
+        <div className="overflow-x-auto pb-1 mb-2 shrink-0">
+          <div className="flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full">
+            <NavLink to="/search"    className={navClass}>Buscar CUIT</NavLink>
+            <NavLink to="/path"      className={navClass}>Buscar relación</NavLink>
+            <NavLink to="/add"       className={navClass}>Manejar relación</NavLink>
+            <NavLink to="/edit"      className={navClass}>Editar persona</NavLink>
+            <NavLink to="/base"      className={navClass}>Mi base</NavLink>
+            <NavLink to="/companies" className={navClass}>Empresas a buscar</NavLink>
           </div>
+        </div>
 
-          {/* CUIT search tab */}
-          <TabsContent value="search" className="flex flex-col flex-1 min-h-0 gap-4">
-            <div className="shrink-0 space-y-2">
-              <SearchBar
-                title="Buscar un CUIT"
-                onSearch={handleCuitSearch}
-                loading={cuitLoading}
-              />
-              {cuitError && <p className="text-destructive text-sm">{cuitError}</p>}
-            </div>
-            {cuitResult
-              ? <GraphView cuitResult={cuitResult} />
-              : <div className="flex-1" />
-            }
-          </TabsContent>
-
-          {/* Path search tab */}
-          <TabsContent value="path" className="flex flex-col flex-1 min-h-0 gap-4">
-            <div className="shrink-0 space-y-2">
-              <PathSearchBar onSearch={handlePathSearch} loading={pathLoading} />
-              {pathError && <p className="text-destructive text-sm">{pathError}</p>}
-            </div>
-            {pathResult
-              ? <GraphView pathResult={pathResult} />
-              : <div className="flex-1" />
-            }
-          </TabsContent>
-
-          {/* Relationship management tab */}
-          <TabsContent value="add" className="flex-1 overflow-y-auto space-y-4">
-            <AddRelationship />
-            <DeleteRelationship />
-          </TabsContent>
-
-          {/* Node edit tab */}
-          <TabsContent value="edit" className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-            <EditNode />
-          </TabsContent>
-
-          {/* Base nodes table tab */}
-          <TabsContent value="base" className="flex-1 overflow-y-auto">
-            <NodeTable />
-          </TabsContent>
-
-          {/* Companies tab */}
-          <TabsContent value="companies" className="flex-1 overflow-y-auto">
-            <CompanyTable />
-          </TabsContent>
-        </Tabs>
+        {/* Routes */}
+        <div className="flex flex-col flex-1 min-h-0">
+          <Routes>
+            <Route path="/" element={<Navigate to="/search" replace />} />
+            <Route path="/search"    element={<SearchTab />} />
+            <Route path="/path"      element={<PathTab />} />
+            <Route path="/add"       element={
+              <div className="overflow-y-auto flex-1 space-y-4">
+                <AddRelationship />
+                <DeleteRelationship />
+              </div>
+            } />
+            <Route path="/edit"      element={
+              <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+                <EditNode onNodeNavigate={handleNodeNavigate} />
+              </div>
+            } />
+            <Route path="/base"      element={
+              <div className="flex-1 overflow-y-auto">
+                <NodeTable />
+              </div>
+            } />
+            <Route path="/companies" element={
+              <div className="flex-1 overflow-y-auto">
+                <CompanyTable />
+              </div>
+            } />
+          </Routes>
+        </div>
 
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} theme={theme} />

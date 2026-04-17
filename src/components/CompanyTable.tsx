@@ -3,22 +3,58 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
+import { useNavigate } from "react-router-dom"
 import { useCompanyNodes } from "@/hooks/useGraphQueries"
+import type { BaseNode } from "@/types"
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type SortField = "businessName" | "relationshipCount"
+type SortDir = "asc" | "desc"
+
+// ─── Sort button ──────────────────────────────────────────────────────────────
+
+function SortButton({
+  field,
+  current,
+  dir,
+  onSort,
+  children,
+}: {
+  field: SortField
+  current: SortField
+  dir: SortDir
+  onSort: (f: SortField) => void
+  children: React.ReactNode
+}) {
+  const active = field === current
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors"
+    >
+      {children}
+      <span className="text-xs leading-none">
+        {active ? (dir === "asc" ? "↑" : "↓") : <span className="opacity-30">↕</span>}
+      </span>
+    </button>
+  )
+}
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-/**
- * Table listing company nodes (taxId starting with 30 or 33, inMyBase = false)
- * ordered by Principal relationship count descending.
- *
- * Clicking a CUIT navigates to the Edit Node tab pre-populated with that node.
- */
 export function CompanyTable() {
-  const { setActiveTab, setEditTaxId } = useStore()
+  const { setEditTaxId, companyTable, setCompanyTable } = useStore()
+  const navigate = useNavigate()
 
   const { data: nodes = [], isLoading: loading, error } = useCompanyNodes()
-  const [search, setSearch] = useState("")
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
+
+  const search = companyTable.search
+  const sortField = companyTable.sortField as SortField
+  const sortDir = companyTable.sortDir as SortDir
+
+  function setSearch(s: string) { setCompanyTable({ search: s }) }
 
   const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
 
@@ -30,19 +66,37 @@ export function CompanyTable() {
     })
   }
 
-  function handleCuitClick(taxId: string): void {
-    setEditTaxId(taxId)
-    setActiveTab("edit")
+  function handleSort(field: SortField): void {
+    if (field === sortField) {
+      setCompanyTable({ sortDir: sortDir === "asc" ? "desc" : "asc" })
+    } else {
+      setCompanyTable({ sortField: field, sortDir: "asc" })
+    }
   }
 
-  const filtered = nodes.filter((node) => {
-    const matchesSearch =
-      node.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      node.taxId.includes(search)
-    const matchesSource =
-      selectedSources.size === 0 || selectedSources.has(node.source)
-    return matchesSearch && matchesSource
-  })
+  function handleNodeClick(taxId: string): void {
+    setEditTaxId(taxId)
+    void navigate("/edit")
+  }
+
+  const filtered = nodes
+    .filter((node) => {
+      const matchesSearch =
+        node.businessName.toLowerCase().includes(search.toLowerCase()) ||
+        node.taxId.includes(search)
+      const matchesSource =
+        selectedSources.size === 0 || selectedSources.has(node.source)
+      return matchesSearch && matchesSource
+    })
+    .sort((a: BaseNode, b: BaseNode) => {
+      let cmp = 0
+      if (sortField === "businessName") {
+        cmp = (a.businessName ?? "").localeCompare(b.businessName ?? "")
+      } else if (sortField === "relationshipCount") {
+        cmp = (a.relationshipCount ?? 0) - (b.relationshipCount ?? 0)
+      }
+      return sortDir === "asc" ? cmp : -cmp
+    })
 
   return (
     <Card>
@@ -85,8 +139,16 @@ export function CompanyTable() {
               <thead className="sticky top-0 bg-background">
                 <tr className="border-b border-slate-700">
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">CUIT</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Nombre</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Relaciones directas con mi base</th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">
+                    <SortButton field="businessName" current={sortField} dir={sortDir} onSort={handleSort}>
+                      Nombre
+                    </SortButton>
+                  </th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">
+                    <SortButton field="relationshipCount" current={sortField} dir={sortDir} onSort={handleSort}>
+                      En mi base
+                    </SortButton>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -97,13 +159,20 @@ export function CompanyTable() {
                   >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
-                        onClick={() => handleCuitClick(node.taxId)}
+                        onClick={() => handleNodeClick(node.taxId)}
                         className="cursor-pointer hover:text-cyan-400 transition-colors"
                       >
                         {node.taxId}
                       </button>
                     </td>
-                    <td className="py-2 px-3 text-center">{node.businessName || "—"}</td>
+                    <td className="py-2 px-3 text-center">
+                      <button
+                        onClick={() => handleNodeClick(node.taxId)}
+                        className="cursor-pointer hover:text-cyan-400 transition-colors"
+                      >
+                        {node.businessName || "—"}
+                      </button>
+                    </td>
                     <td className="py-2 px-3 text-center">
                       <span className="text-muted-foreground">{node.relationshipCount}</span>
                     </td>
@@ -127,15 +196,20 @@ export function CompanyTable() {
                   className="py-3 px-1 hover:bg-slate-800/50 transition-colors"
                 >
                   <button
-                    onClick={() => handleCuitClick(node.taxId)}
+                    onClick={() => handleNodeClick(node.taxId)}
                     className="font-mono text-xs text-cyan-400 hover:text-cyan-300 transition-colors mb-1"
                   >
                     {node.taxId}
                   </button>
-                  <p className="text-sm font-medium">{node.businessName || "—"}</p>
+                  <button
+                    onClick={() => handleNodeClick(node.taxId)}
+                    className="text-sm font-medium hover:text-cyan-400 transition-colors block"
+                  >
+                    {node.businessName || "—"}
+                  </button>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">{node.source || "—"}</Badge>
-                    <span className="text-xs text-muted-foreground">{node.relationshipCount} principales</span>
+                    <span className="text-xs text-muted-foreground">{node.relationshipCount} en mi base</span>
                   </div>
                 </div>
               ))}

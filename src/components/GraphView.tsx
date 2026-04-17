@@ -17,6 +17,7 @@ import { GraphService } from "@/services/api"
 import { getRelationshipLabel } from "@/utils/relationshipLabels"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 import { useStore } from "@/store/useStore"
+import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/hooks/useGraphQueries"
 
@@ -415,7 +416,8 @@ interface GraphViewProps {
  * node fetches and displays additional details in a tooltip.
  */
 export function GraphView({ cuitResult, pathResult, nodeResult, nodeRootName }: GraphViewProps) {
-  const { setEditTaxId, setActiveTab } = useStore()
+  const { setEditTaxId } = useStore()
+  const navigate = useNavigate()
 
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
     () => new GraphBuilder().build(cuitResult, pathResult, nodeResult, nodeRootName),
@@ -435,7 +437,7 @@ export function GraphView({ cuitResult, pathResult, nodeResult, nodeRootName }: 
 
   function handleNodeClick(_: React.MouseEvent, node: Node): void {
     setEditTaxId(node.id)
-    setActiveTab("edit")
+    void navigate("/edit")
   }
 
   const queryClient = useQueryClient()
