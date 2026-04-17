@@ -1,81 +1,53 @@
 import { create } from "zustand"
-import type { CuitSearchResponse, PathResponse } from "@/types"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Theme = "light" | "dark"
 
-/** Active application tab identifier. */
 export type TabId = "search" | "path" | "add" | "edit" | "base" | "companies"
 
-// ─── Slice interfaces ────────────────────────────────────────────────────────
-
-interface ThemeSlice {
-  theme: Theme
-  /** Toggles between light and dark theme. */
-  toggleTheme: () => void
+export const TAB_ROUTES: Record<TabId, string> = {
+  search:    "/search",
+  path:      "/path",
+  add:       "/add",
+  edit:      "/edit",
+  base:      "/base",
+  companies: "/companies",
 }
 
-interface CuitSearchSlice {
-  cuitResult: CuitSearchResponse | null
-  cuitLoading: boolean
-  cuitError: string | null
-  setCuitResult: (result: CuitSearchResponse | null) => void
-  setCuitLoading: (loading: boolean) => void
-  setCuitError: (error: string | null) => void
-}
-
-interface PathSearchSlice {
-  pathResult: PathResponse | null
-  pathLoading: boolean
-  pathError: string | null
-  setPathResult: (result: PathResponse | null) => void
-  setPathLoading: (loading: boolean) => void
-  setPathError: (error: string | null) => void
-}
-
-interface NavigationSlice {
-  activeTab: TabId
-  /** Sets the active tab. */
-  setActiveTab: (tab: TabId) => void
-  /**
-   * Tax ID pre-loaded into the Edit Node tab.
-   * Set this before navigating to "edit" to auto-search on mount.
-   */
-  editTaxId: string | null
-  setEditTaxId: (taxId: string | null) => void
-}
-
-/** Combined application state. */
-type AppState = ThemeSlice & CuitSearchSlice & PathSearchSlice & NavigationSlice
+export const ROUTE_TABS: Record<string, TabId> = Object.fromEntries(
+  Object.entries(TAB_ROUTES).map(([tab, route]) => [route, tab as TabId])
+)
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
+type SortDir = "asc" | "desc"
+
+interface TableState {
+  search: string
+  sortField: string
+  sortDir: SortDir
+}
+
+interface AppState {
+  theme: Theme
+  toggleTheme: () => void
+  editTaxId: string | null
+  setEditTaxId: (taxId: string | null) => void
+  nodeTable: TableState
+  setNodeTable: (state: Partial<TableState>) => void
+  companyTable: TableState
+  setCompanyTable: (state: Partial<TableState>) => void
+}
+
 export const useStore = create<AppState>((set) => ({
-  // Theme
   theme: "dark",
   toggleTheme: () =>
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
-
-  // CUIT search
-  cuitResult: null,
-  cuitLoading: false,
-  cuitError: null,
-  setCuitResult: (result) => set({ cuitResult: result }),
-  setCuitLoading: (loading) => set({ cuitLoading: loading }),
-  setCuitError: (error) => set({ cuitError: error }),
-
-  // Path search
-  pathResult: null,
-  pathLoading: false,
-  pathError: null,
-  setPathResult: (result) => set({ pathResult: result }),
-  setPathLoading: (loading) => set({ pathLoading: loading }),
-  setPathError: (error) => set({ pathError: error }),
-
-  // Navigation
-  activeTab: "search",
-  setActiveTab: (tab) => set({ activeTab: tab }),
   editTaxId: null,
   setEditTaxId: (taxId) => set({ editTaxId: taxId }),
+  nodeTable: { search: "", sortField: "businessName", sortDir: "asc" },
+  setNodeTable: (s) => set((state) => ({ nodeTable: { ...state.nodeTable, ...s } })),
+  companyTable: { search: "", sortField: "relationshipCount", sortDir: "desc" },
+  setCompanyTable: (s) => set((state) => ({ companyTable: { ...state.companyTable, ...s } })),
 }))

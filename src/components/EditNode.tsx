@@ -20,7 +20,11 @@ type SearchStatus = "idle" | "found" | "not_found" | "error"
  * Uses React Query hooks for caching — repeated lookups of the same
  * CUIT won't re-fetch within the configured TTL.
  */
-export function EditNode() {
+interface EditNodeProps {
+  onNodeNavigate?: (taxId: string) => void
+}
+
+export function EditNode({ }: EditNodeProps) {
   const { editTaxId, setEditTaxId } = useStore()
 
   const [taxId, setTaxId] = useState("")
