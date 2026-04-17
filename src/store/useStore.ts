@@ -1,11 +1,14 @@
 import { create } from "zustand"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 type Theme = "light" | "dark"
 
 /** Active application tab identifier. */
-export type TabId = "search" | "path" | "add" | "edit" | "base"
+export type TabId = "search" | "path" | "add" | "edit" | "base" | "companies"
 
+// ─── Slice interfaces ────────────────────────────────────────────────────────
 
 interface ThemeSlice {
   theme: Theme
@@ -46,6 +49,7 @@ interface NavigationSlice {
 /** Combined application state. */
 type AppState = ThemeSlice & CuitSearchSlice & PathSearchSlice & NavigationSlice
 
+// ─── Store ───────────────────────────────────────────────────────────────────
 
 export const useStore = create<AppState>((set) => ({
   // Theme
@@ -53,6 +57,7 @@ export const useStore = create<AppState>((set) => ({
   toggleTheme: () =>
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 
+  // CUIT search
   cuitResult: null,
   cuitLoading: false,
   cuitError: null,
@@ -60,6 +65,7 @@ export const useStore = create<AppState>((set) => ({
   setCuitLoading: (loading) => set({ cuitLoading: loading }),
   setCuitError: (error) => set({ cuitError: error }),
 
+  // Path search
   pathResult: null,
   pathLoading: false,
   pathError: null,
@@ -67,6 +73,7 @@ export const useStore = create<AppState>((set) => ({
   setPathLoading: (loading) => set({ pathLoading: loading }),
   setPathError: (error) => set({ pathError: error }),
 
+  // Navigation
   activeTab: "search",
   setActiveTab: (tab) => set({ activeTab: tab }),
   editTaxId: null,
