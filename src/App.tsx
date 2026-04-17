@@ -9,6 +9,7 @@ import { AddRelationship } from "@/components/AddRelationship"
 import { DeleteRelationship } from "@/components/DeleteRelationship"
 import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
+import { CompanyTable } from "@/components/CompanyTable"
 import { useStore } from "@/store/useStore"
 import type { TabId } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
@@ -90,6 +91,7 @@ export default function App() {
               <TabsTrigger value="add" className="text-xs sm:text-sm">Manejar relación</TabsTrigger>
               <TabsTrigger value="edit" className="text-xs sm:text-sm">Editar persona</TabsTrigger>
               <TabsTrigger value="base" className="text-xs sm:text-sm">Mi base</TabsTrigger>
+              <TabsTrigger value="companies" className="text-xs sm:text-sm">Empresas a buscar</TabsTrigger>
             </TabsList>
           </div>
 
@@ -135,6 +137,11 @@ export default function App() {
           {/* Base nodes table tab */}
           <TabsContent value="base" className="flex-1 overflow-y-auto">
             <NodeTable />
+          </TabsContent>
+
+          {/* Companies tab */}
+          <TabsContent value="companies" className="flex-1 overflow-y-auto">
+            <CompanyTable />
           </TabsContent>
         </Tabs>
 

@@ -131,6 +131,11 @@ export class GraphService {
     )
   }
 
+  static async getCompanyNodes(): Promise<BaseNode[]> {
+    const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/companies`)
+    return data.nodes
+  }
+
   static deleteRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
     return apiFetch(
       `${this.base}/relationship`,

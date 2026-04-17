@@ -85,6 +85,19 @@ export function useNodeRelationships(taxId: string, maxDepth: number, enabled = 
   })
 }
 
+// ─── Companies ───────────────────────────────────────────────────────────────
+
+/**
+ * Fetches and caches all company nodes (taxId starting with 30 or 33, inMyBase = false).
+ * Ordered by Principal relationship count descending.
+ */
+export function useCompanyNodes() {
+  return useQuery({
+    queryKey: ["companyNodes"] as const,
+    queryFn: () => GraphService.getCompanyNodes(),
+  })
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 /**
