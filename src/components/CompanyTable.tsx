@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
+import { useNavigate } from "react-router-dom"
 import { useCompanyNodes } from "@/hooks/useGraphQueries"
 import type { BaseNode } from "@/types"
 
@@ -43,13 +44,17 @@ function SortButton({
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function CompanyTable() {
-  const { setActiveTab, setEditTaxId } = useStore()
+  const { setEditTaxId, companyTable, setCompanyTable } = useStore()
+  const navigate = useNavigate()
 
   const { data: nodes = [], isLoading: loading, error } = useCompanyNodes()
-  const [search, setSearch] = useState("")
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-  const [sortField, setSortField] = useState<SortField>("relationshipCount")
-  const [sortDir, setSortDir] = useState<SortDir>("desc")
+
+  const search = companyTable.search
+  const sortField = companyTable.sortField as SortField
+  const sortDir = companyTable.sortDir as SortDir
+
+  function setSearch(s: string) { setCompanyTable({ search: s }) }
 
   const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
 
@@ -63,16 +68,15 @@ export function CompanyTable() {
 
   function handleSort(field: SortField): void {
     if (field === sortField) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+      setCompanyTable({ sortDir: sortDir === "asc" ? "desc" : "asc" })
     } else {
-      setSortField(field)
-      setSortDir("asc")
+      setCompanyTable({ sortField: field, sortDir: "asc" })
     }
   }
 
   function handleNodeClick(taxId: string): void {
     setEditTaxId(taxId)
-    setActiveTab("edit")
+    void navigate("/edit")
   }
 
   const filtered = nodes

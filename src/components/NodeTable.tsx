@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
+import { useNavigate } from "react-router-dom"
 import { useMyBaseNodes } from "@/hooks/useGraphQueries"
 import type { BaseNode } from "@/types"
 
@@ -43,13 +44,17 @@ function SortButton({
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function NodeTable() {
-  const { setActiveTab, setEditTaxId } = useStore()
+  const { setEditTaxId, nodeTable, setNodeTable } = useStore()
+  const navigate = useNavigate()
 
   const { data: nodes = [], isLoading: loading, error } = useMyBaseNodes()
-  const [search, setSearch] = useState("")
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-  const [sortField, setSortField] = useState<SortField>("businessName")
-  const [sortDir, setSortDir] = useState<SortDir>("asc")
+
+  const search = nodeTable.search
+  const sortField = nodeTable.sortField as SortField
+  const sortDir = nodeTable.sortDir as SortDir
+
+  function setSearch(s: string) { setNodeTable({ search: s }) }
 
   const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
 
@@ -63,16 +68,15 @@ export function NodeTable() {
 
   function handleSort(field: SortField): void {
     if (field === sortField) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+      setNodeTable({ sortDir: sortDir === "asc" ? "desc" : "asc" })
     } else {
-      setSortField(field)
-      setSortDir("asc")
+      setNodeTable({ sortField: field, sortDir: "asc" })
     }
   }
 
   function handleNodeClick(taxId: string): void {
     setEditTaxId(taxId)
-    setActiveTab("edit")
+    void navigate("/edit")
   }
 
   const filtered = nodes
