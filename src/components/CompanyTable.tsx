@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
 import { useCompanyNodes } from "@/hooks/useGraphQueries"
+import { exportNodes } from "@/lib/exportTable"
+import { Button } from "@/components/ui/button"
 import type { BaseNode } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,6 +42,14 @@ function SortButton({
     </button>
   )
 }
+
+// ─── Columns ─────────────────────────────────────────────────────────────────
+
+const COMPANY_COLUMNS = [
+  { key: "taxId" as const,             label: "CUIT" },
+  { key: "businessName" as const,      label: "Nombre" },
+  { key: "relationshipCount" as const, label: "En mi base" },
+]
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -103,12 +113,16 @@ export function CompanyTable() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <CardTitle>Empresas a buscar ({nodes.length})</CardTitle>
-          <Input
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre o CUIT..."
-            className="w-full sm:w-64"
-          />
+          <div className="flex gap-2 items-center">
+            <Input
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre o CUIT..."
+              className="w-full sm:w-64"
+            />
+            <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, COMPANY_COLUMNS, "empresas-a-buscar", "csv")}>CSV</Button>
+            <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, COMPANY_COLUMNS, "empresas-a-buscar", "xlsx")}>XLSX</Button>
+          </div>
         </div>
 
         {sources.length > 0 && (
