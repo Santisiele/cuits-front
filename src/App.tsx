@@ -1,5 +1,5 @@
 import "./App.css"
-import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom"
+import { Routes, Route, NavLink, Navigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
 import { PathSearchBar } from "@/components/PathSearchBar"
@@ -81,12 +81,6 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const { isAuthenticated, username } = useAuthStore()
   const { theme, toggleTheme } = useStore()
-  const navigate = useNavigate()
-
-  function handleNodeNavigate(taxId: string): void {
-    useStore.getState().setEditTaxId(taxId)
-    void navigate("/edit")
-  }
 
   return (
     <div className={`${theme} h-screen flex flex-col bg-background overflow-hidden`}>
@@ -140,7 +134,7 @@ export default function App() {
             } />
             <Route path="/edit"      element={
               <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-                <EditNode onNodeNavigate={handleNodeNavigate} />
+                <EditNode />
               </div>
             } />
             <Route path="/base"      element={
