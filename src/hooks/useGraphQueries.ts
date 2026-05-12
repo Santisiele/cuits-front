@@ -98,6 +98,30 @@ export function useCompanyNodes() {
   })
 }
 
+// ─── Cache invalidation helpers ──────────────────────────────────────────────
+
+/**
+ * Invalidates all queries whose key includes any of the given Tax IDs.
+ * This covers cuitSearch, pathSearch, node, and nodeRelationships entries
+ * for those specific CUITs without flushing the entire cache.
+ */
+function invalidateQueriesForTaxIds(
+  queryClient: ReturnType<typeof useQueryClient>,
+  taxIds: string[]
+): void {
+  console.log("[cache] removing queries for taxIds:", taxIds)
+  console.log("[cache] keys before:", queryClient.getQueryCache().getAll().map(q => q.queryKey))
+  queryClient.removeQueries({
+    predicate: (query) => {
+      const key = query.queryKey
+      const matches = key.some((part) => typeof part === "string" && taxIds.includes(part))
+      if (matches) console.log("[cache] removing key:", key)
+      return matches
+    },
+  })
+  console.log("[cache] keys after:", queryClient.getQueryCache().getAll().map(q => q.queryKey))
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 /**
@@ -111,8 +135,9 @@ export function useAddRelationship() {
       toTaxId: string
       relationshipType: number
     }) => GraphService.addRelationship(fromTaxId, toTaxId, relationshipType),
-    onSuccess: () => {
+    onSuccess: (_data, { fromTaxId, toTaxId }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.myBase() })
+      invalidateQueriesForTaxIds(queryClient, [fromTaxId, toTaxId])
     },
   })
 }
@@ -128,8 +153,11 @@ export function useDeleteRelationship() {
       toTaxId: string
       relationshipType: number
     }) => GraphService.deleteRelationship(fromTaxId, toTaxId, relationshipType),
-    onSuccess: () => {
+    onSuccess: (_data, { fromTaxId, toTaxId }) => {
+      // Companies + my base may both change (orphan cleanup affects company counts)
       void queryClient.invalidateQueries({ queryKey: queryKeys.myBase() })
+      void queryClient.invalidateQueries({ queryKey: ["companyNodes"] })
+      invalidateQueriesForTaxIds(queryClient, [fromTaxId, toTaxId])
     },
   })
 }
