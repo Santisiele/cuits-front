@@ -373,9 +373,16 @@ function NodeTooltip({ tooltip }: NodeTooltipProps) {
               {tooltip.info["inMyBase"] ? "En mi base" : "Externo"}
             </span>
           </p>
-          {tooltip.info["source"] && (
-            <p><span className="text-slate-400">Fuente:</span> {String(tooltip.info["source"])}</p>
-          )}
+          {(() => {
+            const srcs = tooltip.info["sources"]
+            if (!Array.isArray(srcs) || srcs.length === 0) return null
+            return (
+              <p>
+                <span className="text-slate-400">Fuentes:</span>{" "}
+                {srcs.join(", ")}
+              </p>
+            )
+          })()}
         </div>
       ) : (
         <p className="text-slate-400">Sin información adicional</p>

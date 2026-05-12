@@ -1,3 +1,5 @@
+// ─── Graph API types ────────────────────────────────────────────────────────
+
 /**
  * A single node along the path from a searched CUIT to a base node.
  * Used inside {@link SearchResult}.
@@ -34,6 +36,8 @@ export interface CuitSearchResponse {
   results: SearchResult[]
 }
 
+// ─── Path types ─────────────────────────────────────────────────────────────
+
 /**
  * Minimal node information used inside a {@link PathSegment}.
  */
@@ -61,6 +65,8 @@ export interface PathResponse {
   path: PathSegment[]
 }
 
+// ─── Graph visualization types ───────────────────────────────────────────────
+
 /**
  * A node in the React Flow graph visualization.
  */
@@ -80,6 +86,8 @@ export interface GraphEdge {
   label: string
 }
 
+// ─── Node detail types ───────────────────────────────────────────────────────
+
 /**
  * Full detail of a single node as returned by `GET /graph/node/:taxId`.
  */
@@ -90,7 +98,8 @@ export interface NodeData {
   email: string | null
   birthday: string | null
   inMyBase: boolean
-  source: string | null
+  /** All sources that contributed this node (e.g. ["poseidon", "seniorHome"]). */
+  sources: string[]
 }
 
 /**
@@ -108,6 +117,7 @@ export interface NodeUpdateFields {
 export interface BaseNode {
   taxId: string
   businessName: string
-  source: string
+  /** All sources that contributed this node. */
+  sources: string[]
   relationshipCount: number
 }

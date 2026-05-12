@@ -1,6 +1,4 @@
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
@@ -43,7 +41,7 @@ function SortButton({
   )
 }
 
-// ─── Columns ─────────────────────────────────────────────────────────────────
+// ─── Columns (for export) ────────────────────────────────────────────────────
 
 const COMPANY_COLUMNS = [
   { key: "taxId" as const,             label: "CUIT" },
@@ -58,23 +56,11 @@ export function CompanyTable() {
   const navigate = useNavigate()
 
   const { data: nodes = [], isLoading: loading, error } = useCompanyNodes()
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
-
   const search = companyTable.search
   const sortField = companyTable.sortField as SortField
   const sortDir = companyTable.sortDir as SortDir
 
   function setSearch(s: string) { setCompanyTable({ search: s }) }
-
-  const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
-
-  function toggleSource(source: string): void {
-    setSelectedSources((prev) => {
-      const next = new Set(prev)
-      next.has(source) ? next.delete(source) : next.add(source)
-      return next
-    })
-  }
 
   function handleSort(field: SortField): void {
     if (field === sortField) {
@@ -94,9 +80,7 @@ export function CompanyTable() {
       const matchesSearch =
         node.businessName.toLowerCase().includes(search.toLowerCase()) ||
         node.taxId.includes(search)
-      const matchesSource =
-        selectedSources.size === 0 || selectedSources.has(node.source)
-      return matchesSearch && matchesSource
+      return matchesSearch
     })
     .sort((a: BaseNode, b: BaseNode) => {
       let cmp = 0
@@ -125,20 +109,6 @@ export function CompanyTable() {
           </div>
         </div>
 
-        {sources.length > 0 && (
-          <div className="flex gap-2 flex-wrap pt-2">
-            {sources.map((source) => (
-              <button key={source} onClick={() => toggleSource(source)} className="focus:outline-none">
-                <Badge
-                  variant={selectedSources.has(source) ? "default" : "outline"}
-                  className="cursor-pointer"
-                >
-                  {source}
-                </Badge>
-              </button>
-            ))}
-          </div>
-        )}
       </CardHeader>
 
       <CardContent>
@@ -194,7 +164,7 @@ export function CompanyTable() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                    <td colSpan={3} className="py-4 text-center text-muted-foreground">
                       No se encontraron resultados
                     </td>
                   </tr>
@@ -221,8 +191,7 @@ export function CompanyTable() {
                   >
                     {node.businessName || "—"}
                   </button>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">{node.source || "—"}</Badge>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-muted-foreground">{node.relationshipCount} en mi base</span>
                   </div>
                 </div>

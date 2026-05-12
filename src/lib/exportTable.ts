@@ -20,10 +20,12 @@ function toCSV(nodes: BaseNode[], columns: { key: keyof BaseNode; label: string 
   const rows = nodes.map((node) =>
     columns.map((c) => {
       const raw = node[c.key] ?? ""
-      const str = c.key === "taxId" ? formatCuit(String(raw)) : String(raw)
-      return str.includes(",") || str.includes("\n") || str.includes('"')
-        ? `"${str.replace(/"/g, '""')}"`
-        : str
+      const stringValue = Array.isArray(raw)
+        ? raw.join(", ")
+        : c.key === "taxId" ? formatCuit(String(raw)) : String(raw)
+      return stringValue.includes(",") || stringValue.includes("\n") || stringValue.includes('"')
+        ? `"${stringValue.replace(/"/g, '""')}"`
+        : stringValue
     }).join(",")
   )
   return [header, ...rows].join("\n")
@@ -57,7 +59,12 @@ export function exportNodes(
   // XLSX via SheetJS
   const data = [
     columns.map((c) => c.label),
-    ...nodes.map((node) => columns.map((c) => c.key === "taxId" ? formatCuit(String(node[c.key] ?? "")) : (node[c.key] ?? ""))),
+    ...nodes.map((node) => columns.map((c) => {
+      const raw = node[c.key] ?? ""
+      if (Array.isArray(raw)) return raw.join(", ")
+      if (c.key === "taxId") return formatCuit(String(raw))
+      return raw
+    })),
   ]
   const ws = XLSX.utils.aoa_to_sheet(data)
   const wb = XLSX.utils.book_new()

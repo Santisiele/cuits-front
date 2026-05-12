@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
-import { useNode, useNodeRelationships, useUpdateNode } from "@/hooks/useGraphQueries"
+import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,14 +19,13 @@ type SearchStatus = "idle" | "found" | "not_found" | "error"
  * view and edit its contact fields, and visualise its relationships.
  *
  * Uses React Query hooks for caching — repeated lookups of the same
- * CUIT won't re-fetch within the configured TTL.
+ * CUIT won't re-fetch within the configured TTL. On every search,
+ * relevant queries are explicitly invalidated to ensure fresh data
+ * even when the user re-searches a previously cached CUIT.
  */
-interface EditNodeProps {
-  onNodeNavigate?: (taxId: string) => void
-}
-
-export function EditNode({ }: EditNodeProps) {
+export function EditNode() {
   const { editTaxId, setEditTaxId } = useStore()
+  const queryClient = useQueryClient()
 
   const [taxId, setTaxId] = useState("")
   const [maxDepth] = useState(1)
@@ -59,17 +59,28 @@ export function EditNode({ }: EditNodeProps) {
   useEffect(() => {
     if (!editTaxId) return
     setTaxId(editTaxId)
-    setSearchedId(editTaxId)
+    triggerSearch(editTaxId)
     setEditTaxId(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTaxId])
+
+  /**
+   * Triggers a search for the given Tax ID.
+   * Always invalidates cached node + nodeRelationships entries first,
+   * so a re-search always reflects the latest backend state.
+   */
+  function triggerSearch(id: string): void {
     setSearchStatus("idle")
-  }, [editTaxId, setEditTaxId])
+    void queryClient.invalidateQueries({ queryKey: queryKeys.node(id) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.nodeRelationships(id, maxDepth) })
+    setSearchedId(id)
+  }
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault()
     const trimmed = taxId.trim()
     if (!trimmed) return
-    setSearchStatus("idle")
-    setSearchedId(trimmed)
+    triggerSearch(trimmed)
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -125,7 +136,9 @@ export function EditNode({ }: EditNodeProps) {
                 <Badge variant={node.inMyBase ? "default" : "secondary"}>
                   {node.inMyBase ? "En mi base" : "Externo"}
                 </Badge>
-                {node.source && <Badge variant="outline">{node.source}</Badge>}
+                {(node.sources ?? []).map((s) => (
+                  <Badge key={s} variant="outline">{s}</Badge>
+                ))}
               </div>
             </div>
           </CardHeader>
