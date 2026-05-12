@@ -11,7 +11,7 @@ import type { BaseNode } from "@/types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SortField = "businessName" | "source" | "relationshipCount"
+type SortField = "businessName" | "sources" | "relationshipCount"
 type SortDir = "asc" | "desc"
 
 // ─── Sort button ──────────────────────────────────────────────────────────────
@@ -43,12 +43,12 @@ function SortButton({
   )
 }
 
-// ─── Columns ─────────────────────────────────────────────────────────────────
+// ─── Columns (for export) ────────────────────────────────────────────────────
 
 const NODE_COLUMNS = [
   { key: "taxId" as const,             label: "CUIT" },
   { key: "businessName" as const,      label: "Nombre" },
-  { key: "source" as const,            label: "Fuente" },
+  { key: "sources" as const,           label: "Fuentes" },
   { key: "relationshipCount" as const, label: "Relaciones" },
 ]
 
@@ -67,7 +67,10 @@ export function NodeTable() {
 
   function setSearch(s: string) { setNodeTable({ search: s }) }
 
-  const sources = Array.from(new Set(nodes.map((n) => n.source).filter(Boolean)))
+  // Aggregate all unique sources across all nodes for the filter chips
+  const sources = Array.from(
+    new Set(nodes.flatMap((n) => n.sources ?? []).filter(Boolean))
+  ).sort()
 
   function toggleSource(source: string): void {
     setSelectedSources((prev) => {
@@ -95,16 +98,19 @@ export function NodeTable() {
       const matchesSearch =
         node.businessName.toLowerCase().includes(search.toLowerCase()) ||
         node.taxId.includes(search)
+      // A node matches if ANY of its sources is in the selected set.
+      // Empty selection means "no filter" — show everything.
       const matchesSource =
-        selectedSources.size === 0 || selectedSources.has(node.source)
+        selectedSources.size === 0 ||
+        (node.sources ?? []).some((s) => selectedSources.has(s))
       return matchesSearch && matchesSource
     })
     .sort((a: BaseNode, b: BaseNode) => {
       let cmp = 0
       if (sortField === "businessName") {
         cmp = (a.businessName ?? "").localeCompare(b.businessName ?? "")
-      } else if (sortField === "source") {
-        cmp = (a.source ?? "").localeCompare(b.source ?? "")
+      } else if (sortField === "sources") {
+        cmp = (a.sources ?? []).join(", ").localeCompare((b.sources ?? []).join(", "))
       } else if (sortField === "relationshipCount") {
         cmp = (a.relationshipCount ?? 0) - (b.relationshipCount ?? 0)
       }
@@ -162,8 +168,8 @@ export function NodeTable() {
                     </SortButton>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
-                    <SortButton field="source" current={sortField} dir={sortDir} onSort={handleSort}>
-                      Fuente
+                    <SortButton field="sources" current={sortField} dir={sortDir} onSort={handleSort}>
+                      Fuentes
                     </SortButton>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
@@ -196,7 +202,13 @@ export function NodeTable() {
                       </button>
                     </td>
                     <td className="py-2 px-3 text-center">
-                      <Badge variant="outline" className="text-xs">{node.source || "—"}</Badge>
+                      <div className="flex gap-1 flex-wrap justify-center">
+                        {(node.sources ?? []).length > 0
+                          ? node.sources.map((s) => (
+                              <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                            ))
+                          : "—"}
+                      </div>
                     </td>
                     <td className="py-2 px-3 text-center">
                       <span className="text-muted-foreground">{node.relationshipCount}</span>
@@ -232,8 +244,10 @@ export function NodeTable() {
                   >
                     {node.businessName || "—"}
                   </button>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">{node.source || "—"}</Badge>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {(node.sources ?? []).map((s) => (
+                      <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                    ))}
                     <span className="text-xs text-muted-foreground">{node.relationshipCount} relaciones</span>
                   </div>
                 </div>
