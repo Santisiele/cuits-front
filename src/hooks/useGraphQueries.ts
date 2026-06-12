@@ -168,7 +168,7 @@ export function useDeleteRelationship() {
 export function useUpdateNode(taxId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (fields: { phone?: string; email?: string; birthday?: string }) =>
+    mutationFn: (fields: { phone?: string; email?: string; birthday?: string, entryDate?: string,exitDate?: string, loadedAt?: string }) =>
       GraphService.updateNode(taxId, fields),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.node(taxId) })
