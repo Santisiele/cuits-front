@@ -71,6 +71,7 @@ export const RELATIONSHIP_LABELS: Record<string, string> = {
   "Sister": "Hermana",
   "Cousin": "Primo/a",
   "Friend": "Amigo/a",
+  "Responsible": "Responsable"
 }
 
 /**
@@ -147,6 +148,7 @@ export const RELATIONSHIP_OPTIONS: Record<number, string> = {
   1004: "Hermana",
   1005: "Primo/a",
   1006: "Amigo/a",
+  2000: "Responsable",
 }
 
 /**
