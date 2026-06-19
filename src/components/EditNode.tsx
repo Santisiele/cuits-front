@@ -36,6 +36,10 @@ export function EditNode() {
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [birthday, setBirthday] = useState("")
+  const [entryDate, setEntryDate] = useState("")
+  const [exitDate, setExitDate] = useState("")
+  const [loadedAt, setLoadedAt] = useState("")
+  const [sources, setSources] = useState<string[]>([])
 
   // React Query hooks — only fetch when searchedId is set
   const nodeQuery = useNode(searchedId, !!searchedId)
@@ -48,7 +52,11 @@ export function EditNode() {
       setPhone(nodeQuery.data.phone ?? "")
       setEmail(nodeQuery.data.email ?? "")
       setBirthday(nodeQuery.data.birthday ?? "")
+      setEntryDate(nodeQuery.data.entryDate ?? "")
+      setExitDate(nodeQuery.data.exitDate ?? "")
+      setLoadedAt(nodeQuery.data.loadedAt ?? "")
       setSearchStatus("found")
+      setSources(nodeQuery.data.sources ?? [])
     } else if (nodeQuery.isError) {
       const message = (nodeQuery.error as Error).message
       setSearchStatus(message.includes("not found") ? "not_found" : "error")
@@ -61,7 +69,7 @@ export function EditNode() {
     setTaxId(editTaxId)
     triggerSearch(editTaxId)
     setEditTaxId(null)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editTaxId])
 
   /**
@@ -90,6 +98,9 @@ export function EditNode() {
       phone: phone || undefined,
       email: email || undefined,
       birthday: birthday || undefined,
+      entryDate: entryDate || undefined,
+      exitDate: exitDate || undefined,
+      loadedAt: loadedAt || undefined,
     })
   }
 
@@ -176,6 +187,37 @@ export function EditNode() {
                   placeholder="DD/MM/AAAA"
                 />
               </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha de carga</label>
+                <Input
+                  value={loadedAt}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoadedAt(e.target.value)}
+                  placeholder="DD/MM/AAAA"
+                />
+              </div>
+
+              {sources.includes("Residente Senior Home") && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fecha de ingreso</label>
+                  <Input
+                    value={entryDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEntryDate(e.target.value)}
+                    placeholder="DD/MM/AAAA"
+                  />
+                </div>
+              )}
+
+              {sources.includes("Residente Senior Home") && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fecha de egreso</label>
+                  <Input
+                    value={exitDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExitDate(e.target.value)}
+                    placeholder="DD/MM/AAAA"
+                  />
+                </div>
+              )}
 
               <div className="flex items-center gap-3 pt-2">
                 <Button type="submit" disabled={updateMutation.isPending}>

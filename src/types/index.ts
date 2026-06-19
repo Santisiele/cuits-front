@@ -98,6 +98,9 @@ export interface NodeData {
   email: string | null
   birthday: string | null
   inMyBase: boolean
+  entryDate: string | null
+  exitDate: string | null
+  loadedAt: string | null
   /** All sources that contributed this node (e.g. ["poseidon", "seniorHome"]). */
   sources: string[]
 }
@@ -108,7 +111,10 @@ export interface NodeData {
 export interface NodeUpdateFields {
   phone?: string
   email?: string
-  birthday?: string
+  birthday?: string,
+  entryDate?: string,
+  exitDate?: string,
+  loadedAt?: string
 }
 
 /**
