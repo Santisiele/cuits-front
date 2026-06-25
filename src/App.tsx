@@ -9,6 +9,7 @@ import { DeleteRelationship } from "@/components/DeleteRelationship"
 import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
 import { CompanyTable } from "@/components/CompanyTable"
+import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -117,6 +118,7 @@ export default function App() {
             <NavLink to="/edit"      className={navClass}>Editar persona</NavLink>
             <NavLink to="/base"      className={navClass}>Mi base</NavLink>
             <NavLink to="/companies" className={navClass}>Empresas a buscar</NavLink>
+            <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
           </div>
         </div>
 
@@ -145,6 +147,11 @@ export default function App() {
             <Route path="/companies" element={
               <div className="flex-1 overflow-y-auto">
                 <CompanyTable />
+              </div>
+            } />
+            <Route path="/birthdays" element={
+              <div className="flex-1 overflow-y-auto">
+                <BirthdaysTable />
               </div>
             } />
           </Routes>

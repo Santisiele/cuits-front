@@ -1,5 +1,4 @@
 import * as XLSX from "xlsx"
-import type { BaseNode } from "@/types"
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 
@@ -13,9 +12,18 @@ function formatCuit(taxId: string): string {
   return `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`
 }
 
+/**
+ * Column descriptor for {@link exportNodes}. Generic in T so the same
+ * exporter works for any row shape (BaseNode, BirthdayNode, …).
+ */
+export interface ExportColumn<T> {
+  key: keyof T
+  label: string
+}
+
 // ─── CSV export ───────────────────────────────────────────────────────────────
 
-function toCSV(nodes: BaseNode[], columns: { key: keyof BaseNode; label: string }[]): string {
+function toCSV<T>(nodes: T[], columns: ExportColumn<T>[]): string {
   const header = columns.map((c) => c.label).join(",")
   const rows = nodes.map((node) =>
     columns.map((c) => {
@@ -45,9 +53,14 @@ function download(content: string | ArrayBuffer, filename: string, mimeType: str
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function exportNodes(
-  nodes: BaseNode[],
-  columns: { key: keyof BaseNode; label: string }[],
+/**
+ * Exports an array of rows to CSV or XLSX.
+ * Generic in T so the same exporter works for any row shape — pass the
+ * columns you want and they'll be projected in order.
+ */
+export function exportNodes<T>(
+  nodes: T[],
+  columns: ExportColumn<T>[],
   filename: string,
   format: "csv" | "xlsx"
 ): void {

@@ -7,6 +7,7 @@ import type {
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiError } from "@/lib/errors"
+import type { BirthdayNode, BirthdaysResponse } from "@/types"  
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
@@ -141,5 +142,18 @@ export class GraphService {
       `${this.base}/relationship`,
       jsonOptions("DELETE", { fromTaxId, toTaxId, relationshipType })
     )
+  }
+
+  /**
+   * Fetches inMyBase nodes whose birthday falls in [from, to].
+   * @param from dd/mm/yyyy (year ignored)
+   * @param to   dd/mm/yyyy (year ignored)
+   */
+  static async getBirthdays(from: string, to: string): Promise<BirthdayNode[]> {
+    const params = new URLSearchParams({ from, to })
+    const data = await apiFetch<BirthdaysResponse>(
+      `${this.base}/birthdays?${params.toString()}`
+    )
+    return data.results
   }
 }
