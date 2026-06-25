@@ -92,11 +92,18 @@ export function CompanyTable() {
       return sortDir === "asc" ? cmp : -cmp
     })
 
+  // Show the filtered count alongside the total when the search box is non-empty,
+  // so users see at a glance how much the current query narrowed the list.
+  const isFiltered = search.length > 0
+  const title = isFiltered
+    ? `Empresas a buscar (${filtered.length} de ${nodes.length})`
+    : `Empresas a buscar (${nodes.length})`
+
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-          <CardTitle>Empresas a buscar ({nodes.length})</CardTitle>
+          <CardTitle>{title}</CardTitle>
           <div className="flex gap-2 items-center">
             <Input
               value={search}

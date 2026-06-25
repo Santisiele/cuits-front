@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,73 +12,132 @@ import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks
 
 type SearchStatus = "idle" | "found" | "not_found" | "error"
 
+interface FormFields {
+  phone: string
+  email: string
+  birthday: string
+  entryDate: string
+  exitDate: string
+  loadedAt: string
+}
+
+const EMPTY_FIELDS: FormFields = {
+  phone: "",
+  email: "",
+  birthday: "",
+  entryDate: "",
+  exitDate: "",
+  loadedAt: "",
+}
+
+// ─── Date conversion helpers ─────────────────────────────────────────────────
+
+/**
+ * Converts a date string in dd/mm/yyyy format into the yyyy-mm-dd format
+ * required by HTML `<input type="date">`. Returns "" when the input is
+ * empty or malformed, which makes the input render as blank.
+ */
+function toIsoDate(ddmmyyyy: string): string {
+  const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(ddmmyyyy.trim())
+  if (!match) return ""
+  const [, d, m, y] = match
+  return `${y}-${m!.padStart(2, "0")}-${d!.padStart(2, "0")}`
+}
+
+/**
+ * Converts a yyyy-mm-dd date string (emitted by HTML date inputs) back
+ * into the dd/mm/yyyy format the backend persists. Returns "" when the
+ * input is empty, so clearing the field saves a blank value.
+ */
+function fromIsoDate(yyyymmdd: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyymmdd.trim())
+  if (!match) return ""
+  const [, y, m, d] = match
+  return `${d}/${m}/${y}`
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
  * Tab panel that lets the user search for a node by CUIT,
  * view and edit its contact fields, and visualise its relationships.
  *
- * Uses React Query hooks for caching — repeated lookups of the same
- * CUIT won't re-fetch within the configured TTL. On every search,
- * relevant queries are explicitly invalidated to ensure fresh data
- * even when the user re-searches a previously cached CUIT.
+ * Date fields render as native `<input type="date">` pickers, which
+ * guarantees a well-formed value. The display format (yyyy-mm-dd) is
+ * translated to/from the backend's dd/mm/yyyy at the input boundary.
+ *
+ * Form hydration strategy:
+ *  - When the React Query result becomes available for a CUIT we haven't
+ *    hydrated yet, we adopt the server values via the "setState during
+ *    render with key comparison" pattern (React's recommended alternative
+ *    to useEffect for prop-derived state).
+ *
+ * Auto-search from NodeTable:
+ *  - We subscribe to the Zustand store and react to changes in `editTaxId`
+ *    by reading it once during render, kicking off the search, and clearing it.
  */
 export function EditNode() {
-  const { editTaxId, setEditTaxId } = useStore()
+  const editTaxId = useStore((s) => s.editTaxId)
+  const setEditTaxId = useStore((s) => s.setEditTaxId)
   const queryClient = useQueryClient()
 
   const [taxId, setTaxId] = useState("")
-  const [maxDepth] = useState(1)
+  const maxDepth = 1
   const [searchedId, setSearchedId] = useState("")
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle")
 
-  // Editable contact fields
-  const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
-  const [birthday, setBirthday] = useState("")
-  const [entryDate, setEntryDate] = useState("")
-  const [exitDate, setExitDate] = useState("")
-  const [loadedAt, setLoadedAt] = useState("")
-  const [sources, setSources] = useState<string[]>([])
+  /** taxId for which the form has been hydrated. */
+  const [hydratedFor, setHydratedFor] = useState<string>("")
+  /** In-progress form edits. Hydrated from server data, mutated by the user. */
+  const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS)
+
+  // ── Adopt the editTaxId pushed from NodeTable ──────────────────────────
+  if (editTaxId && editTaxId !== searchedId) {
+    setTaxId(editTaxId)
+    setHydratedFor("")
+    setFields(EMPTY_FIELDS)
+    void queryClient.invalidateQueries({ queryKey: queryKeys.node(editTaxId) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.nodeRelationships(editTaxId, maxDepth) })
+    setSearchedId(editTaxId)
+    setEditTaxId(null)
+  }
 
   // React Query hooks — only fetch when searchedId is set
   const nodeQuery = useNode(searchedId, !!searchedId)
   const relationshipsQuery = useNodeRelationships(searchedId, maxDepth, !!searchedId)
   const updateMutation = useUpdateNode(searchedId)
 
-  // Sync form fields when node data loads
-  useEffect(() => {
-    if (nodeQuery.data) {
-      setPhone(nodeQuery.data.phone ?? "")
-      setEmail(nodeQuery.data.email ?? "")
-      setBirthday(nodeQuery.data.birthday ?? "")
-      setEntryDate(nodeQuery.data.entryDate ?? "")
-      setExitDate(nodeQuery.data.exitDate ?? "")
-      setLoadedAt(nodeQuery.data.loadedAt ?? "")
-      setSearchStatus("found")
-      setSources(nodeQuery.data.sources ?? [])
-    } else if (nodeQuery.isError) {
+  // ── Derived values (computed during render) ────────────────────────────
+  const node = nodeQuery.data
+  const graphResult = relationshipsQuery.data ?? null
+  const isSearching = nodeQuery.isFetching
+  const sources = node?.sources ?? []
+
+  const searchStatus: SearchStatus = (() => {
+    if (!searchedId) return "idle"
+    if (nodeQuery.isError) {
       const message = (nodeQuery.error as Error).message
-      setSearchStatus(message.includes("not found") ? "not_found" : "error")
+      return message.includes("not found") ? "not_found" : "error"
     }
-  }, [nodeQuery.data, nodeQuery.isError, nodeQuery.error])
+    if (node) return "found"
+    return "idle"
+  })()
 
-  // Auto-search when navigating from NodeTable
-  useEffect(() => {
-    if (!editTaxId) return
-    setTaxId(editTaxId)
-    triggerSearch(editTaxId)
-    setEditTaxId(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editTaxId])
+  // ── Hydrate the form once per (newly fetched) node ─────────────────────
+  if (node && node.taxId !== hydratedFor) {
+    setHydratedFor(node.taxId)
+    setFields({
+      phone: node.phone ?? "",
+      email: node.email ?? "",
+      birthday: node.birthday ?? "",
+      entryDate: (node as { entryDate?: string | null }).entryDate ?? "",
+      exitDate: (node as { exitDate?: string | null }).exitDate ?? "",
+      loadedAt: (node as { loadedAt?: string | null }).loadedAt ?? "",
+    })
+  }
 
-  /**
-   * Triggers a search for the given Tax ID.
-   * Always invalidates cached node + nodeRelationships entries first,
-   * so a re-search always reflects the latest backend state.
-   */
   function triggerSearch(id: string): void {
-    setSearchStatus("idle")
+    setHydratedFor("")
+    setFields(EMPTY_FIELDS)
     void queryClient.invalidateQueries({ queryKey: queryKeys.node(id) })
     void queryClient.invalidateQueries({ queryKey: queryKeys.nodeRelationships(id, maxDepth) })
     setSearchedId(id)
@@ -91,22 +150,30 @@ export function EditNode() {
     triggerSearch(trimmed)
   }
 
-  async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    if (!nodeQuery.data) return
-    await updateMutation.mutateAsync({
-      phone: phone || undefined,
-      email: email || undefined,
-      birthday: birthday || undefined,
-      entryDate: entryDate || undefined,
-      exitDate: exitDate || undefined,
-      loadedAt: loadedAt || undefined,
-    })
+  function updateField<K extends keyof FormFields>(key: K, value: string): void {
+    setFields((prev) => ({ ...prev, [key]: value }))
   }
 
-  const node = nodeQuery.data
-  const graphResult = relationshipsQuery.data ?? null
-  const isSearching = nodeQuery.isFetching
+  /**
+   * Handler for date-input changes. The native picker emits yyyy-mm-dd,
+   * which we translate back into the dd/mm/yyyy format the backend uses.
+   */
+  function updateDateField<K extends keyof FormFields>(key: K, isoValue: string): void {
+    setFields((prev) => ({ ...prev, [key]: fromIsoDate(isoValue) }))
+  }
+
+  async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
+    e.preventDefault()
+    if (!node) return
+    await updateMutation.mutateAsync({
+      phone: fields.phone || undefined,
+      email: fields.email || undefined,
+      birthday: fields.birthday || undefined,
+      entryDate: fields.entryDate || undefined,
+      exitDate: fields.exitDate || undefined,
+      loadedAt: fields.loadedAt || undefined,
+    })
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -147,7 +214,7 @@ export function EditNode() {
                 <Badge variant={node.inMyBase ? "default" : "secondary"}>
                   {node.inMyBase ? "En mi base" : "Externo"}
                 </Badge>
-                {(node.sources ?? []).map((s) => (
+                {sources.map((s) => (
                   <Badge key={s} variant="outline">{s}</Badge>
                 ))}
               </div>
@@ -163,8 +230,8 @@ export function EditNode() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Teléfono</label>
                 <Input
-                  value={phone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                  value={fields.phone}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("phone", e.target.value)}
                   placeholder="Sin teléfono"
                 />
               </div>
@@ -172,8 +239,8 @@ export function EditNode() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  value={fields.email}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("email", e.target.value)}
                   placeholder="Sin email"
                   type="email"
                 />
@@ -182,41 +249,44 @@ export function EditNode() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Fecha de nacimiento</label>
                 <Input
-                  value={birthday}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBirthday(e.target.value)}
-                  placeholder="DD/MM/AAAA"
+                  type="date"
+                  value={toIsoDate(fields.birthday)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateDateField("birthday", e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Fecha de carga</label>
                 <Input
-                  value={loadedAt}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoadedAt(e.target.value)}
-                  placeholder="DD/MM/AAAA"
+                  type="date"
+                  value={toIsoDate(fields.loadedAt)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateDateField("loadedAt", e.target.value)}
+                  disabled
                 />
               </div>
 
-              {sources.includes("Residente Senior Home") && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fecha de ingreso</label>
-                  <Input
-                    value={entryDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEntryDate(e.target.value)}
-                    placeholder="DD/MM/AAAA"
-                  />
-                </div>
-              )}
+              {sources.includes("Residentes Senior Home") && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fecha de ingreso</label>
+                    <Input
+                      type="date"
+                      value={toIsoDate(fields.entryDate)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateDateField("entryDate", e.target.value)}
+                      disabled
+                    />
+                  </div>
 
-              {sources.includes("Residente Senior Home") && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Fecha de egreso</label>
-                  <Input
-                    value={exitDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExitDate(e.target.value)}
-                    placeholder="DD/MM/AAAA"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Fecha de egreso</label>
+                    <Input
+                      type="date"
+                      value={toIsoDate(fields.exitDate)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateDateField("exitDate", e.target.value)}
+                      disabled={!!fields.exitDate}
+                    />
+                  </div>
+                </>
               )}
 
               <div className="flex items-center gap-3 pt-2">

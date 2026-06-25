@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import { queryClient } from "@/providers/QueryProvider"
+import { queryClient } from "@/lib/queryClient"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,8 +31,17 @@ export const useAuthStore = create<AuthState>()(
       username: null,
       isAuthenticated: false,
 
-      setAuth: (token, username) =>
-        set({ token, username, isAuthenticated: true }),
+      setAuth: (token, username) => {
+        set({ token, username, isAuthenticated: true })
+        // Refetch every query that had failed (typically with 401 because
+        // the user wasn't authenticated yet). This makes the page the user
+        // is currently viewing populate automatically right after login,
+        // without forcing them to navigate away and come back.
+        void queryClient.refetchQueries({
+          type: "active",
+          predicate: (query) => query.state.status === "error",
+        })
+      },
 
       clearAuth: () => {
         // Clear all cached queries so the next user starts fresh

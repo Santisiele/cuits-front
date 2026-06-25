@@ -127,3 +127,27 @@ export interface BaseNode {
   sources: string[]
   relationshipCount: number
 }
+
+// ─── Birthday types ─────────────────────────────────────────────────────────
+
+/**
+ * A row in the birthdays list.
+ * `birthday` is stored as dd/mm/yyyy on the backend; the relationship
+ * count is fetched separately (the backend returns it alongside the node).
+ */
+export interface BirthdayNode {
+  taxId: string
+  businessName: string
+  /** dd/mm/yyyy */
+  birthday: string
+  sources: string[]
+  relationshipCount: number
+}
+
+/**
+ * Response shape for `GET /graph/birthdays`.
+ */
+export interface BirthdaysResponse {
+  count: number
+  results: BirthdayNode[]
+}
