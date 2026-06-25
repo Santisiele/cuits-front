@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -59,11 +58,13 @@ export function NodeTable() {
   const navigate = useNavigate()
 
   const { data: nodes = [], isLoading: loading, error } = useMyBaseNodes()
-  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   const search = nodeTable.search
   const sortField = nodeTable.sortField as SortField
   const sortDir = nodeTable.sortDir as SortDir
+  // selectedSources is persisted in the store as a string[] for serialisability;
+  // we keep a Set locally for O(1) lookups during filtering.
+  const selectedSources = new Set(nodeTable.selectedSources)
 
   function setSearch(s: string) { setNodeTable({ search: s }) }
 
@@ -73,11 +74,10 @@ export function NodeTable() {
   ).sort()
 
   function toggleSource(source: string): void {
-    setSelectedSources((prev) => {
-      const next = new Set(prev)
-      next.has(source) ? next.delete(source) : next.add(source)
-      return next
-    })
+    const next = new Set(selectedSources)
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    next.has(source) ? next.delete(source) : next.add(source)
+    setNodeTable({ selectedSources: Array.from(next) })
   }
 
   function handleSort(field: SortField): void {
@@ -117,11 +117,18 @@ export function NodeTable() {
       return sortDir === "asc" ? cmp : -cmp
     })
 
+  // Show the filtered count alongside the total when any filter is active,
+  // so users can see at a glance how much the current search/source filter narrowed the list.
+  const isFiltered = search.length > 0 || selectedSources.size > 0
+  const title = isFiltered
+    ? `Mi base (${filtered.length} de ${nodes.length})`
+    : `Mi base (${nodes.length})`
+
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-          <CardTitle>Mi base ({nodes.length})</CardTitle>
+          <CardTitle>{title}</CardTitle>
           <div className="flex gap-2 items-center">
             <Input
               value={search}

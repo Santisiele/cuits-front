@@ -27,6 +27,12 @@ interface TableState {
   search: string
   sortField: string
   sortDir: SortDir
+  /**
+   * Source chips currently toggled on as filters. Empty means "no filter".
+   * Kept as an array (not a Set) because Zustand state should be JSON-serialisable
+   * and equality-friendly. Components convert it to a Set at use-site.
+   */
+  selectedSources: string[]
 }
 
 interface AppState {
@@ -46,8 +52,8 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
   editTaxId: null,
   setEditTaxId: (taxId) => set({ editTaxId: taxId }),
-  nodeTable: { search: "", sortField: "businessName", sortDir: "asc" },
+  nodeTable: { search: "", sortField: "businessName", sortDir: "asc", selectedSources: [] },
   setNodeTable: (s) => set((state) => ({ nodeTable: { ...state.nodeTable, ...s } })),
-  companyTable: { search: "", sortField: "relationshipCount", sortDir: "desc" },
+  companyTable: { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [] },
   setCompanyTable: (s) => set((state) => ({ companyTable: { ...state.companyTable, ...s } })),
 }))

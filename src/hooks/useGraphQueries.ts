@@ -13,6 +13,7 @@ export const queryKeys = {
   pathSearch: (from: string, to: string, maxDepth: number) => ["pathSearch", from, to, maxDepth] as const,
   node: (taxId: string) => ["node", taxId] as const,
   nodeRelationships: (taxId: string, maxDepth: number) => ["nodeRelationships", taxId, maxDepth] as const,
+  birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
 }
 
 // ─── My base ─────────────────────────────────────────────────────────────────
@@ -98,6 +99,21 @@ export function useCompanyNodes() {
   })
 }
 
+// ─── Birthdays ───────────────────────────────────────────────────────────────
+
+/**
+ * Fetches the list of inMyBase nodes whose birthday falls in [from, to].
+ * Dates are passed as dd/mm/yyyy strings; the backend ignores the year.
+ * Only runs when `enabled` is true and both dates are non-empty.
+ */
+export function useBirthdays(from: string, to: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.birthdays(from, to),
+    queryFn: () => GraphService.getBirthdays(from, to),
+    enabled: enabled && !!from && !!to,
+  })
+}
+
 // ─── Cache invalidation helpers ──────────────────────────────────────────────
 
 /**
@@ -109,17 +125,13 @@ function invalidateQueriesForTaxIds(
   queryClient: ReturnType<typeof useQueryClient>,
   taxIds: string[]
 ): void {
-  console.log("[cache] removing queries for taxIds:", taxIds)
-  console.log("[cache] keys before:", queryClient.getQueryCache().getAll().map(q => q.queryKey))
   queryClient.removeQueries({
     predicate: (query) => {
       const key = query.queryKey
       const matches = key.some((part) => typeof part === "string" && taxIds.includes(part))
-      if (matches) console.log("[cache] removing key:", key)
       return matches
     },
   })
-  console.log("[cache] keys after:", queryClient.getQueryCache().getAll().map(q => q.queryKey))
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
