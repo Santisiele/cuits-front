@@ -1,372 +1,199 @@
-import { useEffect, useMemo, useState } from "react"
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-  MarkerType,
-  type Node,
-  type Edge,
-} from "@xyflow/react"
-import "@xyflow/react/dist/style.css"
-import dagre from "@dagrejs/dagre"
-import { CuitNode } from "@/components/CuitNode"
+import { useMemo, useState } from "react"
+import { ChevronRight, ChevronDown, Minus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { GraphService } from "@/services/api"
 import { getRelationshipLabel } from "@/utils/relationshipLabels"
-import type { CuitSearchResponse, PathResponse } from "@/types"
+import type { CuitSearchResponse, PathResponse, PathNode } from "@/types"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/hooks/useGraphQueries"
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const NODE_TYPES = { cuitNode: CuitNode }
-
-const NODE_WIDTH = 200
-const NODE_HEIGHT = 60
-
-// ─── Node roles & styles ─────────────────────────────────────────────────────
+// ─── Tree model ──────────────────────────────────────────────────────────────
 
 /**
- * Visual role of a node in the graph — determines its color and border.
+ * Internal tree node used by the list view.
+ * Each node holds enough info to render itself and its children inline.
  */
-type NodeRole = "start" | "end" | "startInBase" | "endInBase" | "inMyBase" | "default"
-
-const NODE_STYLES: Record<NodeRole, React.CSSProperties> = {
-  startInBase: {
-    background: "#0891b2",
-    color: "#fff",
-    border: "3px solid #818cf8",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
-  endInBase: {
-    background: "#16a34a",
-    color: "#fff",
-    border: "3px solid #818cf8",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
-  start: {
-    background: "#0891b2",
-    color: "#fff",
-    border: "2px solid #22d3ee",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
-  end: {
-    background: "#16a34a",
-    color: "#fff",
-    border: "2px solid #4ade80",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
-  inMyBase: {
-    background: "#6366f1",
-    color: "#fff",
-    border: "2px solid #818cf8",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
-  default: {
-    background: "#1e293b",
-    color: "#cbd5e1",
-    border: "1px solid #475569",
-    borderRadius: "8px",
-    padding: "10px",
-    minWidth: `${NODE_WIDTH}px`,
-    textAlign: "center",
-  },
+interface TreeNode {
+  taxId: string
+  businessName: string
+  /** Relationship leading FROM the parent TO this node (empty at root). */
+  relationshipType: string
+  inMyBase: boolean
+  /** Logical depth: 0 = root, 1 = first level, etc. Used for indentation. */
+  depth: number
+  /** Stable unique id within the tree (handles repeated taxIds in different branches). */
+  uid: string
+  children: TreeNode[]
 }
 
-/**
- * Determines the {@link NodeRole} of a node based on its position in the graph.
- * Nodes that are both a path endpoint AND inMyBase get the combined role
- * (e.g. "startInBase") which renders with both the endpoint color and the
- * indigo border to signal base membership.
- */
-function getRole(inMyBase: boolean, isStart: boolean, isEnd: boolean): NodeRole {
-  if (isStart) return inMyBase ? "startInBase" : "start"
-  if (isEnd) return inMyBase ? "endInBase" : "end"
-  if (inMyBase) return "inMyBase"
-  return "default"
+// ─── Tree builders ────────────────────────────────────────────────────────────
+
+function buildTreeFromNodeResult(
+  result: CuitSearchResponse,
+  rootBusinessName?: string
+): TreeNode {
+  const rootName = rootBusinessName ?? result.results[0]?.data.businessName ?? result.cuit
+  const root: TreeNode = {
+    taxId: result.cuit,
+    businessName: rootName,
+    relationshipType: "",
+    inMyBase: result.results.some((r) => r.data.inMyBase) || false,
+    depth: 0,
+    uid: result.cuit,
+    children: [],
+  }
+
+  for (const item of result.results) {
+    const path = item.data.pathToBase
+    if (!path) continue
+    insertPath(root, path, 1)
+  }
+
+  return root
 }
 
-// ─── Layout ──────────────────────────────────────────────────────────────────
-
-/**
- * Applies a top-to-bottom Dagre layout to a set of React Flow nodes and edges.
- * Returns a new nodes array with updated `position` values.
- */
-function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
-  const graph = new dagre.graphlib.Graph()
-  graph.setDefaultEdgeLabel(() => ({}))
-  graph.setGraph({ rankdir: "TB", ranksep: 80, nodesep: 60 })
-
-  for (const node of nodes) {
-    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
-  }
-  for (const edge of edges) {
-    graph.setEdge(edge.source, edge.target)
+function buildTreeFromCuitResult(result: CuitSearchResponse): TreeNode {
+  const firstName = result.results[0]?.data.businessName ?? result.cuit
+  const root: TreeNode = {
+    taxId: result.cuit,
+    businessName: firstName,
+    relationshipType: "",
+    inMyBase: false,
+    depth: 0,
+    uid: result.cuit,
+    children: [],
   }
 
-  dagre.layout(graph)
+  for (const item of result.results) {
+    if (item.data.inMyBase) {
+      root.inMyBase = true
+      continue
+    }
+    const path = item.data.pathToBase
+    if (!path) continue
 
-  return nodes.map((node) => {
-    const { x, y } = graph.node(node.id)
-    return { ...node, position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 } }
-  })
+    const searchedAppearsMiddle = path.slice(0, -1).some(
+      (n, i) => i > 0 && n.taxId === result.cuit
+    )
+    if (searchedAppearsMiddle) continue
+
+    insertPath(root, path, 1)
+  }
+
+  return root
 }
 
-// ─── Graph builder ───────────────────────────────────────────────────────────
-
-/**
- * Builds the React Flow `nodes` and `edges` arrays from the three possible
- * result types (CUIT search, path search, node relationships).
- */
-class GraphBuilder {
-  private nodes: Node[] = []
-  private edges: Edge[] = []
-  private nodeIds = new Set<string>()
-  private edgeIds = new Set<string>()
-
-  /** Adds a node, skipping duplicates. Upgrades the style if the new role is "inMyBase". */
-  private addNode(id: string, label: string, role: NodeRole): void {
-    if (this.nodeIds.has(id)) {
-      if (role === "inMyBase") {
-        const existing = this.nodes.find((n) => n.id === id)
-        if (existing) {
-          existing.data = { ...existing.data, nodeStyle: NODE_STYLES.inMyBase }
-        }
-      }
-      return
-    }
-    this.nodeIds.add(id)
-    this.nodes.push({
-      id,
-      type: "cuitNode",
-      data: { label, role, nodeStyle: NODE_STYLES[role] },
-      position: { x: 0, y: 0 },
-    })
+function buildTreeFromPathResult(result: PathResponse): TreeNode | null {
+  if (result.path.length === 0) return null
+  const first = result.path[0]!.from
+  const root: TreeNode = {
+    taxId: first.taxId,
+    businessName: first.businessName,
+    relationshipType: "",
+    inMyBase: first.inMyBase,
+    depth: 0,
+    uid: first.taxId,
+    children: [],
   }
 
-  /**
-   * Adds a directed edge between two nodes, skipping self-loops and duplicates.
-   * The edge ID is based only on source+target so that multiple calls with
-   * different labels don't create duplicate edges — use the accumulator pattern
-   * in the build methods to combine labels before calling this.
-   * @param label - Already-translated display label (use getRelationshipLabel before calling)
-   */
-  private addEdge(source: string, target: string, label: string): void {
-    if (source === target) return
-    const edgeId = `${source}-${target}`
-    if (this.edgeIds.has(edgeId)) return
-    this.edgeIds.add(edgeId)
-    this.edges.push({
-      id: edgeId,
-      source,
-      target,
-      label,
-      animated: true,
-      markerEnd: { type: MarkerType.ArrowClosed, color: "#475569" },
-      style: { stroke: "#475569" },
-      labelStyle: { fill: "#94a3b8", fontSize: 11 },
-      labelBgStyle: { fill: "#0f172a", opacity: 0.8 },
-    })
+  let current = root
+  for (let i = 0; i < result.path.length; i++) {
+    const segment = result.path[i]!
+    const child: TreeNode = {
+      taxId: segment.to.taxId,
+      businessName: segment.to.businessName,
+      relationshipType: segment.relationships.map((r) => getRelationshipLabel(r)).join(" / "),
+      inMyBase: segment.to.inMyBase,
+      depth: i + 1,
+      uid: `${segment.to.taxId}@${i + 1}`,
+      children: [],
+    }
+    current.children.push(child)
+    current = child
   }
 
-  /** Populates the graph from a CUIT search result.
-   *
-   * The API returns one result per path from the searched CUIT to an inMyBase node.
-   * Multiple results can share the same nodes but differ in relationshipType.
-   * Some paths may include the searched CUIT as an intermediate node (not just start).
-   *
-   * Strategy:
-   * - Skip any path where the searched CUIT appears as an intermediate hop
-   *   (not at position 0 as start) to avoid creating reverse/duplicate edges.
-   * - Accumulate all relationship labels per (source, target) pair.
-   * - Emit a single combined edge per pair.
-   */
-  private buildFromCuitResult(result: CuitSearchResponse): void {
-    const edgeLabels = new Map<string, Set<string>>()
+  return root
+}
 
-    for (const item of result.results) {
-      if (item.data.inMyBase) {
-        this.addNode(result.cuit, item.data.businessName ?? result.cuit, "start")
-        continue
-      }
+function insertPath(parent: TreeNode, path: PathNode[], startDepth: number): void {
+  let current = parent
+  for (let i = 0; i < path.length; i++) {
+    const hop = path[i]!
+    const newLabel = getRelationshipLabel(hop.relationshipType)
 
-      const path = item.data.pathToBase
-      if (!path) continue
-
-      // Skip paths where the searched CUIT appears as an intermediate node
-      const searchedCuitAppearsMiddle = path.slice(0, -1).some(
-        (n, i) => i > 0 && n.taxId === result.cuit
-      )
-      if (searchedCuitAppearsMiddle) continue
-
-      this.addNode(result.cuit, item.data.businessName ?? result.cuit, "start")
-
-      for (let i = 0; i < path.length; i++) {
-        const node = path[i]
-        if (!node) continue
-
-        const isLast = i === path.length - 1
-        const role = getRole(node.inMyBase, false, isLast)
-        this.addNode(node.taxId, node.businessName, role)
-
-        const prevId = i === 0 ? result.cuit : path[i - 1]?.taxId
-        if (!prevId || !node.relationshipType) continue
-
-        const key = `${prevId}→${node.taxId}`
-        if (!edgeLabels.has(key)) edgeLabels.set(key, new Set())
-        edgeLabels.get(key)!.add(node.relationshipType)
-      }
+    const existing = current.children.find(
+      (c) => c.taxId === hop.taxId && c.relationshipType === newLabel
+    )
+    if (existing) {
+      current = existing
+      continue
     }
 
-    // Emit one edge per (source, target) pair with all labels combined
-    for (const [key, labels] of edgeLabels) {
-      const [source, target] = key.split("→") as [string, string]
-      const combinedLabel = [...labels].map((r) => getRelationshipLabel(r)).join(" / ")
-      this.addEdge(source, target, combinedLabel)
+    const sameNode = current.children.find((c) => c.taxId === hop.taxId)
+    if (sameNode && newLabel) {
+      const labels = new Set(sameNode.relationshipType.split(" / ").filter(Boolean))
+      labels.add(newLabel)
+      sameNode.relationshipType = [...labels].join(" / ")
+      current = sameNode
+      continue
     }
+
+    const next: TreeNode = {
+      taxId: hop.taxId,
+      businessName: hop.businessName,
+      relationshipType: newLabel,
+      inMyBase: hop.inMyBase,
+      depth: startDepth + i,
+      uid: `${hop.taxId}@${startDepth + i}@${current.uid}`,
+      children: [],
+    }
+    current.children.push(next)
+    current = next
   }
+}
 
-  /** Populates the graph from a path search result. */
-  private buildFromPathResult(result: PathResponse): void {
-    const firstFrom = result.path[0]?.from.taxId
-    const lastTo = result.path[result.path.length - 1]?.to.taxId
-
-    for (const segment of result.path) {
-      const isFirst = segment.from.taxId === firstFrom
-      const isLast = segment.to.taxId === lastTo
-
-      this.addNode(segment.from.taxId, segment.from.businessName, getRole(segment.from.inMyBase, isFirst, false))
-      this.addNode(segment.to.taxId, segment.to.businessName, getRole(segment.to.inMyBase, false, isLast))
-
-      const combinedLabel = segment.relationships
-        .map((r) => getRelationshipLabel(r))
-        .join(" / ")
-      this.addEdge(segment.from.taxId, segment.to.taxId, combinedLabel)
-    }
-  }
-
-  /** Populates the graph from a node relationships result.
-   *
-   * Groups multiple relationship types between the same pair of nodes
-   * into a single combined edge label (e.g. "Director / Presidente"),
-   * matching the behaviour of buildFromCuitResult.
-   *
-   * @param rootBusinessName - Optional override for the root node label,
-   *   used when the result has no items (node with 0 relationships).
-   */
-  private buildFromNodeResult(result: CuitSearchResponse, rootBusinessName?: string): void {
-    const rootName = rootBusinessName ?? result.results[0]?.data.businessName ?? result.cuit
-    this.addNode(result.cuit, rootName, "start")
-
-    // Accumulate relationship labels keyed by "sourceId→targetId"
-    const edgeLabels = new Map<string, Set<string>>()
-
-    for (const item of result.results) {
-      const path = item.data.pathToBase
-      if (!path) continue
-
-      for (let i = 0; i < path.length; i++) {
-        const node = path[i]
-        if (!node) continue
-
-        this.addNode(node.taxId, node.businessName, node.inMyBase ? "inMyBase" : "default")
-
-        const prevId = i === 0 ? result.cuit : path[i - 1]?.taxId
-        if (!prevId || !node.relationshipType) continue
-
-        const key = `${prevId}→${node.taxId}`
-        if (!edgeLabels.has(key)) edgeLabels.set(key, new Set())
-        edgeLabels.get(key)!.add(node.relationshipType)
-      }
-    }
-
-    // Emit one edge per (source, target) pair with all labels combined
-    for (const [key, labels] of edgeLabels) {
-      const [source, target] = key.split("→") as [string, string]
-      const combinedLabel = [...labels].map((r) => getRelationshipLabel(r)).join(" / ")
-      this.addEdge(source, target, combinedLabel)
-    }
-  }
-
-  /**
-   * Builds and lays out the full graph from the provided data sources.
-   *
-   * @param cuitResult - Result from a CUIT search
-   * @param pathResult - Result from a path search
-   * @param nodeResult - Result from a node relationship query
-   */
-  build(
-    cuitResult?: CuitSearchResponse | null,
-    pathResult?: PathResponse | null,
-    nodeResult?: CuitSearchResponse | null,
-    nodeRootName?: string,
-  ): { nodes: Node[]; edges: Edge[] } {
-    if (cuitResult?.results) this.buildFromCuitResult(cuitResult)
-    if (pathResult?.path) this.buildFromPathResult(pathResult)
-    if (nodeResult) this.buildFromNodeResult(nodeResult, nodeRootName)
-
-    return {
-      nodes: applyDagreLayout(this.nodes, this.edges),
-      edges: this.edges,
-    }
-  }
+/** Collects every uid in the tree — used by "Expand all". */
+function collectAllUids(node: TreeNode, out: Set<string>): void {
+  out.add(node.uid)
+  for (const child of node.children) collectAllUids(child, out)
 }
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
 interface TooltipState {
-  nodeId: string
+  uid: string
   info: Record<string, string | boolean | null> | null
   loading: boolean
+  /** Viewport-relative coordinates (used with position: fixed). */
+  x: number
+  y: number
 }
 
-interface NodeTooltipProps {
-  tooltip: TooltipState
-}
-
-/** Overlay shown when hovering over a graph node. */
-function NodeTooltip({ tooltip }: NodeTooltipProps) {
+/**
+ * Floating tooltip rendered with `position: fixed` so it escapes any
+ * parent overflow / clipping (e.g. the relations Card border). Its
+ * x/y are computed from the row's bounding rect at hover time.
+ */
+function FloatingTooltip({ tooltip, taxId }: { tooltip: TooltipState; taxId: string }) {
   return (
     <div
-      className="absolute top-3 right-3 z-50 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs shadow-xl pointer-events-none"
-      style={{ minWidth: "200px" }}
+      className="fixed z-50 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs shadow-xl pointer-events-none"
+      style={{ left: tooltip.x, top: tooltip.y, minWidth: "240px", maxWidth: "320px" }}
     >
       {tooltip.loading ? (
         <p className="text-slate-400">Cargando...</p>
       ) : tooltip.info ? (
         <div className="space-y-1">
-          <p className="font-medium text-white mb-1">
-            {String(tooltip.info["businessName"] ?? tooltip.nodeId)}
+          <p className="font-medium text-white">
+            {String(tooltip.info["businessName"] ?? taxId)}
           </p>
-          <p className="font-mono text-slate-400 text-xs mb-2">{tooltip.nodeId}</p>
-          {tooltip.info["phone"] && (
-            <p><span className="text-slate-400">Tel:</span> {String(tooltip.info["phone"])}</p>
-          )}
-          {tooltip.info["email"] && (
-            <p><span className="text-slate-400">Email:</span> {String(tooltip.info["email"])}</p>
-          )}
-          {tooltip.info["birthday"] && (
-            <p><span className="text-slate-400">Nacimiento:</span> {String(tooltip.info["birthday"])}</p>
-          )}
+          <p className="font-mono text-slate-400 text-xs mb-2">{taxId}</p>
+          {tooltip.info["phone"] && <p><span className="text-slate-400">Tel:</span> {String(tooltip.info["phone"])}</p>}
+          {tooltip.info["email"] && <p><span className="text-slate-400">Email:</span> {String(tooltip.info["email"])}</p>}
+          {tooltip.info["birthday"] && <p><span className="text-slate-400">Nacimiento:</span> {String(tooltip.info["birthday"])}</p>}
           <p>
             <span className="text-slate-400">Base:</span>{" "}
             <span className={tooltip.info["inMyBase"] ? "text-indigo-400" : "text-slate-400"}>
@@ -376,12 +203,7 @@ function NodeTooltip({ tooltip }: NodeTooltipProps) {
           {(() => {
             const srcs = tooltip.info["sources"]
             if (!Array.isArray(srcs) || srcs.length === 0) return null
-            return (
-              <p>
-                <span className="text-slate-400">Fuentes:</span>{" "}
-                {srcs.join(", ")}
-              </p>
-            )
+            return <p><span className="text-slate-400">Fuentes:</span> {srcs.join(", ")}</p>
           })()}
         </div>
       ) : (
@@ -391,18 +213,101 @@ function NodeTooltip({ tooltip }: NodeTooltipProps) {
   )
 }
 
-// ─── MiniMap helper ──────────────────────────────────────────────────────────
+// ─── Row component ───────────────────────────────────────────────────────────
 
-/** Returns the background color for a node in the MiniMap. */
-function miniMapNodeColor(node: Node): string {
-  const bg = (node.data as { nodeStyle?: { background?: string } }).nodeStyle?.background
-  if (bg === "#0891b2") return "#0891b2"
-  if (bg === "#16a34a") return "#16a34a"
-  if (bg === "#6366f1") return "#6366f1"
-  return "#334155"
+interface RowProps {
+  node: TreeNode
+  expanded: Set<string>
+  toggle: (uid: string) => void
+  onClick: (taxId: string) => void
+  onHoverStart: (uid: string, taxId: string, rect: DOMRect) => void
+  onHoverEnd: () => void
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+/**
+ * Single row in the list. Renders the chevron, the relationship label,
+ * the business name + CUIT, and the inMyBase badge.
+ *
+ * The hover handlers pass the row's bounding rect up so the parent can
+ * position the floating tooltip in viewport coordinates (escapes Card
+ * overflow / clipping).
+ */
+function Row({ node, expanded, toggle, onClick, onHoverStart, onHoverEnd }: RowProps) {
+  const isOpen = expanded.has(node.uid)
+  const hasChildren = node.children.length > 0
+
+  // Indentation: 20px per depth level. Looks like Nosis Manager.
+  const indent = node.depth * 20
+
+  function handleMouseEnter(e: React.MouseEvent<HTMLDivElement>): void {
+    const rect = e.currentTarget.getBoundingClientRect()
+    onHoverStart(node.uid, node.taxId, rect)
+  }
+
+  return (
+    <>
+      <div
+        className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-800/50 transition-colors"
+        style={{ paddingLeft: `${indent + 8}px` }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={onHoverEnd}
+      >
+        {/* Chevron / placeholder */}
+        <button
+          onClick={() => hasChildren && toggle(node.uid)}
+          className={`shrink-0 w-5 h-5 flex items-center justify-center rounded ${
+            hasChildren ? "hover:bg-slate-700 cursor-pointer" : "cursor-default"
+          }`}
+          aria-label={hasChildren ? (isOpen ? "Colapsar" : "Expandir") : ""}
+        >
+          {hasChildren ? (
+            isOpen
+              ? <ChevronDown className="w-4 h-4 text-slate-400" />
+              : <ChevronRight className="w-4 h-4 text-slate-400" />
+          ) : (
+            <Minus className="w-3 h-3 text-slate-600" />
+          )}
+        </button>
+
+        {/* Relationship type (only shown for non-root nodes) */}
+        {node.relationshipType && (
+          <span className="shrink-0 text-xs text-cyan-400 font-medium">
+            {node.relationshipType}
+          </span>
+        )}
+
+        {/* Business name + CUIT (clickable) */}
+        <button
+          onClick={() => onClick(node.taxId)}
+          className="flex items-center gap-2 min-w-0 text-left hover:text-cyan-400 transition-colors"
+        >
+          <span className="text-sm truncate">{node.businessName || "—"}</span>
+          <span className="font-mono text-xs text-slate-500 truncate">{node.taxId}</span>
+        </button>
+
+        {/* inMyBase badge */}
+        {node.inMyBase && (
+          <Badge variant="default" className="ml-auto shrink-0 text-xs">En mi base</Badge>
+        )}
+      </div>
+
+      {/* Children */}
+      {isOpen && node.children.map((child) => (
+        <Row
+          key={child.uid}
+          node={child}
+          expanded={expanded}
+          toggle={toggle}
+          onClick={onClick}
+          onHoverStart={onHoverStart}
+          onHoverEnd={onHoverEnd}
+        />
+      ))}
+    </>
+  )
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 
 interface GraphViewProps {
   /** Result from a CUIT search. */
@@ -416,105 +321,164 @@ interface GraphViewProps {
 }
 
 /**
- * Interactive graph visualisation powered by React Flow.
+ * Nosis-style list view of the relationship tree.
  *
- * Accepts results from any combination of the three search modes and
- * renders them as a directed, auto-laid-out graph. Hovering over a
- * node fetches and displays additional details in a tooltip.
+ * Renders a vertically-stacked list where children are indented one level
+ * below their parent. Each node has a chevron (▶/▼) that toggles expand /
+ * collapse. Clicking the business name or CUIT navigates to the edit page;
+ * hovering shows a floating tooltip with additional details.
+ *
+ * The component grows according to its content — there is no internal
+ * scroll. If the containing page can't fit everything, the page itself
+ * scrolls. The tooltip is rendered with `position: fixed` so it isn't
+ * clipped by ancestor overflow.
  */
 export function GraphView({ cuitResult, pathResult, nodeResult, nodeRootName }: GraphViewProps) {
   const { setEditTaxId } = useStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => new GraphBuilder().build(cuitResult, pathResult, nodeResult, nodeRootName),
-    [cuitResult, pathResult, nodeResult, nodeRootName]
-  )
+  const tree = useMemo<TreeNode | null>(() => {
+    if (nodeResult) return buildTreeFromNodeResult(nodeResult, nodeRootName)
+    if (cuitResult) return buildTreeFromCuitResult(cuitResult)
+    if (pathResult) return buildTreeFromPathResult(pathResult)
+    return null
+  }, [cuitResult, pathResult, nodeResult, nodeRootName])
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const defaultExpanded = useMemo<Set<string>>(() => {
+    if (!tree) return new Set()
+    const out = new Set<string>()
+    out.add(tree.uid)
+    for (const child of tree.children) out.add(child.uid)
+    return out
+  }, [tree])
+
+  const [expanded, setExpanded] = useState<Set<string>>(defaultExpanded)
+  const [hydratedFor, setHydratedFor] = useState<Set<string> | null>(null)
+  if (hydratedFor !== defaultExpanded) {
+    setHydratedFor(defaultExpanded)
+    setExpanded(defaultExpanded)
+  }
+
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
-  // Re-build the graph whenever the input data changes.
-  useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = new GraphBuilder().build(cuitResult, pathResult, nodeResult, nodeRootName)
-    setNodes(newNodes)
-    setEdges(newEdges)
-  }, [cuitResult, pathResult, nodeResult, nodeRootName, setNodes, setEdges])
+  function toggle(uid: string): void {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      next.has(uid) ? next.delete(uid) : next.add(uid)
+      return next
+    })
+  }
 
-  function handleNodeClick(_: React.MouseEvent, node: Node): void {
-    setEditTaxId(node.id)
+  function expandAll(): void {
+    if (!tree) return
+    const all = new Set<string>()
+    collectAllUids(tree, all)
+    setExpanded(all)
+  }
+
+  function collapseAll(): void {
+    if (!tree) return
+    setExpanded(new Set([tree.uid]))
+  }
+
+  function handleNodeClick(taxId: string): void {
+    setEditTaxId(taxId)
     void navigate("/edit")
   }
 
-  const queryClient = useQueryClient()
+  /**
+   * Computes the tooltip's viewport coordinates given the hovered row's
+   * bounding rect. We prefer placing it just below the row, but flip it
+   * above when the bottom half of the viewport doesn't have room — this
+   * is what fixes the "can't see tooltip near the bottom" issue.
+   */
+  function computeTooltipPosition(rect: DOMRect): { x: number; y: number } {
+    const TOOLTIP_HEIGHT_ESTIMATE = 180
+    const TOOLTIP_GAP = 6
+    const TOOLTIP_HEIGHT_VISUAL = 140
+    const viewportHeight = window.innerHeight
 
-  async function handleNodeMouseEnter(_: React.MouseEvent, node: Node): Promise<void> {
-    setTooltip({ nodeId: node.id, info: null, loading: true })
+    const spaceBelow = viewportHeight - rect.bottom
+    const placeBelow = spaceBelow >= TOOLTIP_HEIGHT_ESTIMATE + TOOLTIP_GAP
+
+    const y = placeBelow
+  ? rect.bottom + TOOLTIP_GAP
+  : rect.top - TOOLTIP_HEIGHT_VISUAL - TOOLTIP_GAP
+
+    // Anchor x to the start of the row's content (a small indent from the left
+    // edge so it lines up visually with the row's text).
+    const x = rect.left + 40
+
+    return { x, y }
+  }
+
+  async function handleHoverStart(uid: string, taxId: string, rect: DOMRect): Promise<void> {
+    const { x, y } = computeTooltipPosition(rect)
+    setTooltip({ uid, info: null, loading: true, x, y })
     try {
-      // Check cache first before hitting the network
-      const cached = queryClient.getQueryData(queryKeys.node(node.id))
+      const cached = queryClient.getQueryData(queryKeys.node(taxId))
       if (cached) {
-        setTooltip((prev) => prev ? { ...prev, info: cached as Record<string, string | boolean | null>, loading: false } : null)
+        setTooltip({ uid, info: cached as Record<string, string | boolean | null>, loading: false, x, y })
         return
       }
-      const info = await GraphService.getNode(node.id) as unknown as Record<string, string | boolean | null>
-      // Store in cache for future hovers
-      queryClient.setQueryData(queryKeys.node(node.id), info)
-      setTooltip((prev) => prev ? { ...prev, info, loading: false } : null)
+      const info = await GraphService.getNode(taxId) as unknown as Record<string, string | boolean | null>
+      queryClient.setQueryData(queryKeys.node(taxId), info)
+      setTooltip({ uid, info, loading: false, x, y })
     } catch {
-      setTooltip((prev) => prev ? { ...prev, loading: false } : null)
+      setTooltip({ uid, info: null, loading: false, x, y })
     }
   }
 
-  function handleNodeMouseLeave(): void {
+  function handleHoverEnd(): void {
     setTooltip(null)
   }
 
-  if (!cuitResult && !pathResult && !nodeResult) return null
+  if (!tree) return null
+
+  // The taxId associated with the currently-hovered uid is needed to render
+  // the tooltip's name/cuit fallback. We look it up lazily.
+  function findTaxIdByUid(node: TreeNode, uid: string): string | null {
+    if (node.uid === uid) return node.taxId
+    for (const child of node.children) {
+      const found = findTaxIdByUid(child, uid)
+      if (found) return found
+    }
+    return null
+  }
+  const hoveredTaxId = tooltip ? findTaxIdByUid(tree, tooltip.uid) : null
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-2" style={{ minHeight: 0 }}>
+    <div className="flex flex-col gap-2">
 
-      {/* Legend */}
-      <div className="flex gap-4 text-xs text-muted-foreground px-1">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-cyan-600 inline-block" /> Inicio
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-green-600 inline-block" /> Fin
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" /> En base propia
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-full bg-slate-700 inline-block" /> Externo
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-1 flex-wrap">
+        <Button variant="outline" size="sm" onClick={expandAll}>Expandir todo</Button>
+        <Button variant="outline" size="sm" onClick={collapseAll}>Colapsar todo</Button>
+        <div className="flex-1" />
+        <span className="text-xs text-muted-foreground">
+          Click en el nombre para editar · Click en ▶/▼ para expandir
         </span>
       </div>
 
-      {/* Graph canvas */}
-      <div className="relative rounded-lg border border-slate-700 overflow-hidden bg-slate-950" style={{ flex: "1 1 0", minHeight: "300px", height: "100%" }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={NODE_TYPES}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={handleNodeClick}
-          onNodeMouseEnter={handleNodeMouseEnter}
-          onNodeMouseLeave={handleNodeMouseLeave}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
-        >
-          <Background color="#1e293b" />
-          <Controls />
-          <div className="hidden sm:block">
-            <MiniMap nodeColor={miniMapNodeColor} />
-          </div>
-        </ReactFlow>
-
-        {tooltip && <NodeTooltip tooltip={tooltip} />}
+      {/* Tree list — grows with content, no internal scroll */}
+      <div className="rounded-lg border border-slate-700 bg-slate-950">
+        <Row
+          node={tree}
+          expanded={expanded}
+          toggle={toggle}
+          onClick={handleNodeClick}
+          onHoverStart={handleHoverStart}
+          onHoverEnd={handleHoverEnd}
+        />
       </div>
+
+      {/* Floating tooltip — rendered at viewport coords so it escapes
+          any ancestor overflow / clipping. */}
+      {tooltip && hoveredTaxId && (
+        <FloatingTooltip tooltip={tooltip} taxId={hoveredTaxId} />
+      )}
     </div>
   )
 }

@@ -126,6 +126,7 @@ export interface BaseNode {
   /** All sources that contributed this node. */
   sources: string[]
   relationshipCount: number
+  relatedSources?: string[]
 }
 
 // ─── Birthday types ─────────────────────────────────────────────────────────

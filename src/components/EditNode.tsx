@@ -59,22 +59,24 @@ function fromIsoDate(yyyymmdd: string): string {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
- * Tab panel that lets the user search for a node by CUIT,
- * view and edit its contact fields, and visualise its relationships.
+ * Tab panel that lets the user search for a node by CUIT, view and edit
+ * its contact fields, and visualise its relationships.
  *
- * Date fields render as native `<input type="date">` pickers, which
- * guarantees a well-formed value. The display format (yyyy-mm-dd) is
- * translated to/from the backend's dd/mm/yyyy at the input boundary.
+ * Layout: the wrapper is a plain vertical stack with no flex sizing. Each
+ * card sizes to its content, and the GraphView at the bottom shows the full
+ * tree without internal scroll. If the whole page doesn't fit on screen,
+ * the route container (in App.tsx) scrolls the page.
  *
- * Form hydration strategy:
- *  - When the React Query result becomes available for a CUIT we haven't
- *    hydrated yet, we adopt the server values via the "setState during
- *    render with key comparison" pattern (React's recommended alternative
- *    to useEffect for prop-derived state).
+ * Form hydration:
+ *  - When the React Query result arrives for a new taxId, we adopt the
+ *    server values via the "setState during render with key comparison"
+ *    pattern (React's recommended alternative to useEffect for
+ *    prop-derived state).
  *
  * Auto-search from NodeTable:
  *  - We subscribe to the Zustand store and react to changes in `editTaxId`
- *    by reading it once during render, kicking off the search, and clearing it.
+ *    by kicking off the search here. The store entry is cleared in a
+ *    microtask to avoid updating another component's state during render.
  */
 export function EditNode() {
   const editTaxId = useStore((s) => s.editTaxId)
@@ -98,7 +100,7 @@ export function EditNode() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.node(editTaxId) })
     void queryClient.invalidateQueries({ queryKey: queryKeys.nodeRelationships(editTaxId, maxDepth) })
     setSearchedId(editTaxId)
-    setEditTaxId(null)
+    queueMicrotask(() => setEditTaxId(null))
   }
 
   // React Query hooks — only fetch when searchedId is set
@@ -126,12 +128,12 @@ export function EditNode() {
   if (node && node.taxId !== hydratedFor) {
     setHydratedFor(node.taxId)
     setFields({
-      phone: node.phone ?? "",
-      email: node.email ?? "",
-      birthday: node.birthday ?? "",
+      phone:     node.phone     ?? "",
+      email:     node.email     ?? "",
+      birthday:  node.birthday  ?? "",
       entryDate: (node as { entryDate?: string | null }).entryDate ?? "",
-      exitDate: (node as { exitDate?: string | null }).exitDate ?? "",
-      loadedAt: (node as { loadedAt?: string | null }).loadedAt ?? "",
+      exitDate:  (node as { exitDate?: string | null }).exitDate ?? "",
+      loadedAt:  (node as { loadedAt?: string | null }).loadedAt ?? "",
     })
   }
 
@@ -166,12 +168,12 @@ export function EditNode() {
     e.preventDefault()
     if (!node) return
     await updateMutation.mutateAsync({
-      phone: fields.phone || undefined,
-      email: fields.email || undefined,
-      birthday: fields.birthday || undefined,
+      phone:     fields.phone     || undefined,
+      email:     fields.email     || undefined,
+      birthday:  fields.birthday  || undefined,
       entryDate: fields.entryDate || undefined,
-      exitDate: fields.exitDate || undefined,
-      loadedAt: fields.loadedAt || undefined,
+      exitDate:  fields.exitDate  || undefined,
+      loadedAt:  fields.loadedAt  || undefined,
     })
   }
 
@@ -179,7 +181,7 @@ export function EditNode() {
     <div className="flex flex-col gap-4">
 
       {/* Search form */}
-      <Card className="shrink-0">
+      <Card>
         <CardHeader>
           <CardTitle>Buscar nodo</CardTitle>
         </CardHeader>
@@ -206,7 +208,7 @@ export function EditNode() {
 
       {/* Node detail + edit form */}
       {node && (
-        <Card className="shrink-0">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{node.businessName ?? node.taxId}</CardTitle>
@@ -214,7 +216,7 @@ export function EditNode() {
                 <Badge variant={node.inMyBase ? "default" : "secondary"}>
                   {node.inMyBase ? "En mi base" : "Externo"}
                 </Badge>
-                {sources.map((s) => (
+                {sources.map((s: string) => (
                   <Badge key={s} variant="outline">{s}</Badge>
                 ))}
               </div>
@@ -305,16 +307,14 @@ export function EditNode() {
         </Card>
       )}
 
-      {/* Relationship graph */}
+      {/* Relationship graph — grows with content, no internal scroll. */}
       {graphResult && (
-        <Card className="shrink-0">
+        <Card>
           <CardHeader>
             <CardTitle>Relaciones</CardTitle>
           </CardHeader>
           <CardContent>
-            <div style={{ height: "50vh", minHeight: "300px" }}>
-              <GraphView nodeResult={graphResult} nodeRootName={node?.businessName ?? undefined} />
-            </div>
+            <GraphView nodeResult={graphResult} nodeRootName={node?.businessName ?? undefined} />
           </CardContent>
         </Card>
       )}

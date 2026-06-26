@@ -28,8 +28,12 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
       : "text-muted-foreground hover:text-foreground"
   }`
 
-// ─── Search tab (keeps its own state so it persists across navigation) ────────
+// ─── Search tab ──────────────────────────────────────────────────────────────
 
+/**
+ * Search tab — looks up a single CUIT and shows its tree.
+ * Plain vertical stack: form + (optional) GraphView, both grow with content.
+ */
 function SearchTab() {
   const [cuitInput, setCuitInput] = useState({ taxId: "", maxDepth: 3, enabled: false })
   const cuitQuery = useCuitSearch(cuitInput.taxId, cuitInput.maxDepth, cuitInput.enabled)
@@ -42,18 +46,22 @@ function SearchTab() {
   const error = cuitQuery.error ? (cuitQuery.error as Error).message : null
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 space-y-2">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-2">
         <SearchBar title="Buscar un CUIT" onSearch={handleSearch} loading={cuitQuery.isFetching} />
         {error && <p className="text-destructive text-sm">{error}</p>}
       </div>
-      {result ? <GraphView cuitResult={result} /> : <div className="flex-1" />}
+      {result && <GraphView cuitResult={result} />}
     </div>
   )
 }
 
 // ─── Path tab ────────────────────────────────────────────────────────────────
 
+/**
+ * Path tab — finds the shortest path between two CUITs and shows it.
+ * Same layout as SearchTab.
+ */
 function PathTab() {
   const [pathInput, setPathInput] = useState({ from: "", to: "", maxDepth: 3, enabled: false })
   const pathQuery = usePathSearch(pathInput.from, pathInput.to, pathInput.maxDepth, pathInput.enabled)
@@ -66,18 +74,27 @@ function PathTab() {
   const error = pathQuery.error ? (pathQuery.error as Error).message : null
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 space-y-2">
+    <div className="flex flex-col gap-4">
+      <div className="space-y-2">
         <PathSearchBar onSearch={handleSearch} loading={pathQuery.isFetching} />
         {error && <p className="text-destructive text-sm">{error}</p>}
       </div>
-      {result ? <GraphView pathResult={result} /> : <div className="flex-1" />}
+      {result && <GraphView pathResult={result} />}
     </div>
   )
 }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Page layout:
+ *  - The outermost `div` is the full viewport (h-screen + overflow-hidden)
+ *  - Header + nav don't shrink (shrink-0)
+ *  - The routes container has overflow-y-auto so the PAGE scrolls when its
+ *    content (forms + GraphView + tables) is taller than the viewport
+ *  - Each route is plain content — no internal flex sizing — so the
+ *    container's overflow is what handles overflow
+ */
 export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const { isAuthenticated, username } = useAuthStore()
@@ -88,7 +105,7 @@ export default function App() {
       <div className="flex flex-col flex-1 min-h-0 bg-background text-foreground p-3 sm:p-6">
 
         {/* Header */}
-        <header className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+        <header className="flex items-center justify-between mb-4 sm:mb-6 gap-2 shrink-0">
           <div className="min-w-0">
             <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
             <p className="text-muted-foreground text-xs sm:text-sm">Buscar y explorar relaciones entre CUITs</p>
@@ -122,38 +139,23 @@ export default function App() {
           </div>
         </div>
 
-        {/* Routes */}
-        <div className="flex flex-col flex-1 min-h-0">
+        {/* Routes — flex-1 so this takes the remaining height, overflow-y-auto
+            so the PAGE scrolls when content overflows the viewport. */}
+        <div className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Navigate to="/search" replace />} />
             <Route path="/search"    element={<SearchTab />} />
             <Route path="/path"      element={<PathTab />} />
             <Route path="/add"       element={
-              <div className="overflow-y-auto flex-1 space-y-4">
+              <div className="space-y-4">
                 <AddRelationship />
                 <DeleteRelationship />
               </div>
             } />
-            <Route path="/edit"      element={
-              <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-                <EditNode />
-              </div>
-            } />
-            <Route path="/base"      element={
-              <div className="flex-1 overflow-y-auto">
-                <NodeTable />
-              </div>
-            } />
-            <Route path="/companies" element={
-              <div className="flex-1 overflow-y-auto">
-                <CompanyTable />
-              </div>
-            } />
-            <Route path="/birthdays" element={
-              <div className="flex-1 overflow-y-auto">
-                <BirthdaysTable />
-              </div>
-            } />
+            <Route path="/edit"      element={<EditNode />} />
+            <Route path="/base"      element={<NodeTable />} />
+            <Route path="/companies" element={<CompanyTable />} />
+            <Route path="/birthdays" element={<BirthdaysTable />} />
           </Routes>
         </div>
 

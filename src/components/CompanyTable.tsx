@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
@@ -51,6 +52,18 @@ const COMPANY_COLUMNS = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+/**
+ * Tab panel listing companies (CUITs starting with 30 or 33) that have at
+ * least one direct relationship with a node in my base.
+ *
+ * Source filter (the chips below the title) is "by the sources of the
+ * RELATED nodes": picking "poseidon" shows companies that have at least
+ * one direct relationship with an inMyBase node whose sources include
+ * "poseidon". Empty selection → no filter, normal listing.
+ *
+ * The selection persists across navigation via Zustand, matching the
+ * behaviour of `NodeTable`.
+ */
 export function CompanyTable() {
   const { setEditTaxId, companyTable, setCompanyTable } = useStore()
   const navigate = useNavigate()
@@ -59,8 +72,24 @@ export function CompanyTable() {
   const search = companyTable.search
   const sortField = companyTable.sortField as SortField
   const sortDir = companyTable.sortDir as SortDir
+  // selectedSources is persisted in the store as string[] for serialisability;
+  // we keep a Set locally for O(1) lookups during filtering.
+  const selectedSources = new Set(companyTable.selectedSources)
 
   function setSearch(s: string) { setCompanyTable({ search: s }) }
+
+  // Aggregate all unique RELATED sources across all companies for the chips.
+  // (Not the company's own sources — those are mostly empty for 30/33 CUITs.)
+  const sources = Array.from(
+    new Set(nodes.flatMap((n) => n.relatedSources ?? []).filter(Boolean))
+  ).sort()
+
+  function toggleSource(source: string): void {
+    const next = new Set(selectedSources)
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    next.has(source) ? next.delete(source) : next.add(source)
+    setCompanyTable({ selectedSources: Array.from(next) })
+  }
 
   function handleSort(field: SortField): void {
     if (field === sortField) {
@@ -80,7 +109,13 @@ export function CompanyTable() {
       const matchesSearch =
         node.businessName.toLowerCase().includes(search.toLowerCase()) ||
         node.taxId.includes(search)
-      return matchesSearch
+      // Empty selection → no filter, show everything.
+      // Otherwise show only companies whose related-sources include AT LEAST
+      // ONE of the selected chips.
+      const matchesSource =
+        selectedSources.size === 0 ||
+        (node.relatedSources ?? []).some((s) => selectedSources.has(s))
+      return matchesSearch && matchesSource
     })
     .sort((a: BaseNode, b: BaseNode) => {
       let cmp = 0
@@ -92,9 +127,8 @@ export function CompanyTable() {
       return sortDir === "asc" ? cmp : -cmp
     })
 
-  // Show the filtered count alongside the total when the search box is non-empty,
-  // so users see at a glance how much the current query narrowed the list.
-  const isFiltered = search.length > 0
+  // Show "(X de Y)" when any filter is active, just "(Y)" otherwise.
+  const isFiltered = search.length > 0 || selectedSources.size > 0
   const title = isFiltered
     ? `Empresas a buscar (${filtered.length} de ${nodes.length})`
     : `Empresas a buscar (${nodes.length})`
@@ -116,6 +150,20 @@ export function CompanyTable() {
           </div>
         </div>
 
+        {sources.length > 0 && (
+          <div className="flex gap-2 flex-wrap pt-2">
+            {sources.map((source) => (
+              <button key={source} onClick={() => toggleSource(source)} className="focus:outline-none">
+                <Badge
+                  variant={selectedSources.has(source) ? "default" : "outline"}
+                  className="cursor-pointer"
+                >
+                  {source}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent>
