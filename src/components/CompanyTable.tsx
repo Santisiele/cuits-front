@@ -262,4 +262,4 @@ export function CompanyTable() {
       </CardContent>
     </Card>
   )
-}
+} 
