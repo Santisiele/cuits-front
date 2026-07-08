@@ -126,8 +126,7 @@ export function CompanyTable() {
       }
       return sortDir === "asc" ? cmp : -cmp
     })
-
-  // Show "(X de Y)" when any filter is active, just "(Y)" otherwise.
+    
   const isFiltered = search.length > 0 || selectedSources.size > 0
   const title = isFiltered
     ? `Empresas a buscar (${filtered.length} de ${nodes.length})`
