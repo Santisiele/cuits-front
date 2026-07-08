@@ -125,6 +125,15 @@ export class GraphService {
     return data.nodes
   }
 
+  /**
+   * Lists all "por conocer" nodes (isToKnow=true) that the backend has.
+   * Endpoint: GET /graph/to-know
+   */
+  static async getToKnowNodes(): Promise<BaseNode[]> {
+    const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/to-know`)
+    return data.nodes
+  }
+
   static addRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
     return apiFetch(
       `${this.base}/relationship`,

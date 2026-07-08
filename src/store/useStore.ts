@@ -1,10 +1,8 @@
 import { create } from "zustand"
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type Theme = "light" | "dark"
 
-export type TabId = "search" | "path" | "add" | "edit" | "base" | "companies"
+export type TabId = "search" | "path" | "add" | "edit" | "base" | "companies" | "to-know"
 
 export const TAB_ROUTES: Record<TabId, string> = {
   search:    "/search",
@@ -13,25 +11,24 @@ export const TAB_ROUTES: Record<TabId, string> = {
   edit:      "/edit",
   base:      "/base",
   companies: "/companies",
+  "to-know": "/to-know",
 }
 
 export const ROUTE_TABS: Record<string, TabId> = Object.fromEntries(
   Object.entries(TAB_ROUTES).map(([tab, route]) => [route, tab as TabId])
 )
 
-// ─── Store ───────────────────────────────────────────────────────────────────
-
 type SortDir = "asc" | "desc"
 
+/**
+ * Per-table UI state persisted across navigation.
+ * `selectedSources` is stored as string[] for serialisability;
+ * components convert to Set locally for O(1) lookups.
+ */
 interface TableState {
   search: string
   sortField: string
   sortDir: SortDir
-  /**
-   * Source chips currently toggled on as filters. Empty means "no filter".
-   * Kept as an array (not a Set) because Zustand state should be JSON-serialisable
-   * and equality-friendly. Components convert it to a Set at use-site.
-   */
   selectedSources: string[]
 }
 
@@ -44,6 +41,12 @@ interface AppState {
   setNodeTable: (state: Partial<TableState>) => void
   companyTable: TableState
   setCompanyTable: (state: Partial<TableState>) => void
+  /**
+   * "Por conocer" table state — mirrors nodeTable exactly, since the
+   * two views share the same filter surface and export behaviour.
+   */
+  toKnowTable: TableState
+  setToKnowTable: (state: Partial<TableState>) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -56,4 +59,6 @@ export const useStore = create<AppState>((set) => ({
   setNodeTable: (s) => set((state) => ({ nodeTable: { ...state.nodeTable, ...s } })),
   companyTable: { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [] },
   setCompanyTable: (s) => set((state) => ({ companyTable: { ...state.companyTable, ...s } })),
+  toKnowTable: { search: "", sortField: "businessName", sortDir: "asc", selectedSources: [] },
+  setToKnowTable: (s) => set((state) => ({ toKnowTable: { ...state.toKnowTable, ...s } })),
 }))

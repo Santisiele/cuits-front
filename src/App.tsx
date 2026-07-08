@@ -9,6 +9,7 @@ import { DeleteRelationship } from "@/components/DeleteRelationship"
 import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
 import { CompanyTable } from "@/components/CompanyTable"
+import { ToKnowTable } from "@/components/ToKnowTable"
 import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
@@ -133,8 +134,9 @@ export default function App() {
             <NavLink to="/path"      className={navClass}>Buscar relación</NavLink>
             <NavLink to="/add"       className={navClass}>Manejar relación</NavLink>
             <NavLink to="/edit"      className={navClass}>Editar persona</NavLink>
-            <NavLink to="/base"      className={navClass}>Mi base</NavLink>
+            <NavLink to="/base"      className={navClass}>Conocidos</NavLink>
             <NavLink to="/companies" className={navClass}>Empresas a buscar</NavLink>
+            <NavLink to="/to-know"   className={navClass}>Por conocer</NavLink>
             <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
           </div>
         </div>
@@ -155,6 +157,7 @@ export default function App() {
             <Route path="/edit"      element={<EditNode />} />
             <Route path="/base"      element={<NodeTable />} />
             <Route path="/companies" element={<CompanyTable />} />
+            <Route path="/to-know"   element={<ToKnowTable />} />
             <Route path="/birthdays" element={<BirthdaysTable />} />
           </Routes>
         </div>

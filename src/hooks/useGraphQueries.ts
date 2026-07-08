@@ -14,6 +14,7 @@ export const queryKeys = {
   node: (taxId: string) => ["node", taxId] as const,
   nodeRelationships: (taxId: string, maxDepth: number) => ["nodeRelationships", taxId, maxDepth] as const,
   birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
+  toKnow: () => ["toKnow"] as const,
 }
 
 // ─── My base ─────────────────────────────────────────────────────────────────
@@ -26,6 +27,17 @@ export function useMyBaseNodes() {
   return useQuery({
     queryKey: queryKeys.myBase(),
     queryFn: () => GraphService.getMyBaseNodes(),
+  })
+}
+
+/**
+ * Fetches and caches all "por conocer" nodes (isToKnow=true).
+ * Cache is shared — navigating away and back won't re-fetch within the TTL.
+ */
+export function useToKnowNodes() {
+  return useQuery({
+    queryKey: queryKeys.toKnow(),
+    queryFn: () => GraphService.getToKnowNodes(),
   })
 }
 
