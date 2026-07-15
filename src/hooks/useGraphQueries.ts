@@ -15,6 +15,7 @@ export const queryKeys = {
   nodeRelationships: (taxId: string, maxDepth: number) => ["nodeRelationships", taxId, maxDepth] as const,
   birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
   toKnow: () => ["toKnow"] as const,
+  fullBase: () => ["fullBase"] as const,
 }
 
 // ─── My base ─────────────────────────────────────────────────────────────────
@@ -40,6 +41,18 @@ export function useToKnowNodes() {
     queryFn: () => GraphService.getToKnowNodes(),
   })
 }
+
+/**
+ * Fetches and caches the union of "conocidos" and "por conocer" nodes.
+ * Corresponds to GET /graph/full-base on the backend.
+ */
+export function useFullBaseNodes() {
+  return useQuery({
+    queryKey: queryKeys.fullBase(),
+    queryFn: () => GraphService.getFullBaseNodes(),
+  })
+}
+ 
 
 // ─── CUIT search ─────────────────────────────────────────────────────────────
 

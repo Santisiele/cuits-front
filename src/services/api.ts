@@ -4,165 +4,146 @@ import type {
   NodeData,
   NodeUpdateFields,
   BaseNode,
+  BirthdaysResponse,
+  BirthdayNode
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
-import { translateApiError } from "@/lib/errors"
-import type { BirthdayNode, BirthdaysResponse } from "@/types"  
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
 /**
- * Returns the Authorization header with the current JWT token.
- * Throws if no token is available (should not happen in normal flow).
+ * Wrapper around `fetch` that:
+ *   - Injects the JWT from the auth store as a Bearer token
+ *   - Handles 401 responses centrally
+ *   - Throws typed errors from the response body when available
  */
-function authHeader(): Record<string, string> {
+async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = useAuthStore.getState().token
-  if (!token) throw new Error("Not authenticated")
-  return { Authorization: `Bearer ${token}` }
-}
-
-/**
- * Performs a fetch request with the JWT token attached.
- * Throws an `Error` with the API's message if the response is not OK.
- * Clears auth and redirects to login on 401.
- */
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options?.headers,
-      ...authHeader(),
-    },
-  })
-
-  if (response.status === 401) {
-    // clearAuth also clears the React Query cache
-    useAuthStore.getState().clearAuth()
-    throw new Error("Sesión expirada")
+  const headers = new Headers(options.headers)
+  headers.set("Content-Type", "application/json")
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`)
   }
-
+  const response = await fetch(url, { ...options, headers })
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(translateApiError(body.message ?? `HTTP ${response.status}`))
-  }
-
-  return response.json() as Promise<T>
-}
-
-/** Shorthand for JSON POST/PATCH/DELETE requests. */
-function jsonOptions(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }
-}
-
-// ─── Auth service (logout) ───────────────────────────────────────────────────
-
-export class AuthApiService {
-  static async login(username: string, password: string): Promise<{ token: string; username: string }> {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    })
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}))
-      throw new Error(translateApiError(body.message ?? "Login failed"))
+    if (response.status === 401) {
+      useAuthStore.getState().clearAuth()
     }
-    return response.json()
+    const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string; message?: string }
+    throw new Error(error.message || error.error || "Request failed")
   }
-
-  /** Notifies the server of logout so it can log the event. */
-  static async logout(): Promise<void> {
-    const token = useAuthStore.getState().token
-    if (!token) return
-    await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {}) // Fire and forget — don't block the UI
-    useAuthStore.getState().clearAuth()
-  }
+  return response.json()
 }
 
-// ─── Graph service ────────────────────────────────────────────────────────────
+// ─── Graph API ────────────────────────────────────────────────────────────────
 
 /**
- * Service class encapsulating all graph-related API calls.
- * All methods include the JWT token in the Authorization header.
+ * Object-oriented namespace bundling every /graph/* endpoint the frontend
+ * needs to talk to. Each method builds the full URL from API_BASE_URL and
+ * delegates the fetch to `apiFetch` for auth + error handling.
  */
-export class GraphService {
-  private static base = `${API_URL}/graph`
+export const GraphService = {
+  searchCuit: (taxId: string, maxDepth: number) =>
+    apiFetch<CuitSearchResponse>(`${API_BASE_URL}/graph/cuit/${taxId}?maxDepth=${maxDepth}`),
 
-  static searchCuit(taxId: string, maxDepth = 3): Promise<CuitSearchResponse> {
-    return apiFetch(`${this.base}/cuit/${taxId}?maxDepth=${maxDepth}`)
-  }
+  findPath: (from: string, to: string, maxDepth: number) =>
+    apiFetch<PathResponse>(`${API_BASE_URL}/graph/path?from=${from}&to=${to}&maxDepth=${maxDepth}`),
 
-  static findPath(from: string, to: string, maxDepth = 3): Promise<PathResponse> {
-    return apiFetch(`${this.base}/path?from=${from}&to=${to}&maxDepth=${maxDepth}`)
-  }
+  addRelationship: (fromTaxId: string, toTaxId: string, relationshipType: number) =>
+    apiFetch(`${API_BASE_URL}/graph/relationship`, {
+      method: "POST",
+      body: JSON.stringify({ fromTaxId, toTaxId, relationshipType }),
+    }),
 
-  static getNode(taxId: string): Promise<NodeData> {
-    return apiFetch(`${this.base}/node/${taxId}`)
-  }
+  deleteRelationship: (fromTaxId: string, toTaxId: string, relationshipType: number) =>
+    apiFetch(`${API_BASE_URL}/graph/relationship`, {
+      method: "DELETE",
+      body: JSON.stringify({ fromTaxId, toTaxId, relationshipType }),
+    }),
 
-  static updateNode(taxId: string, fields: NodeUpdateFields): Promise<void> {
-    return apiFetch(`${this.base}/node/${taxId}`, jsonOptions("PATCH", fields))
-  }
+  getMyBaseNodes: () =>
+    apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/nodes`).then(res => res.nodes),
 
-  static async getNodeRelationships(taxId: string, maxDepth = 3): Promise<CuitSearchResponse> {
-    const data = await apiFetch<{ found: boolean; results: CuitSearchResponse["results"] }>(
-      `${this.base}/node/${taxId}/relationships?maxDepth=${maxDepth}`
-    )
-    return { cuit: taxId, found: data.found, results: data.results }
-  }
+  getCompanyNodes: () =>
+    apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/companies`).then(res => res.nodes),
 
-  static async getMyBaseNodes(): Promise<BaseNode[]> {
-    const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/nodes`)
-    return data.nodes
-  }
+  getToKnowNodes: () =>
+    apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/to-know`).then(res => res.nodes),
 
   /**
-   * Lists all "por conocer" nodes (isToKnow=true) that the backend has.
-   * Endpoint: GET /graph/to-know
+   * Union of "conocidos" (isKnown) and "por conocer" (isToKnow) nodes.
+   * Corresponds to GET /graph/base-full on the backend.
    */
-  static async getToKnowNodes(): Promise<BaseNode[]> {
-    const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/to-know`)
-    return data.nodes
-  }
+  getFullBaseNodes: () =>
+    apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/base-full`).then(res => res.nodes),
 
-  static addRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
-    return apiFetch(
-      `${this.base}/relationship`,
-      jsonOptions("POST", { fromTaxId, toTaxId, relationshipType })
-    )
-  }
+  getNode: (taxId: string) =>
+    apiFetch<NodeData>(`${API_BASE_URL}/graph/node/${taxId}`),
 
-  static async getCompanyNodes(): Promise<BaseNode[]> {
-    const data = await apiFetch<{ nodes: BaseNode[] }>(`${this.base}/companies`)
-    return data.nodes
-  }
+  updateNode: (taxId: string, fields: NodeUpdateFields) =>
+    apiFetch<{ message: string }>(`${API_BASE_URL}/graph/node/${taxId}`, {
+      method: "PATCH",
+      body: JSON.stringify(fields),
+    }),
 
-  static deleteRelationship(fromTaxId: string, toTaxId: string, relationshipType: number): Promise<void> {
-    return apiFetch(
-      `${this.base}/relationship`,
-      jsonOptions("DELETE", { fromTaxId, toTaxId, relationshipType })
-    )
-  }
+  getNodeRelationships: (taxId: string, maxDepth: number) =>
+    apiFetch<CuitSearchResponse>(`${API_BASE_URL}/graph/node/${taxId}/relationships?maxDepth=${maxDepth}`),
 
   /**
    * Fetches inMyBase nodes whose birthday falls in [from, to].
    * @param from dd/mm/yyyy (year ignored)
    * @param to   dd/mm/yyyy (year ignored)
    */
-  static async getBirthdays(from: string, to: string): Promise<BirthdayNode[]> {
+  getBirthdays: async (from: string, to: string): Promise<BirthdayNode[]> => {
     const params = new URLSearchParams({ from, to })
     const data = await apiFetch<BirthdaysResponse>(
-      `${this.base}/birthdays?${params.toString()}`
+      `${API_BASE_URL}/graph/birthdays?${params.toString()}`
     )
     return data.results
+  },
+}
+
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+
+interface LoginResponse {
+  token: string
+  username: string
+}
+
+interface LoginErrorResponse {
+  message: string
+}
+
+/**
+ * Authentication-related endpoints. Kept separate from GraphService so
+ * that consumers can import just what they need.
+ */
+export const AuthApiService = {
+  login: async (username: string, password: string): Promise<LoginResponse> => {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null) as LoginErrorResponse | null
+      throw new Error(errorData?.message || "Login failed")
+    }
+
+    return response.json()
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      const token = useAuthStore.getState().token
+      if (!token) return
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    } finally {
+      useAuthStore.getState().clearAuth()
+    }
   }
 }

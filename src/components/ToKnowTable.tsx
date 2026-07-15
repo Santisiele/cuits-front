@@ -158,7 +158,7 @@ export function ToKnowTable() {
         {loading ? (
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : error ? (
-          <p className="text-destructive text-sm">Error al cargar los nodos</p>
+          <p className="text-destructive text-sm">Error al cargar los cuits</p>
         ) : (
           <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
             <table className="hidden sm:table w-full text-sm">

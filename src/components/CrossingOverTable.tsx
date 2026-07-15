@@ -1,19 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
-import { useMyBaseNodes } from "@/hooks/useGraphQueries"
+import { useFullBaseNodes } from "@/hooks/useGraphQueries"
 import { exportNodes } from "@/lib/exportTable"
-import { Button } from "@/components/ui/button"
 import type { BaseNode } from "@/types"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortField = "businessName" | "sources" | "relationshipCount"
 type SortDir = "asc" | "desc"
-
-// ─── Sort button ──────────────────────────────────────────────────────────────
 
 function SortButton({
   field,
@@ -42,33 +38,44 @@ function SortButton({
   )
 }
 
-// ─── Columns (for export) ────────────────────────────────────────────────────
-
-const NODE_COLUMNS = [
+const CROSSING_OVER_COLUMNS = [
   { key: "taxId" as const,             label: "CUIT" },
   { key: "businessName" as const,      label: "Nombre" },
   { key: "sources" as const,           label: "Fuentes" },
   { key: "relationshipCount" as const, label: "Relaciones" },
 ]
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
-export function NodeTable() {
-  const { setEditTaxId, nodeTable, setNodeTable } = useStore()
+/**
+ * "Crossing over" tab. Given a multi-select of sources, shows only nodes
+ * that belong to ALL selected sources at once (AND / intersection).
+ *
+ * A node with extra sources beyond the selection is still shown — the
+ * filter only requires the selected subset to be present. Example:
+ *   selected = [A, B]
+ *   node X: sources = [A, C]     → NO (missing B)
+ *   node Y: sources = [B]        → NO (missing A)
+ *   node Z: sources = [A, B, C]  → YES (has both A and B; C is irrelevant)
+ *
+ * Data source: the "full-base" endpoint (isKnown ∪ isToKnow), same as the
+ * Full base tab. This is consistent because "crossing over" is fundamentally
+ * a filter on top of the same universe of owned nodes.
+ *
+ * The table stays hidden until at least two sources are selected — a single
+ * selection would just replicate one of the other views (Full base, Mi base,
+ * Por conocer). The point of this view is to find the intersection.
+ */
+export function CrossingOverTable() {
+  const { setEditTaxId, crossingOverTable, setCrossingOverTable } = useStore()
   const navigate = useNavigate()
 
-  const { data: nodes = [], isLoading: loading, error } = useMyBaseNodes()
+  const { data: nodes = [], isLoading: loading, error } = useFullBaseNodes()
+  const search = crossingOverTable.search
+  const sortField = crossingOverTable.sortField as SortField
+  const sortDir = crossingOverTable.sortDir as SortDir
+  const selectedSources = new Set(crossingOverTable.selectedSources)
 
-  const search = nodeTable.search
-  const sortField = nodeTable.sortField as SortField
-  const sortDir = nodeTable.sortDir as SortDir
-  // selectedSources is persisted in the store as a string[] for serialisability;
-  // we keep a Set locally for O(1) lookups during filtering.
-  const selectedSources = new Set(nodeTable.selectedSources)
+  function setSearch(s: string) { setCrossingOverTable({ search: s }) }
 
-  function setSearch(s: string) { setNodeTable({ search: s }) }
-
-  // Aggregate all unique sources across all nodes for the filter chips
   const sources = Array.from(
     new Set(nodes.flatMap((n) => n.sources ?? []).filter(Boolean))
   ).sort()
@@ -77,14 +84,14 @@ export function NodeTable() {
     const next = new Set(selectedSources)
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     next.has(source) ? next.delete(source) : next.add(source)
-    setNodeTable({ selectedSources: Array.from(next) })
+    setCrossingOverTable({ selectedSources: Array.from(next) })
   }
 
   function handleSort(field: SortField): void {
     if (field === sortField) {
-      setNodeTable({ sortDir: sortDir === "asc" ? "desc" : "asc" })
+      setCrossingOverTable({ sortDir: sortDir === "asc" ? "desc" : "asc" })
     } else {
-      setNodeTable({ sortField: field, sortDir: "asc" })
+      setCrossingOverTable({ sortField: field, sortDir: "asc" })
     }
   }
 
@@ -93,78 +100,101 @@ export function NodeTable() {
     void navigate("/edit")
   }
 
-  const filtered = nodes
-    .filter((node) => {
-      const matchesSearch =
-        node.businessName.toLowerCase().includes(search.toLowerCase()) ||
-        node.taxId.includes(search)
-      // A node matches if ANY of its sources is in the selected set.
-      // Empty selection means "no filter" — show everything.
-      const matchesSource =
-        selectedSources.size === 0 ||
-        (node.sources ?? []).some((s) => selectedSources.has(s))
-      return matchesSearch && matchesSource
-    })
-    .sort((a: BaseNode, b: BaseNode) => {
-      let cmp = 0
-      if (sortField === "businessName") {
-        cmp = (a.businessName ?? "").localeCompare(b.businessName ?? "")
-      } else if (sortField === "sources") {
-        cmp = (a.sources ?? []).join(", ").localeCompare((b.sources ?? []).join(", "))
-      } else if (sortField === "relationshipCount") {
-        cmp = (a.relationshipCount ?? 0) - (b.relationshipCount ?? 0)
-      }
-      return sortDir === "asc" ? cmp : -cmp
-    })
+  const hasEnoughSelections = selectedSources.size >= 2
 
-  // Show the filtered count alongside the total when any filter is active,
-  // so users can see at a glance how much the current search/source filter narrowed the list.
-  const isFiltered = search.length > 0 || selectedSources.size > 0
-  const title = isFiltered
-    ? `Mi base (${filtered.length} de ${nodes.length})`
-    : `Mi base (${nodes.length})`
+  const filtered = hasEnoughSelections
+    ? nodes
+        .filter((node) => {
+          const nodeSources = new Set(node.sources ?? [])
+          for (const s of selectedSources) {
+            if (!nodeSources.has(s)) return false
+          }
+          return true
+        })
+        .filter((node) => {
+          if (!search) return true
+          return (
+            node.businessName.toLowerCase().includes(search.toLowerCase()) ||
+            node.taxId.includes(search)
+          )
+        })
+        .sort((a: BaseNode, b: BaseNode) => {
+          let cmp = 0
+          if (sortField === "businessName") {
+            cmp = (a.businessName ?? "").localeCompare(b.businessName ?? "")
+          } else if (sortField === "sources") {
+            cmp = (a.sources ?? []).join(", ").localeCompare((b.sources ?? []).join(", "))
+          } else if (sortField === "relationshipCount") {
+            cmp = (a.relationshipCount ?? 0) - (b.relationshipCount ?? 0)
+          }
+          return sortDir === "asc" ? cmp : -cmp
+        })
+    : []
+
+  const totalForIntersection = hasEnoughSelections
+    ? nodes.filter((node) => {
+        const nodeSources = new Set(node.sources ?? [])
+        for (const s of selectedSources) {
+          if (!nodeSources.has(s)) return false
+        }
+        return true
+      }).length
+    : 0
+  const isFiltered = hasEnoughSelections && search.length > 0
+  const title = hasEnoughSelections
+    ? isFiltered
+      ? `Coincidencias (${filtered.length} de ${totalForIntersection})`
+      : `Coincidencias (${totalForIntersection})`
+    : "Coincidencias"
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <CardTitle>{title}</CardTitle>
-          <div className="flex gap-2 items-center">
-            <Input
-              value={search}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o CUIT..."
-              className="w-full sm:w-64"
-            />
-            <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, NODE_COLUMNS, "mi-base", "csv")}>CSV</Button>
-            <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, NODE_COLUMNS, "mi-base", "xlsx")}>XLSX</Button>
-          </div>
+          {hasEnoughSelections && (
+            <div className="flex gap-2 items-center flex-wrap">
+              <Input
+                value={search}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o CUIT..."
+                className="w-full sm:w-64"
+              />
+              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "csv")}>CSV</Button>
+              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "xlsx")}>XLSX</Button>
+            </div>
+          )}
         </div>
 
         {sources.length > 0 && (
           <div className="flex gap-2 flex-wrap pt-2">
-            {sources.map((source) => (
-              <button key={source} onClick={() => toggleSource(source)} className="focus:outline-none">
-                <Badge
-                  variant={selectedSources.has(source) ? "default" : "outline"}
-                  className="cursor-pointer"
-                >
-                  {source}
-                </Badge>
-              </button>
-            ))}
+            {sources.map((source) => {
+              const isChecked = selectedSources.has(source)
+              return (
+                <button key={source} onClick={() => toggleSource(source)} className="focus:outline-none">
+                  <Badge
+                    variant={isChecked ? "default" : "outline"}
+                    className="cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="text-[11px] leading-none">{isChecked ? "☑" : "☐"}</span>
+                    {source}
+                  </Badge>
+                </button>
+              )
+            })}
           </div>
         )}
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1 min-h-0 overflow-auto">
         {loading ? (
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : error ? (
           <p className="text-destructive text-sm">Error al cargar los cuits</p>
+        ) : !hasEnoughSelections ? (
+          <p className="text-muted-foreground text-sm">Seleccioná al menos dos fuentes para ver las coincidencias.</p>
         ) : (
-          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
-            {/* Desktop table */}
+          <>
             <table className="hidden sm:table w-full text-sm">
               <thead className="sticky top-0 bg-background">
                 <tr className="border-b border-slate-700">
@@ -225,14 +255,13 @@ export function NodeTable() {
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={4} className="py-4 text-center text-muted-foreground">
-                      No se encontraron resultados
+                      No hay cuits que estén en todas las fuentes seleccionadas
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
 
-            {/* Mobile list */}
             <div className="sm:hidden divide-y divide-slate-800">
               {filtered.map((node) => (
                 <div
@@ -261,11 +290,11 @@ export function NodeTable() {
               ))}
               {filtered.length === 0 && (
                 <p className="py-4 text-center text-muted-foreground text-sm">
-                  No se encontraron resultados
+                  No hay cuits que estén en todas las fuentes seleccionadas
                 </p>
               )}
             </div>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>

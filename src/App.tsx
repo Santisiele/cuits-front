@@ -9,8 +9,10 @@ import { DeleteRelationship } from "@/components/DeleteRelationship"
 import { EditNode } from "@/components/EditNode"
 import { NodeTable } from "@/components/NodeTable"
 import { CompanyTable } from "@/components/CompanyTable"
+import { CrossingOverTable } from "@/components/CrossingOverTable"
 import { ToKnowTable } from "@/components/ToKnowTable"
 import { BirthdaysTable } from "@/components/BirthdaysTable"
+import { FullBaseTable } from "./components/FullBaseTable"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -131,13 +133,12 @@ export default function App() {
         <div className="overflow-x-auto pb-1 mb-2 shrink-0">
           <div className="flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full">
             <NavLink to="/search"    className={navClass}>Buscar CUIT</NavLink>
-            <NavLink to="/path"      className={navClass}>Buscar relación</NavLink>
+            <NavLink to="/full-base"      className={navClass}>Fuentes</NavLink>
+            <NavLink to="/crossing-over" className={navClass}>Coincidencias</NavLink>
+            <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
             <NavLink to="/add"       className={navClass}>Manejar relación</NavLink>
             <NavLink to="/edit"      className={navClass}>Editar persona</NavLink>
-            <NavLink to="/base"      className={navClass}>Conocidos</NavLink>
             <NavLink to="/companies" className={navClass}>Empresas a buscar</NavLink>
-            <NavLink to="/to-know"   className={navClass}>Por conocer</NavLink>
-            <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
           </div>
         </div>
 
@@ -159,6 +160,8 @@ export default function App() {
             <Route path="/companies" element={<CompanyTable />} />
             <Route path="/to-know"   element={<ToKnowTable />} />
             <Route path="/birthdays" element={<BirthdaysTable />} />
+            <Route path="/full-base"  element={<FullBaseTable />} />
+            <Route path="/crossing-over"  element={<CrossingOverTable />} />
           </Routes>
         </div>
 
