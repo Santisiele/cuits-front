@@ -21,6 +21,7 @@ type CategoryId = "known" | "toKnow"
  */
 const SOURCE_CATEGORY: Record<string, CategoryId> = {
   "Empresas concursadas": "toKnow",
+  "Bolsa": "toKnow",
 }
 
 const CATEGORIES: { id: CategoryId; label: string }[] = [
