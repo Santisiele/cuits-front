@@ -13,29 +13,23 @@ import type { NavGroup } from "./SidebarGroup"
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
-/**
- * Every route the user can reach, grouped by what they are trying to do.
- *
- * "Mi base", "Buscar relación" and "Por conocer" had routes but no entry in the
- * old horizontal bar, which had run out of room — they were reachable only by
- * typing the URL. A drawer has vertical space, so they are listed again.
- */
+/** Routes offered in the drawer, grouped by what the user is trying to do. */
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Búsqueda",
     icon: Search,
     items: [
       { path: "/search", label: "Buscar CUIT" },
-      { path: "/path", label: "Buscar relación" },
+      { path: "/path", label: "Buscar relación", hidden: true },
     ],
   },
   {
     label: "Mi base",
     icon: Database,
     items: [
-      { path: "/base", label: "Mi base" },
+      { path: "/base", label: "Mi base", hidden: true },
       { path: "/full-base", label: "Full base" },
-      { path: "/to-know", label: "Por conocer" },
+      { path: "/to-know", label: "Por conocer", hidden: true },
       { path: "/companies", label: "Empresas a buscar" },
       { path: "/crossing-over", label: "Coincidencias" },
       { path: "/birthdays", label: "Cumpleaños" },

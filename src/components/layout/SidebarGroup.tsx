@@ -4,6 +4,12 @@ import type { LucideIcon } from "lucide-react"
 export interface NavItem {
   path: string
   label: string
+  /**
+   * Keeps the route out of the menu without unwiring it. These screens work
+   * and are still routed; they were never offered in the old horizontal bar
+   * either, so listing them would be adding navigation, not restoring it.
+   */
+  hidden?: boolean
 }
 
 export interface NavGroup {
@@ -35,7 +41,9 @@ export function SidebarGroup({ group, onNavigate }: SidebarGroupProps) {
         {group.label}
       </div>
 
-      {group.items.map((item) => (
+      {group.items
+        .filter((item) => !item.hidden)
+        .map((item) => (
         <NavLink
           key={item.path}
           to={item.path}
@@ -48,9 +56,9 @@ export function SidebarGroup({ group, onNavigate }: SidebarGroupProps) {
             }`
           }
         >
-          {item.label}
-        </NavLink>
-      ))}
+            {item.label}
+          </NavLink>
+        ))}
     </div>
   )
 }
