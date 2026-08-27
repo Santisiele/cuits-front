@@ -10,5 +10,12 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    /**
+     * Without this the dependency optimizer inlines a second copy of react-dom
+     * into the pre-bundle of any package that imports it (sonner does), which
+     * gives that package its own renderer instance and makes every hook it
+     * calls throw "Invalid hook call".
+     */
+    dedupe: ["react", "react-dom"],
   },
 })
