@@ -1,5 +1,5 @@
 import "./App.css"
-import { Routes, Route, NavLink, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
 import { PathSearchBar } from "@/components/PathSearchBar"
@@ -15,6 +15,7 @@ import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { FullBaseTable } from "./components/FullBaseTable"
 import { SourcesTable } from "@/components/SourcesTable"
 import { Toaster } from "@/components/ui/sonner"
+import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -23,15 +24,6 @@ import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
 import { useState } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
-
-// ─── Nav link styles ─────────────────────────────────────────────────────────
-
-const navClass = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs sm:text-sm font-medium transition-all ${
-    isActive
-      ? "bg-background text-foreground shadow"
-      : "text-muted-foreground hover:text-foreground"
-  }`
 
 // ─── Search tab ──────────────────────────────────────────────────────────────
 
@@ -111,9 +103,12 @@ export default function App() {
 
         {/* Header */}
         <header className="flex items-center justify-between mb-4 sm:mb-6 gap-2 shrink-0">
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
-            <p className="text-muted-foreground text-xs sm:text-sm">Buscar y explorar relaciones entre CUITs</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <AppSidebar />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
+              <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">Buscar y explorar relaciones entre CUITs</p>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-sm text-muted-foreground hidden sm:inline">
@@ -131,19 +126,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* Nav */}
-        <div className="overflow-x-auto pb-1 mb-2 shrink-0">
-          <div className="flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full">
-            <NavLink to="/search"    className={navClass}>Buscar CUIT</NavLink>
-            <NavLink to="/full-base" className={navClass}>Full base</NavLink>
-            <NavLink to="/sources"   className={navClass}>Fuentes</NavLink>
-            <NavLink to="/crossing-over" className={navClass}>Coincidencias</NavLink>
-            <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
-            <NavLink to="/add"       className={navClass}>Manejar relación</NavLink>
-            <NavLink to="/edit"      className={navClass}>Editar persona</NavLink>
-            <NavLink to="/companies" className={navClass}>Empresas a buscar</NavLink>
-          </div>
-        </div>
 
         {/* Routes — flex-1 so this takes the remaining height, overflow-y-auto
             so the PAGE scrolls when content overflows the viewport. */}
