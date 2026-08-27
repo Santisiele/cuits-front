@@ -180,34 +180,34 @@ interface TooltipState {
 function FloatingTooltip({ tooltip, taxId }: { tooltip: TooltipState; taxId: string }) {
   return (
     <div
-      className="fixed z-50 bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs shadow-xl pointer-events-none"
+      className="fixed z-50 bg-popover border border-border rounded-lg p-3 text-xs shadow-xl pointer-events-none"
       style={{ left: tooltip.x, top: tooltip.y, minWidth: "240px", maxWidth: "320px" }}
     >
       {tooltip.loading ? (
-        <p className="text-slate-400">Cargando...</p>
+        <p className="text-muted-foreground">Cargando...</p>
       ) : tooltip.info ? (
         <div className="space-y-1">
           <p className="font-medium text-white">
             {String(tooltip.info["businessName"] ?? taxId)}
           </p>
-          <p className="font-mono text-slate-400 text-xs mb-2">{taxId}</p>
-          {tooltip.info["phone"] && <p><span className="text-slate-400">Tel:</span> {String(tooltip.info["phone"])}</p>}
-          {tooltip.info["email"] && <p><span className="text-slate-400">Email:</span> {String(tooltip.info["email"])}</p>}
-          {tooltip.info["birthday"] && <p><span className="text-slate-400">Nacimiento:</span> {String(tooltip.info["birthday"])}</p>}
+          <p className="font-mono text-muted-foreground text-xs mb-2">{taxId}</p>
+          {tooltip.info["phone"] && <p><span className="text-muted-foreground">Tel:</span> {String(tooltip.info["phone"])}</p>}
+          {tooltip.info["email"] && <p><span className="text-muted-foreground">Email:</span> {String(tooltip.info["email"])}</p>}
+          {tooltip.info["birthday"] && <p><span className="text-muted-foreground">Nacimiento:</span> {String(tooltip.info["birthday"])}</p>}
           <p>
-            <span className="text-slate-400">Base:</span>{" "}
-            <span className={tooltip.info["inMyBase"] ? "text-indigo-400" : "text-slate-400"}>
+            <span className="text-muted-foreground">Base:</span>{" "}
+            <span className={tooltip.info["inMyBase"] ? "text-indigo-400" : "text-muted-foreground"}>
               {tooltip.info["inMyBase"] ? "En mi base" : "Externo"}
             </span>
           </p>
           {(() => {
             const srcs = tooltip.info["sources"]
             if (!Array.isArray(srcs) || srcs.length === 0) return null
-            return <p><span className="text-slate-400">Fuentes:</span> {srcs.join(", ")}</p>
+            return <p><span className="text-muted-foreground">Fuentes:</span> {srcs.join(", ")}</p>
           })()}
         </div>
       ) : (
-        <p className="text-slate-400">Sin información adicional</p>
+        <p className="text-muted-foreground">Sin información adicional</p>
       )}
     </div>
   )
@@ -247,7 +247,7 @@ function Row({ node, expanded, toggle, onClick, onHoverStart, onHoverEnd }: RowP
   return (
     <>
       <div
-        className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-800/50 transition-colors"
+        className="flex items-center gap-2 py-1.5 px-2 hover:bg-accent/50 transition-colors"
         style={{ paddingLeft: `${indent + 8}px` }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={onHoverEnd}
@@ -256,22 +256,22 @@ function Row({ node, expanded, toggle, onClick, onHoverStart, onHoverEnd }: RowP
         <button
           onClick={() => hasChildren && toggle(node.uid)}
           className={`shrink-0 w-5 h-5 flex items-center justify-center rounded ${
-            hasChildren ? "hover:bg-slate-700 cursor-pointer" : "cursor-default"
+            hasChildren ? "hover:bg-accent cursor-pointer" : "cursor-default"
           }`}
           aria-label={hasChildren ? (isOpen ? "Colapsar" : "Expandir") : ""}
         >
           {hasChildren ? (
             isOpen
-              ? <ChevronDown className="w-4 h-4 text-slate-400" />
-              : <ChevronRight className="w-4 h-4 text-slate-400" />
+              ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              : <ChevronRight className="w-4 h-4 text-muted-foreground" />
           ) : (
-            <Minus className="w-3 h-3 text-slate-600" />
+            <Minus className="w-3 h-3 text-muted-foreground" />
           )}
         </button>
 
         {/* Relationship type (only shown for non-root nodes) */}
         {node.relationshipType && (
-          <span className="shrink-0 text-xs text-cyan-400 font-medium">
+          <span className="shrink-0 text-xs text-cyan-600 dark:text-cyan-400 font-medium">
             {node.relationshipType}
           </span>
         )}
@@ -279,10 +279,10 @@ function Row({ node, expanded, toggle, onClick, onHoverStart, onHoverEnd }: RowP
         {/* Business name + CUIT (clickable) */}
         <button
           onClick={() => onClick(node.taxId)}
-          className="flex items-center gap-2 min-w-0 text-left hover:text-cyan-400 transition-colors"
+          className="flex items-center gap-2 min-w-0 text-left hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
         >
           <span className="text-sm truncate">{node.businessName || "—"}</span>
-          <span className="font-mono text-xs text-slate-500 truncate">{node.taxId}</span>
+          <span className="font-mono text-xs text-muted-foreground truncate">{node.taxId}</span>
         </button>
 
         {/* inMyBase badge */}
@@ -463,7 +463,7 @@ export function GraphView({ cuitResult, pathResult, nodeResult, nodeRootName }: 
       </div>
 
       {/* Tree list — grows with content, no internal scroll */}
-      <div className="rounded-lg border border-slate-700 bg-slate-950">
+      <div className="rounded-lg border border-border bg-background">
         <Row
           node={tree}
           expanded={expanded}

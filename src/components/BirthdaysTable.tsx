@@ -157,7 +157,7 @@ export function BirthdaysTable() {
             {/* Desktop table */}
             <table className="hidden sm:table w-full text-sm">
               <thead className="sticky top-0 bg-background">
-                <tr className="border-b border-slate-700">
+                <tr className="border-b border-border">
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">CUIT</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Nombre</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Fuentes</th>
@@ -169,12 +169,12 @@ export function BirthdaysTable() {
                 {nodes.map((node) => (
                   <tr
                     key={node.taxId}
-                    className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+                    className="border-b border-border hover:bg-accent/50 transition-colors"
                   >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
                         onClick={() => handleNodeClick(node.taxId)}
-                        className="cursor-pointer hover:text-cyan-400 transition-colors"
+                        className="cursor-pointer hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                       >
                         {node.taxId}
                       </button>
@@ -182,7 +182,7 @@ export function BirthdaysTable() {
                     <td className="py-2 px-3 text-center">
                       <button
                         onClick={() => handleNodeClick(node.taxId)}
-                        className="cursor-pointer hover:text-cyan-400 transition-colors"
+                        className="cursor-pointer hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                       >
                         {node.businessName || "—"}
                       </button>
@@ -215,21 +215,21 @@ export function BirthdaysTable() {
             </table>
 
             {/* Mobile list */}
-            <div className="sm:hidden divide-y divide-slate-800">
+            <div className="sm:hidden divide-y divide-border">
               {nodes.map((node) => (
                 <div
                   key={node.taxId}
-                  className="py-3 px-1 hover:bg-slate-800/50 transition-colors"
+                  className="py-3 px-1 hover:bg-accent/50 transition-colors"
                 >
                   <button
                     onClick={() => handleNodeClick(node.taxId)}
-                    className="font-mono text-xs text-cyan-400 hover:text-cyan-300 transition-colors mb-1"
+                    className="font-mono text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 dark:text-cyan-300 transition-colors mb-1"
                   >
                     {node.taxId}
                   </button>
                   <button
                     onClick={() => handleNodeClick(node.taxId)}
-                    className="text-sm font-medium hover:text-cyan-400 transition-colors block"
+                    className="text-sm font-medium hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors block"
                   >
                     {node.businessName || "—"}
                   </button>

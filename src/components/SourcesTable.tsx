@@ -156,7 +156,7 @@ export function SourcesTable() {
               </thead>
               <tbody>
                 {filtered.map((source) => (
-                  <tr key={source.name} className="hover:bg-slate-800/50 transition-colors">
+                  <tr key={source.name} className="hover:bg-accent/50 transition-colors">
                     <td className="py-2 px-3">
                       <Checkbox
                         checked={selected.has(source.name)}
@@ -203,7 +203,7 @@ export function SourcesTable() {
               </tbody>
             </table>
 
-            <div className="sm:hidden divide-y divide-slate-800">
+            <div className="sm:hidden divide-y divide-border">
               {filtered.map((source) => (
                 <div key={source.name} className="py-3 px-1">
                   <div className="flex items-start gap-3">
