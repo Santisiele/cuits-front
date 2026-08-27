@@ -12,6 +12,7 @@ export type TabId =
   | "to-know"
   | "full-base"
   | "crossing-over"
+  | "sources"
 
 export const TAB_ROUTES: Record<TabId, string> = {
   search:          "/search",
@@ -23,6 +24,7 @@ export const TAB_ROUTES: Record<TabId, string> = {
   "to-know":       "/to-know",
   "full-base":     "/full-base",
   "crossing-over": "/crossing-over",
+  sources:         "/sources",
 }
 
 export const ROUTE_TABS: Record<string, TabId> = Object.fromEntries(

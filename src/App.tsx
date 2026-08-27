@@ -13,6 +13,8 @@ import { CrossingOverTable } from "@/components/CrossingOverTable"
 import { ToKnowTable } from "@/components/ToKnowTable"
 import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { FullBaseTable } from "./components/FullBaseTable"
+import { SourcesTable } from "@/components/SourcesTable"
+import { Toaster } from "@/components/ui/sonner"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -133,7 +135,8 @@ export default function App() {
         <div className="overflow-x-auto pb-1 mb-2 shrink-0">
           <div className="flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full">
             <NavLink to="/search"    className={navClass}>Buscar CUIT</NavLink>
-            <NavLink to="/full-base"      className={navClass}>Fuentes</NavLink>
+            <NavLink to="/full-base" className={navClass}>Full base</NavLink>
+            <NavLink to="/sources"   className={navClass}>Fuentes</NavLink>
             <NavLink to="/crossing-over" className={navClass}>Coincidencias</NavLink>
             <NavLink to="/birthdays" className={navClass}>Cumpleaños</NavLink>
             <NavLink to="/add"       className={navClass}>Manejar relación</NavLink>
@@ -162,11 +165,13 @@ export default function App() {
             <Route path="/birthdays" element={<BirthdaysTable />} />
             <Route path="/full-base"  element={<FullBaseTable />} />
             <Route path="/crossing-over"  element={<CrossingOverTable />} />
+            <Route path="/sources"        element={<SourcesTable />} />
           </Routes>
         </div>
 
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} theme={theme} />
+      <Toaster />
     </div>
   )
 }
