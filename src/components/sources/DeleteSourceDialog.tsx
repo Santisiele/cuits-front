@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { RESPONSIVE_DIALOG } from "@/lib/dialogStyles"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useDeleteSource } from "@/hooks/useSourceMutations"
@@ -38,7 +39,7 @@ export function DeleteSourceDialog({ source, onClose }: DeleteSourceDialogProps)
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={RESPONSIVE_DIALOG}>
         <DialogHeader>
           <DialogTitle>Borrar "{source.name}"</DialogTitle>
           <DialogDescription>Esta operación no se puede deshacer.</DialogDescription>

@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { RESPONSIVE_DIALOG } from "@/lib/dialogStyles"
 import {
   Select,
   SelectContent,
@@ -71,7 +72,7 @@ export function EditNodeSourcesDialog({ node, onClose }: EditNodeSourcesDialogPr
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={RESPONSIVE_DIALOG}>
         <DialogHeader>
           <DialogTitle>Fuentes de {node.businessName ?? node.taxId}</DialogTitle>
           <DialogDescription>

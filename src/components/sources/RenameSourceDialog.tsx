@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { RESPONSIVE_DIALOG } from "@/lib/dialogStyles"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRenameSource } from "@/hooks/useSourceMutations"
@@ -43,7 +44,7 @@ export function RenameSourceDialog({ source, onClose }: RenameSourceDialogProps)
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={RESPONSIVE_DIALOG}>
         <DialogHeader>
           <DialogTitle>Renombrar "{source.name}"</DialogTitle>
           <DialogDescription>

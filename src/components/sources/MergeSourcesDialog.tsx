@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { RESPONSIVE_DIALOG } from "@/lib/dialogStyles"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useMergeSources } from "@/hooks/useSourceMutations"
@@ -46,7 +47,7 @@ export function MergeSourcesDialog({ sourceA, sourceB, onClose }: MergeSourcesDi
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={RESPONSIVE_DIALOG}>
         <DialogHeader>
           <DialogTitle>Unificar fuentes</DialogTitle>
           <DialogDescription>
