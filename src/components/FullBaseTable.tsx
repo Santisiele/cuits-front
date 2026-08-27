@@ -7,32 +7,18 @@ import { ChevronRight, ChevronDown } from "lucide-react"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
 import { useFullBaseNodes } from "@/hooks/useGraphQueries"
+import { useSourceCategoryMap } from "@/hooks/useSourcesQuery"
 import { exportNodes } from "@/lib/exportTable"
-import type { BaseNode } from "@/types"
+import type { BaseNode, SourceCategory } from "@/types"
 
 type SortField = "businessName" | "sources" | "relationshipCount"
 type SortDir = "asc" | "desc"
-type CategoryId = "known" | "toKnow"
-
-/**
- * Hard-coded classification of every source into one of two groups.
- * Any source not listed here defaults to "known" — that keeps the UI
- * from breaking when a new loader ships before we update this map.
- */
-const SOURCE_CATEGORY: Record<string, CategoryId> = {
-  "Empresas concursadas": "toKnow",
-  "Bolsa": "toKnow",
-  "Deudores por financiera": "toKnow"
-}
+type CategoryId = SourceCategory
 
 const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: "known",  label: "Conocidos"  },
   { id: "toKnow", label: "Por conocer" },
 ]
-
-function classify(source: string): CategoryId {
-  return SOURCE_CATEGORY[source] ?? "known"
-}
 
 function SortButton({
   field,
@@ -90,8 +76,8 @@ const FULL_BASE_COLUMNS = [
  *   - The active source persists in Zustand via `fullBaseTable.selectedSources`
  *     (single-choice — the array holds 0 or 1 entries)
  *
- * The classification is hard-coded in `SOURCE_CATEGORY`. When a new
- * "por conocer" loader ships, add its source name to that map.
+ * Classification comes from the backend via `useSourceCategoryMap` — the
+ * (:Source) node owns its category, so a new loader needs no change here.
  */
 export function FullBaseTable() {
   const { setEditTaxId, fullBaseTable, setFullBaseTable } = useStore()
@@ -106,6 +92,18 @@ export function FullBaseTable() {
   const [openCategories, setOpenCategories] = useState<Set<CategoryId>>(
     new Set(CATEGORIES.map((c) => c.id))
   )
+
+  /**
+   * Categories come from the backend, where the (:Source) node owns them.
+   * A source missing from the map falls back to "known" so a source created
+   * after this query was cached still shows up somewhere rather than
+   * disappearing from the tree.
+   */
+  const categoryMap = useSourceCategoryMap()
+
+  function classify(source: string): CategoryId {
+    return categoryMap[source] ?? "known"
+  }
 
   function setSearch(s: string) { setFullBaseTable({ search: s }) }
 
