@@ -22,7 +22,7 @@ import { LoginModal } from "@/components/LoginModal"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
 // ─── Search tab ──────────────────────────────────────────────────────────────
@@ -96,6 +96,21 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const { isAuthenticated, username } = useAuthStore()
   const { theme, toggleTheme } = useStore()
+
+  /**
+   * The theme class has to live on <html>, not on a wrapper div.
+   *
+   * Radix renders dialogs, the navigation drawer and the toaster through a
+   * portal into document.body, outside the React tree. The dark variant is
+   * defined as `&:is(.dark *)`, so anything portalled out of a themed wrapper
+   * falls back to the light palette — which is why the modals used to open
+   * white while the app behind them was dark.
+   */
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove("light", "dark")
+    root.classList.add(theme)
+  }, [theme])
 
   return (
     <div className={`${theme} h-screen flex flex-col bg-background overflow-hidden`}>
