@@ -152,3 +152,40 @@ export interface BirthdaysResponse {
   count: number
   results: BirthdayNode[]
 }
+
+// ─── Source administration types ─────────────────────────────────────────────
+
+/**
+ * Category a source belongs to.
+ *
+ * The backend serialises this as `"known" | "to_know"` (snake_case, its domain
+ * type). It is normalised to camelCase in `GraphService.getSources` so the
+ * whole frontend speaks one dialect — see the note there before changing this.
+ */
+export type SourceCategory = "known" | "toKnow"
+
+/**
+ * A source as registered in the backend graph, with how many nodes hang off it.
+ */
+export interface SourceInfo {
+  name: string
+  category: SourceCategory
+  nodeCount: number
+}
+
+/**
+ * Result of a source admin operation, returned identically by a dry run and by
+ * the real execution — `dryRun` is what tells them apart.
+ *
+ * `message` arrives already written in Spanish and is safe to display as-is.
+ */
+export interface OperationSummary {
+  operation: "rename" | "merge" | "delete" | "add-source" | "move-source"
+  affectedNodeCount: number
+  removedNodeCount: number
+  updatedNodeCount: number
+  createdSourceName?: string
+  removedSourceName?: string
+  dryRun: boolean
+  message: string
+}
