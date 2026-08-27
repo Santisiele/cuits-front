@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
 import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
+import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,7 @@ export function EditNode() {
   const graphResult = relationshipsQuery.data ?? null
   const isSearching = nodeQuery.isFetching
   const sources = node?.sources ?? []
+  const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
     if (!searchedId) return "idle"
@@ -301,6 +303,13 @@ export function EditNode() {
                 {updateMutation.isError && (
                   <Badge variant="destructive">Error al guardar</Badge>
                 )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSourcesDialogOpen(true)}
+                >
+                  Editar fuentes
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -317,6 +326,10 @@ export function EditNode() {
             <GraphView nodeResult={graphResult} nodeRootName={node?.businessName ?? undefined} />
           </CardContent>
         </Card>
+      )}
+
+      {sourcesDialogOpen && node && (
+        <EditNodeSourcesDialog node={node} onClose={() => setSourcesDialogOpen(false)} />
       )}
     </div>
   )
