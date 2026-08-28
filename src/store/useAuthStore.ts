@@ -26,7 +26,7 @@ interface AuthState {
  */
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: null,
       username: null,
       isAuthenticated: false,
@@ -44,6 +44,15 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearAuth: () => {
+        /**
+         * Every 401 reaches this, and clearing the cache makes each mounted
+         * query refetch — which 401s again on an expired token. Without this
+         * guard the two feed each other and the app hammers the API in a
+         * tight loop for as long as the screen stays open. Clearing once is
+         * enough; later calls have nothing left to clear.
+         */
+        if (!get().token && !get().isAuthenticated) return
+
         // Clear all cached queries so the next user starts fresh
         queryClient.clear()
         set({ token: null, username: null, isAuthenticated: false })
