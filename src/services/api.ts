@@ -39,8 +39,19 @@ async function apiFetch<T>(
   }
   const response = await fetch(url, { ...options, headers })
   if (!response.ok) {
+    /**
+     * Only tear down the session this request was actually made under.
+     *
+     * Screens with auto-firing queries have requests in flight while the user
+     * is logging in. Those went out unauthenticated and answer 401 afterwards;
+     * without this check they clear the session that was just created, and the
+     * login silently fails to stick — which is why logging in used to work
+     * only on the one screen that fetches nothing on mount.
+     */
     if (response.status === 401 && !keepSessionOn401) {
-      useAuthStore.getState().clearAuth()
+      if (useAuthStore.getState().token === token) {
+        useAuthStore.getState().clearAuth()
+      }
     }
     const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string; message?: string }
     throw new Error(error.message || error.error || "Request failed")
