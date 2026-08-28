@@ -6,6 +6,7 @@ import type {
   BaseNode,
   BirthdaysResponse,
   BirthdayNode,
+  NameSearchResult,
   SourceInfo,
   SourceCategory,
   OperationSummary
@@ -110,6 +111,18 @@ export const GraphService = {
     const params = new URLSearchParams({ from, to })
     const data = await apiFetch<BirthdaysResponse>(
       `${API_BASE_URL}/graph/birthdays?${params.toString()}`
+    )
+    return data.results
+  },
+
+  /**
+   * Searches nodes by business name across the whole graph.
+   * The backend rejects anything shorter than 3 characters.
+   */
+  searchByName: async (query: string, limit = 50): Promise<NameSearchResult[]> => {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    const data = await apiFetch<{ count: number; results: NameSearchResult[] }>(
+      `${API_BASE_URL}/graph/search-by-name?${params.toString()}`
     )
     return data.results
   },

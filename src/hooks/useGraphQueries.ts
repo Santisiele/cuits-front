@@ -16,6 +16,22 @@ export const queryKeys = {
   birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
   toKnow: () => ["toKnow"] as const,
   fullBase: () => ["fullBase"] as const,
+  nameSearch: (query: string) => ["nameSearch", query] as const,
+}
+
+// ─── Name search ──────────────────────────────────────────────────────────────
+
+/**
+ * Searches nodes by business name. Disabled until the caller submits, so
+ * typing does not fire a full-graph scan per keystroke.
+ */
+export function useNameSearch(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.nameSearch(query),
+    queryFn: () => GraphService.searchByName(query),
+    enabled: enabled && query.trim().length >= 3,
+    staleTime: 60 * 1000,
+  })
 }
 
 // ─── My base ─────────────────────────────────────────────────────────────────

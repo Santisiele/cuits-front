@@ -153,6 +153,23 @@ export interface BirthdaysResponse {
   results: BirthdayNode[]
 }
 
+// ─── Name search types ───────────────────────────────────────────────────────
+
+/**
+ * A node matched by searching business names.
+ *
+ * The backend searches the whole graph, so most results are nodes that are NOT
+ * in the base — they were discovered through enrichment. `inMyBase` is what
+ * lets the list say which is which.
+ */
+export interface NameSearchResult {
+  taxId: string
+  businessName: string
+  sources: string[]
+  inMyBase: boolean
+  relationshipCount: number
+}
+
 // ─── Source administration types ─────────────────────────────────────────────
 
 /**
