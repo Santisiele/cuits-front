@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { toast } from "sonner"
 import { getErrorMessage, translateApiError } from "@/lib/errors"
+import { describeOperation } from "@/lib/operationMessages"
 import type { OperationSummary } from "@/types"
 
 /**
@@ -51,7 +52,7 @@ export function useSourceOperationFlow(run: RunOperation, onClose: () => void) {
     setLoading(true)
     try {
       const summary = await run(password, false)
-      toast.success(summary.message)
+      toast.success(describeOperation(summary))
       onClose()
     } catch (err) {
       setError(translateApiError(getErrorMessage(err, "Error inesperado")))

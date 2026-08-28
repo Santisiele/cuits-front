@@ -19,17 +19,25 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   "not found": "Uno o ambos CUITs no existen en el grafo",
   "Invalid username or password": "Usuario o contraseña incorrectos",
   "Graph database unavailable": "Error del servidor. Intentá de nuevo",
-  "Request failed": "No se pudo completar la operación"
+  "Request failed": "No se pudo completar la operación",
+
+  // Source administration. The API answers in English; these are the strings
+  // the user actually reads. Matching is by substring, so the fragments below
+  // deliberately leave out the interpolated names and counts.
+  "Password required for this operation": "Ingresá tu contraseña para confirmar",
+  "Invalid password": "Contraseña incorrecta",
+  "is already in use": "Ese nombre ya existe. Usá unificar en su lugar",
+  "cannot be merged into itself": "No se puede unificar una fuente consigo misma",
+  "Cannot merge sources of different categories":
+    "Solo se pueden unificar fuentes de la misma categoría",
+  "does not exist": "No existe",
+  "does not belong to source": "El CUIT no pertenece a esa fuente",
+  "fromSource is required in move mode": "Falta indicar la fuente de origen",
+  "The new name cannot be empty": "El nuevo nombre no puede estar vacío",
+  "Name search requires at least 3 characters":
+    "La búsqueda por nombre necesita al menos 3 caracteres"
 }
 
-/**
- * The source admin endpoints already answer in Spanish — "Password incorrecta",
- * 'La fuente "X" no existe', 'El nombre "Y" ya está en uso. Usá merge en su
- * lugar.' — so they are deliberately absent from the map above: translating
- * them would be an identity mapping, and adding entries here would only hide
- * the more specific wording the backend already provides (which source, which
- * name). Only the messages that reach the user in English are listed.
- */
 
 /**
  * Translates a known API error message to Spanish.

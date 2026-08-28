@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { describeOperation } from "@/lib/operationMessages"
 import type { OperationSummary } from "@/types"
 
 interface OperationPreviewProps {
@@ -24,7 +25,7 @@ export function OperationPreview({
 }: OperationPreviewProps) {
   return (
     <div className="space-y-4">
-      <p className="text-sm">{summary.message}</p>
+      <p className="text-sm">{describeOperation(summary)}</p>
 
       <div className="rounded-md border border-border p-3 space-y-1 text-xs">
         <div className="flex justify-between gap-4">
