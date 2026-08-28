@@ -1,12 +1,25 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useNameSearch } from "@/hooks/useGraphQueries"
+import type { NameSearchResult } from "@/types"
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 /** The backend rejects anything shorter, so the button stays disabled until here. */
 const MIN_QUERY_LENGTH = 3
+
+type BaseFilter = "all" | "inBase" | "outside"
+
+const BASE_FILTERS: { id: BaseFilter; label: string }[] = [
+  { id: "all", label: "Todos" },
+  { id: "inBase", label: "En mi base" },
+  { id: "outside", label: "Externos" },
+]
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 interface NameSearchProps {
   /**
@@ -23,23 +36,63 @@ interface NameSearchProps {
  * The search is submitted rather than run while typing: it scans every node in
  * the graph, so firing it per keystroke would be wasteful for no gain.
  *
- * Most results are nodes outside the base — the ones the graph knows about
- * through enrichment — so each row says whether it is in the base and which
- * sources it came from.
+ * Filtering happens over the results already fetched — by source tag and by
+ * whether the node is in the base — so narrowing a result set never costs
+ * another round trip.
  */
 export function NameSearch({ onSelect }: NameSearchProps) {
   const [input, setInput] = useState("")
   const [submitted, setSubmitted] = useState("")
+  const [baseFilter, setBaseFilter] = useState<BaseFilter>("all")
+  const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set())
 
   const { data: results = [], isFetching, error } = useNameSearch(submitted, submitted.length > 0)
 
   const trimmed = input.trim()
   const canSearch = trimmed.length >= MIN_QUERY_LENGTH
 
+  /** Every source present in the current results, for the tag filter. */
+  const availableSources = useMemo(
+    () => [...new Set(results.flatMap((node) => node.sources))].sort(),
+    [results]
+  )
+
+  const filtered = useMemo(
+    () =>
+      results
+        .filter((node) => {
+          if (baseFilter === "inBase") return node.inMyBase
+          if (baseFilter === "outside") return !node.inMyBase
+          return true
+        })
+        .filter(
+          (node) =>
+            selectedSources.size === 0 ||
+            node.sources.some((source) => selectedSources.has(source))
+        ),
+    [results, baseFilter, selectedSources]
+  )
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault()
     if (!canSearch) return
     setSubmitted(trimmed)
+    setBaseFilter("all")
+    setSelectedSources(new Set())
+  }
+
+  function toggleSource(source: string): void {
+    setSelectedSources((current) => {
+      const next = new Set(current)
+      if (next.has(source)) next.delete(source)
+      else next.add(source)
+      return next
+    })
+  }
+
+  const counts = {
+    inBase: results.filter((node) => node.inMyBase).length,
+    outside: results.filter((node) => !node.inMyBase).length,
   }
 
   return (
@@ -67,52 +120,113 @@ export function NameSearch({ onSelect }: NameSearchProps) {
           </p>
         )}
 
-        {error && (
-          <p className="text-destructive text-sm">{(error as Error).message}</p>
-        )}
+        {error && <p className="text-destructive text-sm">{(error as Error).message}</p>}
 
-        {submitted && !isFetching && !error && (
-          <p className="text-xs text-muted-foreground">
-            {results.length === 0
-              ? `Sin resultados para "${submitted}"`
-              : `${results.length} resultado${results.length > 1 ? "s" : ""} para "${submitted}"`}
-          </p>
+        {submitted && !isFetching && !error && results.length === 0 && (
+          <p className="text-xs text-muted-foreground">Sin resultados para "{submitted}"</p>
         )}
 
         {results.length > 0 && (
-          <div className="divide-y divide-border overflow-auto" style={{ maxHeight: "22rem" }}>
-            {results.map((node) => (
-              <button
-                key={node.taxId}
-                onClick={() => onSelect(node.taxId)}
-                className="w-full text-left py-2 px-1 hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-medium break-words">
-                    {node.businessName || "—"}
-                  </span>
-                  <span className="font-mono text-xs text-cyan-600 dark:text-cyan-400 shrink-0">
-                    {node.taxId}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <Badge variant={node.inMyBase ? "default" : "secondary"} className="text-xs">
-                    {node.inMyBase ? "En mi base" : "Externo"}
+          <>
+            <div className="flex gap-2 flex-wrap">
+              {BASE_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setBaseFilter(filter.id)}
+                  className="focus:outline-none"
+                >
+                  <Badge
+                    variant={baseFilter === filter.id ? "default" : "outline"}
+                    className="cursor-pointer"
+                  >
+                    {filter.label}
+                    {filter.id === "inBase" && ` (${counts.inBase})`}
+                    {filter.id === "outside" && ` (${counts.outside})`}
+                    {filter.id === "all" && ` (${results.length})`}
                   </Badge>
-                  {node.sources.map((source) => (
-                    <Badge key={source} variant="outline" className="text-xs">
+                </button>
+              ))}
+            </div>
+
+            {availableSources.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                {availableSources.map((source) => (
+                  <button
+                    key={source}
+                    onClick={() => toggleSource(source)}
+                    className="focus:outline-none"
+                  >
+                    <Badge
+                      variant={selectedSources.has(source) ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                    >
                       {source}
                     </Badge>
-                  ))}
-                  <span className="text-xs text-muted-foreground">
-                    {node.relationshipCount} relaciones
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Mostrando {filtered.length} de {results.length} resultado
+              {results.length > 1 ? "s" : ""} para "{submitted}"
+            </p>
+
+            <div className="divide-y divide-border overflow-auto" style={{ maxHeight: "22rem" }}>
+              {filtered.map((node) => (
+                <ResultRow key={node.taxId} node={node} onSelect={onSelect} />
+              ))}
+              {filtered.length === 0 && (
+                <p className="py-4 text-center text-muted-foreground text-sm">
+                  Ningún resultado pasa los filtros
+                </p>
+              )}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
+  )
+}
+
+// ─── Row ──────────────────────────────────────────────────────────────────────
+
+interface ResultRowProps {
+  node: NameSearchResult
+  onSelect: (taxId: string) => void
+}
+
+/**
+ * One result. The whole strip is the click target — a row where only the name
+ * responds reads as broken, and the useful gesture is "pick this one", not
+ * "click these particular words".
+ */
+function ResultRow({ node, onSelect }: ResultRowProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(node.taxId)}
+      className="block w-full cursor-pointer px-2 py-3 text-left transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium break-words">{node.businessName || "—"}</span>
+        <span className="font-mono text-xs text-cyan-600 dark:text-cyan-400 shrink-0">
+          {node.taxId}
+        </span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <Badge variant={node.inMyBase ? "default" : "secondary"} className="text-xs">
+          {node.inMyBase ? "En mi base" : "Externo"}
+        </Badge>
+        {node.sources.map((source) => (
+          <Badge key={source} variant="outline" className="text-xs">
+            {source}
+          </Badge>
+        ))}
+        <span className="text-xs text-muted-foreground">
+          {node.relationshipCount} relaciones
+        </span>
+      </div>
+    </button>
   )
 }
