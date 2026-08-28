@@ -37,6 +37,19 @@ function SearchTab() {
   const cuitQuery = useCuitSearch(cuitInput.taxId, cuitInput.maxDepth, cuitInput.enabled)
   const resultRef = useRef<HTMLDivElement>(null)
 
+  /**
+   * Bumped each time a name result is picked. The scroll runs from an effect
+   * rather than inline so it happens after React has committed the new result,
+   * and so it does not depend on requestAnimationFrame, which browsers pause
+   * while the tab is in the background.
+   */
+  const [scrollRequest, setScrollRequest] = useState(0)
+
+  useEffect(() => {
+    if (scrollRequest === 0) return
+    resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [scrollRequest])
+
   function handleSearch(taxId: string, maxDepth: number): void {
     setCuitInput({ taxId, maxDepth, enabled: true })
   }
@@ -45,15 +58,13 @@ function SearchTab() {
    * A name result feeds straight into the CUIT search, reusing the depth the
    * user last picked so clicking a name behaves like typing its CUIT.
    *
-   * The result renders below the name list, well out of view on a long list,
-   * so the view is scrolled to it — otherwise picking a name looks like it
-   * did nothing at all.
+   * The view scrolls back up to the CUIT search, which is where the answer
+   * appears — from down in a long result list, picking a name would otherwise
+   * look like it did nothing at all.
    */
   function handleNameSelect(taxId: string): void {
     setCuitInput((current) => ({ ...current, taxId, enabled: true }))
-    requestAnimationFrame(() => {
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    })
+    setScrollRequest((n) => n + 1)
   }
 
   const result = cuitQuery.data as CuitSearchResponse | undefined
@@ -61,7 +72,9 @@ function SearchTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="space-y-2">
+      {/* The CUIT result belongs with the search that produced it, above the
+          name search rather than at the bottom of the page. */}
+      <div ref={resultRef} className="space-y-2 scroll-mt-4">
         <SearchBar
           title="Buscar un CUIT"
           onSearch={handleSearch}
@@ -69,14 +82,12 @@ function SearchTab() {
           value={cuitInput.taxId}
         />
         {error && <p className="text-destructive text-sm">{error}</p>}
-      </div>
-      <NameSearch onSelect={handleNameSelect} />
-      <div ref={resultRef} className="scroll-mt-4">
         {cuitQuery.isFetching && (
           <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
         )}
         {result && !cuitQuery.isFetching && <GraphView cuitResult={result} />}
       </div>
+      <NameSearch onSelect={handleNameSelect} />
     </div>
   )
 }
