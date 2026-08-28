@@ -2,6 +2,7 @@ import "./App.css"
 import { Routes, Route, Navigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
+import { NameSearch } from "@/components/NameSearch"
 import { PathSearchBar } from "@/components/PathSearchBar"
 import { GraphView } from "@/components/GraphView"
 import { AddRelationship } from "@/components/AddRelationship"
@@ -39,6 +40,14 @@ function SearchTab() {
     setCuitInput({ taxId, maxDepth, enabled: true })
   }
 
+  /**
+   * A name result feeds straight into the CUIT search, reusing the depth the
+   * user last picked so clicking a name behaves like typing its CUIT.
+   */
+  function handleNameSelect(taxId: string): void {
+    setCuitInput((current) => ({ ...current, taxId, enabled: true }))
+  }
+
   const result = cuitQuery.data as CuitSearchResponse | undefined
   const error = cuitQuery.error ? (cuitQuery.error as Error).message : null
 
@@ -48,6 +57,7 @@ function SearchTab() {
         <SearchBar title="Buscar un CUIT" onSearch={handleSearch} loading={cuitQuery.isFetching} />
         {error && <p className="text-destructive text-sm">{error}</p>}
       </div>
+      <NameSearch onSelect={handleNameSelect} />
       {result && <GraphView cuitResult={result} />}
     </div>
   )
