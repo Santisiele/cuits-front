@@ -23,7 +23,7 @@ import { LoginModal } from "@/components/LoginModal"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
 // ─── Search tab ──────────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@ import type { CuitSearchResponse, PathResponse } from "@/types"
 function SearchTab() {
   const [cuitInput, setCuitInput] = useState({ taxId: "", maxDepth: 3, enabled: false })
   const cuitQuery = useCuitSearch(cuitInput.taxId, cuitInput.maxDepth, cuitInput.enabled)
+  const resultRef = useRef<HTMLDivElement>(null)
 
   function handleSearch(taxId: string, maxDepth: number): void {
     setCuitInput({ taxId, maxDepth, enabled: true })
@@ -43,9 +44,16 @@ function SearchTab() {
   /**
    * A name result feeds straight into the CUIT search, reusing the depth the
    * user last picked so clicking a name behaves like typing its CUIT.
+   *
+   * The result renders below the name list, well out of view on a long list,
+   * so the view is scrolled to it — otherwise picking a name looks like it
+   * did nothing at all.
    */
   function handleNameSelect(taxId: string): void {
     setCuitInput((current) => ({ ...current, taxId, enabled: true }))
+    requestAnimationFrame(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
   }
 
   const result = cuitQuery.data as CuitSearchResponse | undefined
@@ -54,11 +62,21 @@ function SearchTab() {
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-2">
-        <SearchBar title="Buscar un CUIT" onSearch={handleSearch} loading={cuitQuery.isFetching} />
+        <SearchBar
+          title="Buscar un CUIT"
+          onSearch={handleSearch}
+          loading={cuitQuery.isFetching}
+          value={cuitInput.taxId}
+        />
         {error && <p className="text-destructive text-sm">{error}</p>}
       </div>
       <NameSearch onSelect={handleNameSelect} />
-      {result && <GraphView cuitResult={result} />}
+      <div ref={resultRef} className="scroll-mt-4">
+        {cuitQuery.isFetching && (
+          <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
+        )}
+        {result && !cuitQuery.isFetching && <GraphView cuitResult={result} />}
+      </div>
     </div>
   )
 }

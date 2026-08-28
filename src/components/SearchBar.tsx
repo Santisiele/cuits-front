@@ -12,6 +12,12 @@ interface SearchBarProps {
   loading: boolean
   /** Input placeholder text. Defaults to "Ingresar CUIT". */
   placeholder?: string
+  /**
+   * Fills the input from outside — used when a name-search result is picked,
+   * so the box shows the CUIT actually being searched instead of whatever the
+   * user had typed before.
+   */
+  value?: string
 }
 
 /**
@@ -25,9 +31,20 @@ export function SearchBar({
   onSearch,
   loading,
   placeholder = "Ingresar CUIT",
+  value,
 }: SearchBarProps) {
-  const [taxId, setTaxId] = useState("")
+  const [taxId, setTaxId] = useState(value ?? "")
   const [maxDepth, setMaxDepth] = useState("3")
+
+  /**
+   * Adopts a new value pushed from the parent without clobbering what the user
+   * is typing: it only reassigns when the incoming value actually changed.
+   */
+  const [adoptedValue, setAdoptedValue] = useState(value)
+  if (value !== undefined && value !== adoptedValue) {
+    setAdoptedValue(value)
+    setTaxId(value)
+  }
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault()
