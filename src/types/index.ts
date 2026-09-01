@@ -103,6 +103,14 @@ export interface NodeData {
   loadedAt: string | null
   /** All sources that contributed this node (e.g. ["poseidon", "seniorHome"]). */
   sources: string[]
+  /**
+   * Months the node has operations in, as `yyyy-mm`, most recent first.
+   *
+   * Derived by the backend from the operations its loader recorded, so it is
+   * empty for sources that do not track them. Optional because responses
+   * cached before the field existed will not carry it.
+   */
+  activityMonths?: string[]
 }
 
 /**

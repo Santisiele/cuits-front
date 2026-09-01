@@ -8,6 +8,7 @@ import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
 import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
 import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
+import { formatActivityMonth } from "@/lib/activityMonths"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -230,6 +231,23 @@ export function EditNode() {
                 <span>CUIT</span>
                 <span className="font-mono">{node.taxId}</span>
               </div>
+
+              {/* Only sources that record dated operations produce these, so
+                  the block stays out of the way for everyone else. */}
+              {(node.activityMonths?.length ?? 0) > 0 && (
+                <div className="space-y-2 mb-4">
+                  <span className="text-sm text-muted-foreground">
+                    Meses con operaciones
+                  </span>
+                  <div className="flex gap-2 flex-wrap">
+                    {node.activityMonths?.map((month) => (
+                      <Badge key={month} variant="outline">
+                        {formatActivityMonth(month)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Teléfono</label>
