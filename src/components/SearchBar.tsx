@@ -1,11 +1,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface SearchBarProps {
-  /** Card title displayed above the search form. */
-  title: string
   /** Callback invoked when the user submits a valid search. */
   onSearch: (taxId: string, maxDepth: number) => void
   /** Whether a search is currently in progress. */
@@ -21,13 +18,15 @@ interface SearchBarProps {
 }
 
 /**
- * Single-CUIT search bar with configurable depth.
+ * Single-CUIT search form with configurable depth.
  *
- * Handles its own input state and delegates the actual
- * search call to the parent via {@link SearchBarProps.onSearch}.
+ * Renders bare, without a card of its own: the parent owns the card so this
+ * form and the name search can share one, switched by a mode toggle.
+ *
+ * Handles its own input state and delegates the actual search call to the
+ * parent via {@link SearchBarProps.onSearch}.
  */
 export function SearchBar({
-  title,
   onSearch,
   loading,
   placeholder = "Ingresar CUIT",
@@ -55,33 +54,26 @@ export function SearchBar({
   const isDisabled = loading || !taxId.trim()
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-          <Input
-            value={taxId}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTaxId(e.target.value)}
-            placeholder={placeholder}
-            disabled={loading}
-          />
-          <Input
-            value={maxDepth}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxDepth(e.target.value)}
-            placeholder="Profundidad"
-            type="number"
-            min={1}
-            max={10}
-            className="w-32"
-            disabled={loading}
-          />
-          <Button type="submit" disabled={isDisabled}>
-            {loading ? "Buscando..." : "Buscar"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+      <Input
+        value={taxId}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTaxId(e.target.value)}
+        placeholder={placeholder}
+        disabled={loading}
+      />
+      <Input
+        value={maxDepth}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxDepth(e.target.value)}
+        placeholder="Profundidad"
+        type="number"
+        min={1}
+        max={10}
+        className="w-32"
+        disabled={loading}
+      />
+      <Button type="submit" disabled={isDisabled}>
+        {loading ? "Buscando..." : "Buscar"}
+      </Button>
+    </form>
   )
 }

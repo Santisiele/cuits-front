@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
 import { NameSearch } from "@/components/NameSearch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Hash, Type } from "lucide-react"
 import { PathSearchBar } from "@/components/PathSearchBar"
 import { GraphView } from "@/components/GraphView"
 import { AddRelationship } from "@/components/AddRelationship"
@@ -45,6 +47,13 @@ function SearchTab() {
    */
   const [scrollRequest, setScrollRequest] = useState(0)
 
+  /**
+   * Which search is on screen. Only one form shows at a time — having both
+   * stacked left the screen crowded and made it unclear which one you were
+   * about to use.
+   */
+  const [mode, setMode] = useState<"cuit" | "name">("cuit")
+
   useEffect(() => {
     if (scrollRequest === 0) return
     resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -64,6 +73,12 @@ function SearchTab() {
    */
   function handleNameSelect(taxId: string): void {
     setCuitInput((current) => ({ ...current, taxId, enabled: true }))
+    /**
+     * Switching back to the CUIT form puts the answer right under the box that
+     * now holds the CUIT, and folds away a result list that can run long. The
+     * name search keeps its state, so returning to it shows the same results.
+     */
+    setMode("cuit")
     setScrollRequest((n) => n + 1)
   }
 
@@ -72,22 +87,56 @@ function SearchTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* The CUIT result belongs with the search that produced it, above the
-          name search rather than at the bottom of the page. */}
+      {/* The result belongs with the search that produced it, so both live in
+          the same block and the view scrolls here after picking a name. */}
       <div ref={resultRef} className="space-y-2 scroll-mt-4">
-        <SearchBar
-          title="Buscar un CUIT"
-          onSearch={handleSearch}
-          loading={cuitQuery.isFetching}
-          value={cuitInput.taxId}
-        />
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+              <CardTitle>Buscar</CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={mode === "cuit" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMode("cuit")}
+                >
+                  <Hash className="w-4 h-4 mr-1" />
+                  Por CUIT
+                </Button>
+                <Button
+                  variant={mode === "name" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMode("name")}
+                >
+                  <Type className="w-4 h-4 mr-1" />
+                  Por nombre
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+
+          {/* Both forms stay mounted so switching modes keeps what you typed
+              and the results already fetched, instead of searching again. */}
+          <CardContent>
+            <div className={mode === "cuit" ? "" : "hidden"}>
+              <SearchBar
+                onSearch={handleSearch}
+                loading={cuitQuery.isFetching}
+                value={cuitInput.taxId}
+              />
+            </div>
+            <div className={mode === "name" ? "" : "hidden"}>
+              <NameSearch onSelect={handleNameSelect} />
+            </div>
+          </CardContent>
+        </Card>
+
         {error && <p className="text-destructive text-sm">{error}</p>}
         {cuitQuery.isFetching && (
           <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
         )}
         {result && !cuitQuery.isFetching && <GraphView cuitResult={result} />}
       </div>
-      <NameSearch onSelect={handleNameSelect} />
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +38,8 @@ interface NameSearchProps {
  * Filtering happens over the results already fetched — by source tag and by
  * whether the node is in the base — so narrowing a result set never costs
  * another round trip.
+ *
+ * Renders bare: the parent owns the card this shares with the CUIT search.
  */
 export function NameSearch({ onSelect }: NameSearchProps) {
   const [input, setInput] = useState("")
@@ -96,96 +97,90 @@ export function NameSearch({ onSelect }: NameSearchProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Buscar por nombre</CardTitle>
-      </CardHeader>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+        <Input
+          value={input}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+          placeholder="Nombre o parte del nombre"
+          className="flex-1"
+        />
+        <Button type="submit" disabled={!canSearch || isFetching}>
+          {isFetching ? "Buscando..." : "Buscar"}
+        </Button>
+      </form>
 
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-          <Input
-            value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-            placeholder="Nombre o parte del nombre"
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!canSearch || isFetching}>
-            {isFetching ? "Buscando..." : "Buscar"}
-          </Button>
-        </form>
+      {trimmed.length > 0 && !canSearch && (
+        <p className="text-xs text-muted-foreground">
+          Escribí al menos {MIN_QUERY_LENGTH} caracteres.
+        </p>
+      )}
 
-        {trimmed.length > 0 && !canSearch && (
-          <p className="text-xs text-muted-foreground">
-            Escribí al menos {MIN_QUERY_LENGTH} caracteres.
-          </p>
-        )}
+      {error && <p className="text-destructive text-sm">{(error as Error).message}</p>}
 
-        {error && <p className="text-destructive text-sm">{(error as Error).message}</p>}
+      {submitted && !isFetching && !error && results.length === 0 && (
+        <p className="text-xs text-muted-foreground">Sin resultados para "{submitted}"</p>
+      )}
 
-        {submitted && !isFetching && !error && results.length === 0 && (
-          <p className="text-xs text-muted-foreground">Sin resultados para "{submitted}"</p>
-        )}
+      {results.length > 0 && (
+        <>
+          <div className="flex gap-2 flex-wrap">
+            {BASE_FILTERS.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setBaseFilter(filter.id)}
+                className="focus:outline-none"
+              >
+                <Badge
+                  variant={baseFilter === filter.id ? "default" : "outline"}
+                  className="cursor-pointer"
+                >
+                  {filter.label}
+                  {filter.id === "inBase" && ` (${counts.inBase})`}
+                  {filter.id === "outside" && ` (${counts.outside})`}
+                  {filter.id === "all" && ` (${results.length})`}
+                </Badge>
+              </button>
+            ))}
+          </div>
 
-        {results.length > 0 && (
-          <>
+          {availableSources.length > 0 && (
             <div className="flex gap-2 flex-wrap">
-              {BASE_FILTERS.map((filter) => (
+              {availableSources.map((source) => (
                 <button
-                  key={filter.id}
-                  onClick={() => setBaseFilter(filter.id)}
+                  key={source}
+                  onClick={() => toggleSource(source)}
                   className="focus:outline-none"
                 >
                   <Badge
-                    variant={baseFilter === filter.id ? "default" : "outline"}
-                    className="cursor-pointer"
+                    variant={selectedSources.has(source) ? "default" : "outline"}
+                    className="cursor-pointer text-xs"
                   >
-                    {filter.label}
-                    {filter.id === "inBase" && ` (${counts.inBase})`}
-                    {filter.id === "outside" && ` (${counts.outside})`}
-                    {filter.id === "all" && ` (${results.length})`}
+                    {source}
                   </Badge>
                 </button>
               ))}
             </div>
+          )}
 
-            {availableSources.length > 0 && (
-              <div className="flex gap-2 flex-wrap">
-                {availableSources.map((source) => (
-                  <button
-                    key={source}
-                    onClick={() => toggleSource(source)}
-                    className="focus:outline-none"
-                  >
-                    <Badge
-                      variant={selectedSources.has(source) ? "default" : "outline"}
-                      className="cursor-pointer text-xs"
-                    >
-                      {source}
-                    </Badge>
-                  </button>
-                ))}
-              </div>
+          <p className="text-xs text-muted-foreground">
+            Mostrando {filtered.length} de {results.length} resultado
+            {results.length > 1 ? "s" : ""} para "{submitted}"
+          </p>
+
+          <div className="divide-y divide-border overflow-auto" style={{ maxHeight: "22rem" }}>
+            {filtered.map((node) => (
+              <ResultRow key={node.taxId} node={node} onSelect={onSelect} />
+            ))}
+            {filtered.length === 0 && (
+              <p className="py-4 text-center text-muted-foreground text-sm">
+                Ningún resultado pasa los filtros
+              </p>
             )}
-
-            <p className="text-xs text-muted-foreground">
-              Mostrando {filtered.length} de {results.length} resultado
-              {results.length > 1 ? "s" : ""} para "{submitted}"
-            </p>
-
-            <div className="divide-y divide-border overflow-auto" style={{ maxHeight: "22rem" }}>
-              {filtered.map((node) => (
-                <ResultRow key={node.taxId} node={node} onSelect={onSelect} />
-              ))}
-              {filtered.length === 0 && (
-                <p className="py-4 text-center text-muted-foreground text-sm">
-                  Ningún resultado pasa los filtros
-                </p>
-              )}
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
