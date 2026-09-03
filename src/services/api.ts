@@ -13,8 +13,29 @@ import type {
   OperationSummary
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
+import { translateApiError } from "@/lib/errors"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
+
+/**
+ * An error the API answered with, carrying both what the user reads and what
+ * the server actually said.
+ *
+ * The API answers in English and the Spanish lives in the frontend, so the
+ * translation happens here, at the single boundary every call goes through —
+ * translating at each screen instead is what left half the app showing raw
+ * English. `rawMessage` keeps the original for the few places that branch on
+ * which error it was rather than displaying it.
+ */
+export class ApiError extends Error {
+  readonly rawMessage: string
+
+  constructor(rawMessage: string) {
+    super(translateApiError(rawMessage))
+    this.name = "ApiError"
+    this.rawMessage = rawMessage
+  }
+}
 
 /**
  * Wrapper around `fetch` that:
@@ -55,7 +76,7 @@ async function apiFetch<T>(
       }
     }
     const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string; message?: string }
-    throw new Error(error.message || error.error || "Request failed")
+    throw new ApiError(error.message || error.error || "Request failed")
   }
   return response.json()
 }

@@ -10,13 +10,24 @@ export function getErrorMessage(error: unknown, fallback = "Error desconocido"):
 
 /**
  * Known API error messages mapped to user-facing Spanish strings.
+ *
+ * Matching is by substring, in insertion order, so the specific entries have
+ * to come before the loose ones: "Relationship not found" would otherwise be
+ * swallowed by the bare "not found" below it and read as a missing CUIT.
  */
 export const API_ERROR_MESSAGES: Record<string, string> = {
   "Tax ID not found in graph": "CUIT no encontrado en el grafo",
   "No path found between the two Tax IDs": "No se encontró ningún camino entre los dos CUITs",
   "From and To Tax IDs must be different": "Los dos CUITs deben ser distintos",
+  "Relationship not found": "La relación no existe",
+  "CUIT not found in any source": "No se encontró el CUIT en ninguna fuente",
   "already exists": "Esta relación ya existe entre los dos CUITs",
   "not found": "Uno o ambos CUITs no existen en el grafo",
+  "Invalid CUIT format": "Formato de CUIT inválido. Se espera XX-XXXXXXXX-X",
+  "All sources failed": "Fallaron todas las fuentes. Intentá de nuevo",
+  "Invalid date format": "Formato de fecha inválido. Usá dd/mm/aaaa",
+  "Invalid maxDepth": "Profundidad inválida",
+  "Invalid relationship type code": "Tipo de relación inválido",
   "Invalid username or password": "Usuario o contraseña incorrectos",
   "Graph database unavailable": "Error del servidor. Intentá de nuevo",
   "Request failed": "No se pudo completar la operación",

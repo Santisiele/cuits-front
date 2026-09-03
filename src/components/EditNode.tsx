@@ -8,6 +8,7 @@ import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
 import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
 import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
+import { ApiError } from "@/services/api"
 import { formatActivityMonth } from "@/lib/activityMonths"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -137,7 +138,13 @@ export function EditNode() {
   const searchStatus: SearchStatus = (() => {
     if (!searchedId) return "idle"
     if (nodeQuery.isError) {
-      const message = (nodeQuery.error as Error).message
+      /**
+       * Branches on what the server said, not on what the user reads: the
+       * displayed message is translated at the API boundary, so matching the
+       * English here keeps working no matter how the Spanish is worded.
+       */
+      const error = nodeQuery.error
+      const message = error instanceof ApiError ? error.rawMessage : (error as Error).message
       return message.includes("not found") ? "not_found" : "error"
     }
     if (node) return "found"
