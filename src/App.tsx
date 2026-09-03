@@ -131,7 +131,11 @@ function SearchTab() {
           </CardContent>
         </Card>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {/* Guarded against sitting next to a result: whatever the last failed
+            search said stops being true the moment a later one answers. */}
+        {error && !result && !cuitQuery.isFetching && (
+          <p className="text-destructive text-sm">{error}</p>
+        )}
         {cuitQuery.isFetching && (
           <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
         )}
@@ -162,7 +166,9 @@ function PathTab() {
     <div className="flex flex-col gap-4">
       <div className="space-y-2">
         <PathSearchBar onSearch={handleSearch} loading={pathQuery.isFetching} />
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && !result && !pathQuery.isFetching && (
+          <p className="text-destructive text-sm">{error}</p>
+        )}
       </div>
       {result && <GraphView pathResult={result} />}
     </div>
