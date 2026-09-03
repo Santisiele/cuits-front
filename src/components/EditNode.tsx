@@ -115,11 +115,12 @@ export function EditNode() {
   const graphResult = relationshipsQuery.data ?? null
   const isSearching = nodeQuery.isFetching
   const sources = node?.sources ?? []
+  const activityMonths = node?.activityMonths ?? []
   /**
    * The backend sorts the months most recent first, so the head of the list
    * is the month of the node's last operation.
    */
-  const lastActivityMonth = node?.activityMonths?.[0]
+  const lastActivityMonth = activityMonths[0]
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -232,47 +233,45 @@ export function EditNode() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
-                <span>CUIT</span>
+              {/* The columns hug their labels instead of splitting the card in
+                  half, which used to strand every value out on the far right. */}
+              <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-2 text-sm mb-4">
+                <span className="text-muted-foreground">CUIT</span>
                 <span className="font-mono">{node.taxId}</span>
 
-                {/* Named on its own even though the full month list sits below:
-                    for a node with years of operations, how recent the last one
-                    is answers the question people actually open the node with. */}
+                {/* Named on its own because for a node with a long history, how
+                    recent the last operation is answers the question people
+                    actually open the node with. */}
                 {lastActivityMonth && (
                   <>
-                    <span>Última operación</span>
-                    <span className="text-foreground">
-                      {formatActivityMonth(lastActivityMonth)}
-                    </span>
+                    <span className="text-muted-foreground">Última operación</span>
+                    <span>{formatActivityMonth(lastActivityMonth)}</span>
                   </>
                 )}
 
                 {/* Only "Empresas concursadas" carries a boletín oficial date. */}
                 {node.publicationDate && (
                   <>
-                    <span>Fecha de publicación</span>
-                    <span className="text-foreground">{node.publicationDate}</span>
+                    <span className="text-muted-foreground">Fecha de publicación</span>
+                    <span>{node.publicationDate}</span>
+                  </>
+                )}
+
+                {/* Dropped when the last operation is the only one there is:
+                    repeating that single month adds nothing to the row above. */}
+                {activityMonths.length > 1 && (
+                  <>
+                    <span className="text-muted-foreground">Meses con operaciones</span>
+                    <span className="flex gap-1.5 flex-wrap">
+                      {activityMonths.map((month) => (
+                        <Badge key={month} variant="outline">
+                          {formatActivityMonth(month)}
+                        </Badge>
+                      ))}
+                    </span>
                   </>
                 )}
               </div>
-
-              {/* Only sources that record dated operations produce these, so
-                  the block stays out of the way for everyone else. */}
-              {(node.activityMonths?.length ?? 0) > 0 && (
-                <div className="space-y-2 mb-4">
-                  <span className="text-sm text-muted-foreground">
-                    Meses con operaciones
-                  </span>
-                  <div className="flex gap-2 flex-wrap">
-                    {node.activityMonths?.map((month) => (
-                      <Badge key={month} variant="outline">
-                        {formatActivityMonth(month)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Teléfono</label>
