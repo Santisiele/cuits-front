@@ -121,6 +121,17 @@ export function EditNode() {
    * is the month of the node's last operation.
    */
   const lastActivityMonth = activityMonths[0]
+  /**
+   * Both sources that record operations land in the same two fields, so the
+   * label is the only thing that says which one a month came from. A node
+   * carrying both keeps the named labels — they are still true of it.
+   */
+  const lastActivityLabel = sources.includes("Deudores por financiera")
+    ? "Fecha de última operación con financiera"
+    : "Última operación"
+  const activityMonthsLabel = sources.includes("Bolsa")
+    ? "Meses con operaciones en bolsa"
+    : "Meses con operaciones"
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -244,7 +255,7 @@ export function EditNode() {
                     actually open the node with. */}
                 {lastActivityMonth && (
                   <>
-                    <span className="text-muted-foreground">Última operación</span>
+                    <span className="text-muted-foreground">{lastActivityLabel}</span>
                     <span>{formatActivityMonth(lastActivityMonth)}</span>
                   </>
                 )}
@@ -252,7 +263,7 @@ export function EditNode() {
                 {/* Only "Empresas concursadas" carries a boletín oficial date. */}
                 {node.publicationDate && (
                   <>
-                    <span className="text-muted-foreground">Fecha de publicación</span>
+                    <span className="text-muted-foreground">Fecha de publicación BO</span>
                     <span>{node.publicationDate}</span>
                   </>
                 )}
@@ -261,7 +272,7 @@ export function EditNode() {
                     repeating that single month adds nothing to the row above. */}
                 {activityMonths.length > 1 && (
                   <>
-                    <span className="text-muted-foreground">Meses con operaciones</span>
+                    <span className="text-muted-foreground">{activityMonthsLabel}</span>
                     <span className="flex gap-1.5 flex-wrap">
                       {activityMonths.map((month) => (
                         <Badge key={month} variant="outline">
