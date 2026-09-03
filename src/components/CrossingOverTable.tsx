@@ -153,10 +153,14 @@ export function CrossingOverTable() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <div className="space-y-1">
             <CardTitle>{title}</CardTitle>
+            {/* Carries the ↗ so the badge in the rows explains itself — the
+                arrow on its own reads as decoration. */}
             {byRelationCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                {byRelationCount} {byRelationCount === 1 ? "entra" : "entran"} por
-                relación directa, no por estar cargada en la fuente
+                ↗ {byRelationCount}{" "}
+                {byRelationCount === 1
+                  ? "entra por relación directa, no por estar cargada en la fuente"
+                  : "entran por relación directa, no por estar cargadas en la fuente"}
               </p>
             )}
           </div>
