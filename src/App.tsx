@@ -131,15 +131,24 @@ function SearchTab() {
           </CardContent>
         </Card>
 
-        {/* Guarded against sitting next to a result: whatever the last failed
-            search said stops being true the moment a later one answers. */}
-        {error && !result && !cuitQuery.isFetching && (
-          <p className="text-destructive text-sm">{error}</p>
+        {/* Everything below belongs to the CUIT form, so it only shows in that
+            mode. The name results render inside the Card above and this block
+            renders after it, which left a failed CUIT search reporting itself
+            underneath a perfectly good list of names.
+
+            Also guarded against sitting next to a result: whatever the last
+            failed search said stops being true once a later one answers. */}
+        {mode === "cuit" && (
+          <>
+            {error && !result && !cuitQuery.isFetching && (
+              <p className="text-destructive text-sm">{error}</p>
+            )}
+            {cuitQuery.isFetching && (
+              <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
+            )}
+            {result && !cuitQuery.isFetching && <GraphView cuitResult={result} />}
+          </>
         )}
-        {cuitQuery.isFetching && (
-          <p className="text-muted-foreground text-sm">Buscando {cuitInput.taxId}...</p>
-        )}
-        {result && !cuitQuery.isFetching && <GraphView cuitResult={result} />}
       </div>
     </div>
   )
