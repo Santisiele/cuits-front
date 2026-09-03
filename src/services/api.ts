@@ -4,6 +4,7 @@ import type {
   NodeData,
   NodeUpdateFields,
   BaseNode,
+  CrossingNode,
   BirthdaysResponse,
   BirthdayNode,
   NameSearchResult,
@@ -100,6 +101,22 @@ export const GraphService = {
    */
   getFullBaseNodes: () =>
     apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/base-full`).then(res => res.nodes),
+
+  /**
+   * Nodes belonging to every source in `sources` at once, resolved server-side.
+   *
+   * The intersection cannot be computed here: it counts companies that reach a
+   * source through a related node, and no list endpoint carries relationships.
+   *
+   * @param sources At least two source names.
+   */
+  getCrossingNodes: (sources: string[]) => {
+    const params = new URLSearchParams()
+    for (const source of sources) params.append("sources", source)
+    return apiFetch<{nodes: CrossingNode[]}>(
+      `${API_BASE_URL}/graph/crossing?${params.toString()}`
+    ).then(res => res.nodes)
+  },
 
   getNode: (taxId: string) =>
     apiFetch<NodeData>(`${API_BASE_URL}/graph/node/${taxId}`),

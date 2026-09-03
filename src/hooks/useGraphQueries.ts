@@ -16,6 +16,7 @@ export const queryKeys = {
   birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
   toKnow: () => ["toKnow"] as const,
   fullBase: () => ["fullBase"] as const,
+  crossing: (sources: string[]) => ["crossing", sources] as const,
   nameSearch: (query: string) => ["nameSearch", query] as const,
 }
 
@@ -66,6 +67,26 @@ export function useFullBaseNodes() {
   return useQuery({
     queryKey: queryKeys.fullBase(),
     queryFn: () => GraphService.getFullBaseNodes(),
+  })
+}
+
+/**
+ * Nodes belonging to every source in `sources` at once.
+ *
+ * Fetched per selection instead of filtering a full download client-side: the
+ * intersection counts companies that reach a source through a related node,
+ * which needs the graph. Disabled below two sources, matching the endpoint —
+ * one source is not a crossing, and the table does not render one either.
+ *
+ * The key sorts the names so picking A then B hits the same cache entry as
+ * picking B then A.
+ */
+export function useCrossingNodes(sources: string[]) {
+  const key = [...sources].sort()
+  return useQuery({
+    queryKey: queryKeys.crossing(key),
+    queryFn: () => GraphService.getCrossingNodes(key),
+    enabled: key.length >= 2,
   })
 }
  

@@ -144,6 +144,22 @@ export interface BaseNode {
   relatedSources?: string[]
 }
 
+/**
+ * A row of the crossing-over table: a node that belongs to every selected
+ * source at once.
+ *
+ * A company can belong to a source without carrying it, by being directly
+ * related to a node that does — which is the only way a source made of people
+ * ("Residentes Senior Home") ever crosses with a source made of companies.
+ */
+export interface CrossingNode extends BaseNode {
+  /**
+   * The selected sources this node reaches only through a related node. Empty
+   * for a plain member of all of them.
+   */
+  indirectSources: string[]
+}
+
 // ─── Birthday types ─────────────────────────────────────────────────────────
 
 /**

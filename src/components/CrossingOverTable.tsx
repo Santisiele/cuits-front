@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
-import { useFullBaseNodes } from "@/hooks/useGraphQueries"
+import { useCrossingNodes } from "@/hooks/useGraphQueries"
+import { useSourcesQuery } from "@/hooks/useSourcesQuery"
 import { exportNodes } from "@/lib/exportTable"
-import type { BaseNode } from "@/types"
+import type { CrossingNode } from "@/types"
 
 type SortField = "businessName" | "sources" | "relationshipCount"
 type SortDir = "asc" | "desc"
@@ -42,6 +43,7 @@ const CROSSING_OVER_COLUMNS = [
   { key: "taxId" as const,             label: "CUIT" },
   { key: "businessName" as const,      label: "Nombre" },
   { key: "sources" as const,           label: "Fuentes" },
+  { key: "indirectSources" as const,   label: "Por relación con" },
   { key: "relationshipCount" as const, label: "Relaciones" },
 ]
 
@@ -56,9 +58,18 @@ const CROSSING_OVER_COLUMNS = [
  *   node Y: sources = [B]        → NO (missing A)
  *   node Z: sources = [A, B, C]  → YES (has both A and B; C is irrelevant)
  *
- * Data source: the "full-base" endpoint (isKnown ∪ isToKnow), same as the
- * Full base tab. This is consistent because "crossing over" is fundamentally
- * a filter on top of the same universe of owned nodes.
+ * A company (CUIT 30/33) also counts as belonging to a source when it is
+ * directly related to a node that has it, as long as it carries at least one
+ * of the selected sources itself. Without that, crossing a source made of
+ * people ("Residentes Senior Home" holds no company at all) against a source
+ * made of companies returned nothing, which was the whole point of the view.
+ * Those rows are marked, because "está acá por una relación" is a weaker
+ * claim than "está cargada en las dos fuentes".
+ *
+ * Data source: GET /graph/crossing, resolved server-side and fetched per
+ * selection. It used to filter a full download of the base (~27k rows) in
+ * memory, which is no longer possible — the by-relation rule needs the graph,
+ * and no list endpoint carries relationships.
  *
  * The table stays hidden until at least two sources are selected — a single
  * selection would just replicate one of the other views (Full base, Mi base,
@@ -68,7 +79,11 @@ export function CrossingOverTable() {
   const { setEditTaxId, crossingOverTable, setCrossingOverTable } = useStore()
   const navigate = useNavigate()
 
-  const { data: nodes = [], isLoading: loading, error } = useFullBaseNodes()
+  const { data: nodes = [], isLoading: loading, error } = useCrossingNodes(
+    crossingOverTable.selectedSources
+  )
+  /** The chips list every registered source, not just the ones already fetched. */
+  const { data: sourceInfos = [] } = useSourcesQuery()
   const search = crossingOverTable.search
   const sortField = crossingOverTable.sortField as SortField
   const sortDir = crossingOverTable.sortDir as SortDir
@@ -76,9 +91,7 @@ export function CrossingOverTable() {
 
   function setSearch(s: string) { setCrossingOverTable({ search: s }) }
 
-  const sources = Array.from(
-    new Set(nodes.flatMap((n) => n.sources ?? []).filter(Boolean))
-  ).sort()
+  const sources = sourceInfos.map((s) => s.name).sort()
 
   function toggleSource(source: string): void {
     const next = new Set(selectedSources)
@@ -102,15 +115,9 @@ export function CrossingOverTable() {
 
   const hasEnoughSelections = selectedSources.size >= 2
 
+  /** The endpoint already resolved the intersection; only search is left. */
   const filtered = hasEnoughSelections
     ? nodes
-        .filter((node) => {
-          const nodeSources = new Set(node.sources ?? [])
-          for (const s of selectedSources) {
-            if (!nodeSources.has(s)) return false
-          }
-          return true
-        })
         .filter((node) => {
           if (!search) return true
           return (
@@ -118,7 +125,7 @@ export function CrossingOverTable() {
             node.taxId.includes(search)
           )
         })
-        .sort((a: BaseNode, b: BaseNode) => {
+        .sort((a: CrossingNode, b: CrossingNode) => {
           let cmp = 0
           if (sortField === "businessName") {
             cmp = (a.businessName ?? "").localeCompare(b.businessName ?? "")
@@ -131,15 +138,8 @@ export function CrossingOverTable() {
         })
     : []
 
-  const totalForIntersection = hasEnoughSelections
-    ? nodes.filter((node) => {
-        const nodeSources = new Set(node.sources ?? [])
-        for (const s of selectedSources) {
-          if (!nodeSources.has(s)) return false
-        }
-        return true
-      }).length
-    : 0
+  const totalForIntersection = hasEnoughSelections ? nodes.length : 0
+  const byRelationCount = nodes.filter((n) => n.indirectSources.length > 0).length
   const isFiltered = hasEnoughSelections && search.length > 0
   const title = hasEnoughSelections
     ? isFiltered
@@ -151,7 +151,15 @@ export function CrossingOverTable() {
     <Card className="h-full flex flex-col">
       <CardHeader className="shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-          <CardTitle>{title}</CardTitle>
+          <div className="space-y-1">
+            <CardTitle>{title}</CardTitle>
+            {byRelationCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {byRelationCount} {byRelationCount === 1 ? "entra" : "entran"} por
+                relación directa, no por estar cargada en la fuente
+              </p>
+            )}
+          </div>
           {hasEnoughSelections && (
             <div className="flex gap-2 items-center flex-wrap">
               <Input
@@ -187,12 +195,14 @@ export function CrossingOverTable() {
       </CardHeader>
 
       <CardContent className="flex-1 min-h-0 overflow-auto">
-        {loading ? (
+        {/* The selection check comes first: below two sources nothing is
+            fetched at all, so there is neither loading nor error to report. */}
+        {!hasEnoughSelections ? (
+          <p className="text-muted-foreground text-sm">Seleccioná al menos dos fuentes para ver las coincidencias.</p>
+        ) : loading ? (
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : error ? (
           <p className="text-destructive text-sm">Error al cargar los cuits</p>
-        ) : !hasEnoughSelections ? (
-          <p className="text-muted-foreground text-sm">Seleccioná al menos dos fuentes para ver las coincidencias.</p>
         ) : (
           <>
             <table className="hidden sm:table w-full text-sm">
@@ -245,6 +255,18 @@ export function CrossingOverTable() {
                               <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
                             ))
                           : "—"}
+                        {/* Filled badge, so a row that is only here through a
+                            neighbour never reads like a plain member. */}
+                        {node.indirectSources.map((s) => (
+                          <Badge
+                            key={s}
+                            variant="secondary"
+                            className="text-xs"
+                            title="Pertenece a esta fuente por una relación directa, no por estar cargada en ella"
+                          >
+                            ↗ {s}
+                          </Badge>
+                        ))}
                       </div>
                     </td>
                     <td className="py-2 px-3 text-center">
@@ -283,6 +305,9 @@ export function CrossingOverTable() {
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {(node.sources ?? []).map((s) => (
                       <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                    ))}
+                    {node.indirectSources.map((s) => (
+                      <Badge key={s} variant="secondary" className="text-xs">↗ {s}</Badge>
                     ))}
                     <span className="text-xs text-muted-foreground">{node.relationshipCount} relaciones</span>
                   </div>
