@@ -115,6 +115,11 @@ export function EditNode() {
   const graphResult = relationshipsQuery.data ?? null
   const isSearching = nodeQuery.isFetching
   const sources = node?.sources ?? []
+  /**
+   * The backend sorts the months most recent first, so the head of the list
+   * is the month of the node's last operation.
+   */
+  const lastActivityMonth = node?.activityMonths?.[0]
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -230,6 +235,26 @@ export function EditNode() {
               <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
                 <span>CUIT</span>
                 <span className="font-mono">{node.taxId}</span>
+
+                {/* Named on its own even though the full month list sits below:
+                    for a node with years of operations, how recent the last one
+                    is answers the question people actually open the node with. */}
+                {lastActivityMonth && (
+                  <>
+                    <span>Última operación</span>
+                    <span className="text-foreground">
+                      {formatActivityMonth(lastActivityMonth)}
+                    </span>
+                  </>
+                )}
+
+                {/* Only "Empresas concursadas" carries a boletín oficial date. */}
+                {node.publicationDate && (
+                  <>
+                    <span>Fecha de publicación</span>
+                    <span className="text-foreground">{node.publicationDate}</span>
+                  </>
+                )}
               </div>
 
               {/* Only sources that record dated operations produce these, so

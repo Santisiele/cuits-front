@@ -111,6 +111,13 @@ export interface NodeData {
    * cached before the field existed will not carry it.
    */
   activityMonths?: string[]
+  /**
+   * Date the company was published in the boletín oficial, as `dd/mm/yyyy`.
+   *
+   * Only "Empresas concursadas" records it, so it arrives empty for every
+   * other source. Optional for the same reason as {@link activityMonths}.
+   */
+  publicationDate?: string
 }
 
 /**
