@@ -353,7 +353,14 @@ export function EditNode() {
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={formatTrustLevel(Number(fields.levelOfTrust))} />
                   </SelectTrigger>
-                  <SelectContent>
+                  {/* Anchored under the trigger instead of the default
+                      "item-aligned", which slides the list so the chosen item
+                      lands on the trigger — the menu then opens higher the
+                      further down the list your current level is. Collisions
+                      are ignored on purpose: near the bottom of the window it
+                      scrolls rather than flipping above the field, so the
+                      levels are always in the same place. */}
+                  <SelectContent position="popper" side="bottom" avoidCollisions={false}>
                     {TRUST_LEVELS.map((level) => (
                       <SelectItem key={level.value} value={String(level.value)}>
                         {level.label}

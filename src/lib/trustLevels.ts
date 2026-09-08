@@ -21,10 +21,17 @@ export interface TrustLevel {
   tone: TrustTone
 }
 
-export const TRUST_LEVELS: TrustLevel[] = [
-  { value: 0, label: "Sin nivel", tone: "none" },
-  { value: 1, label: "Ignorar", tone: "danger" },
-]
+/**
+ * Sorted by value, and sorted here rather than trusted to stay that way: this
+ * is the order the dropdown lists, so a level appended out of order later
+ * would shuffle a menu people navigate by position.
+ */
+export const TRUST_LEVELS: TrustLevel[] = (
+  [
+    { value: 0, label: "Sin nivel", tone: "none" },
+    { value: 1, label: "Ignorar", tone: "danger" },
+  ] satisfies TrustLevel[]
+).sort((a, b) => a.value - b.value)
 
 const BY_VALUE = new Map(TRUST_LEVELS.map((level) => [level.value, level]))
 
