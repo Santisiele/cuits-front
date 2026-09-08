@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { TrustBadge } from "@/components/TrustBadge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/store/useStore"
@@ -251,6 +252,7 @@ export function CrossingOverTable() {
                       >
                         {node.businessName || "—"}
                       </button>
+                      <TrustBadge level={node.levelOfTrust} />
                     </td>
                     <td className="py-2 px-3 text-center">
                       <div className="flex gap-1 flex-wrap justify-center">
@@ -306,6 +308,7 @@ export function CrossingOverTable() {
                   >
                     {node.businessName || "—"}
                   </button>
+                  <TrustBadge level={node.levelOfTrust} />
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {(node.sources ?? []).map((s) => (
                       <Badge key={s} variant="outline" className="text-xs">{s}</Badge>

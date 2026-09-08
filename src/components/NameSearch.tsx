@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { TrustBadge } from "@/components/TrustBadge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useNameSearch } from "@/hooks/useGraphQueries"
@@ -204,7 +205,10 @@ function ResultRow({ node, onSelect }: ResultRowProps) {
       className="block w-full cursor-pointer px-2 py-3 text-left transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium break-words">{node.businessName || "—"}</span>
+        <span className="text-sm font-medium break-words">
+          {node.businessName || "—"}
+          <TrustBadge level={node.levelOfTrust} />
+        </span>
         <span className="font-mono text-xs text-cyan-600 dark:text-cyan-400 shrink-0">
           {node.taxId}
         </span>

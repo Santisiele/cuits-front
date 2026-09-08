@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { TrustBadge } from "@/components/TrustBadge"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
@@ -210,6 +211,7 @@ export function CompanyTable() {
                       >
                         {node.businessName || "—"}
                       </button>
+                      <TrustBadge level={node.levelOfTrust} />
                     </td>
                     <td className="py-2 px-3 text-center">
                       <span className="text-muted-foreground">{node.relationshipCount}</span>
@@ -245,6 +247,7 @@ export function CompanyTable() {
                   >
                     {node.businessName || "—"}
                   </button>
+                  <TrustBadge level={node.levelOfTrust} />
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-muted-foreground">{node.relationshipCount} en mi base</span>
                   </div>
