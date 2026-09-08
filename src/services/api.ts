@@ -9,6 +9,9 @@ import type {
   BirthdayNode,
   NameSearchResult,
   SourceInfo,
+  TrustLevelInfo,
+  TrustLevelColor,
+  TrustLevelOperationSummary,
   SourceCategory,
   OperationSummary
 } from "@/types"
@@ -177,6 +180,47 @@ export const GraphService = {
     )
     return data.results
   },
+
+  // ─── Trust levels ──────────────────────────────────────────────────────────
+
+  getTrustLevels: (): Promise<TrustLevelInfo[]> =>
+    apiFetch<{ levels: TrustLevelInfo[] }>(`${API_BASE_URL}/trust-levels`).then((res) => res.levels),
+
+  createTrustLevel: (
+    label: string,
+    color: TrustLevelColor,
+    password: string | null,
+    dryRun: boolean
+  ): Promise<TrustLevelOperationSummary> =>
+    apiFetch(
+      `${API_BASE_URL}/trust-levels?dryRun=${dryRun}`,
+      { method: "POST", body: JSON.stringify(dryRun ? { label, color } : { label, color, password }) },
+      true
+    ),
+
+  updateTrustLevel: (
+    value: number,
+    label: string,
+    color: TrustLevelColor,
+    password: string | null,
+    dryRun: boolean
+  ): Promise<TrustLevelOperationSummary> =>
+    apiFetch(
+      `${API_BASE_URL}/trust-levels/${value}?dryRun=${dryRun}`,
+      { method: "PATCH", body: JSON.stringify(dryRun ? { label, color } : { label, color, password }) },
+      true
+    ),
+
+  deleteTrustLevel: (
+    value: number,
+    password: string | null,
+    dryRun: boolean
+  ): Promise<TrustLevelOperationSummary> =>
+    apiFetch(
+      `${API_BASE_URL}/trust-levels/${value}?dryRun=${dryRun}`,
+      { method: "DELETE", body: JSON.stringify(dryRun ? {} : { password }) },
+      true
+    ),
 
   // ─── Source administration ─────────────────────────────────────────────────
 

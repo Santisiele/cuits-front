@@ -253,3 +253,32 @@ export interface OperationSummary {
   dryRun: boolean
   message: string
 }
+
+// ─── Trust level types ───────────────────────────────────────────────────────
+
+export type TrustLevelColor =
+  | "red"
+  | "orange"
+  | "amber"
+  | "green"
+  | "teal"
+  | "blue"
+  | "violet"
+  | "pink"
+  | "slate"
+
+export interface TrustLevelInfo {
+  value: number
+  label: string
+  color: TrustLevelColor
+  nodeCount: number
+}
+
+export interface TrustLevelOperationSummary {
+  operation: "create-level" | "update-level" | "delete-level"
+  value: number
+  label: string
+  affectedNodeCount: number
+  dryRun: boolean
+  message: string
+}

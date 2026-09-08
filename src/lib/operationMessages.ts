@@ -1,4 +1,4 @@
-import type { OperationSummary } from "@/types"
+import type { OperationSummary, TrustLevelOperationSummary } from "@/types"
 
 /**
  * Builds the Spanish sentence shown for a source admin operation.
@@ -55,5 +55,27 @@ export function describeOperation(summary: OperationSummary): string {
         ? `Se movería de "${removedSourceName}" a "${createdSourceName}".`
         : `Se movió de "${removedSourceName}" a "${createdSourceName}".`
     }
+  }
+}
+
+export function describeTrustLevelOperation(summary: TrustLevelOperationSummary): string {
+  const { operation, label, affectedNodeCount, dryRun } = summary
+  const cuits = (n: number) => `${n} CUIT${n === 1 ? "" : "s"}`
+
+  switch (operation) {
+    case "create-level":
+      return dryRun
+        ? `Se crearía el nivel "${label}".`
+        : `Se creó el nivel "${label}".`
+
+    case "update-level":
+      return dryRun
+        ? `Se guardaría como "${label}", afectando ${cuits(affectedNodeCount)}.`
+        : `Se guardó como "${label}", afectando ${cuits(affectedNodeCount)}.`
+
+    case "delete-level":
+      return dryRun
+        ? `Se borraría "${label}" y ${cuits(affectedNodeCount)} volverían a quedar sin nivel.`
+        : `Se borró "${label}" y ${cuits(affectedNodeCount)} volvieron a quedar sin nivel.`
   }
 }

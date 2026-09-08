@@ -15,7 +15,7 @@ export type FlowStep = "form" | "preview" | "password"
  * Runs one source operation. `password` is null on a dry run, where the
  * backend neither expects nor checks it.
  */
-type RunOperation = (password: string | null, dryRun: boolean) => Promise<OperationSummary>
+type RunOperation<S> = (password: string | null, dryRun: boolean) => Promise<S>
 
 /**
  * Drives the shared form → preview → password flow.
@@ -28,9 +28,13 @@ type RunOperation = (password: string | null, dryRun: boolean) => Promise<Operat
  * case is a mistyped password, and closing would throw away a preview the user
  * would have to run again.
  */
-export function useSourceOperationFlow(run: RunOperation, onClose: () => void) {
+export function useSourceOperationFlow<S = OperationSummary>(
+  run: RunOperation<S>,
+  onClose: () => void,
+  describe: (summary: S) => string = describeOperation as (summary: S) => string
+) {
   const [step, setStep] = useState<FlowStep>("form")
-  const [preview, setPreview] = useState<OperationSummary | null>(null)
+  const [preview, setPreview] = useState<S | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -52,7 +56,7 @@ export function useSourceOperationFlow(run: RunOperation, onClose: () => void) {
     setLoading(true)
     try {
       const summary = await run(password, false)
-      toast.success(describeOperation(summary))
+      toast.success(describe(summary))
       onClose()
     } catch (err) {
       setError(translateApiError(getErrorMessage(err, "Error inesperado")))

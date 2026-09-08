@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
-import { trustRowClass } from "@/lib/trustLevels"
+import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -85,6 +85,7 @@ const FULL_BASE_COLUMNS = [
 export function FullBaseTable() {
   const { setEditTaxId, fullBaseTable, setFullBaseTable } = useStore()
   const navigate = useNavigate()
+  const { rowClassFor } = useTrustLevels()
 
   const search = fullBaseTable.search
   const sortField = fullBaseTable.sortField as SortField
@@ -299,7 +300,7 @@ export function FullBaseTable() {
                 {filtered.map((node) => (
                   <tr
                     key={node.taxId}
-                    className={cn("border-b border-border transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
+                    className={cn("border-b border-border transition-colors", rowClassFor(node.levelOfTrust) || "hover:bg-accent/50")}
                   >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
@@ -346,7 +347,7 @@ export function FullBaseTable() {
               {filtered.map((node) => (
                 <div
                   key={node.taxId}
-                  className={cn("py-3 px-1 transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
+                  className={cn("py-3 px-1 transition-colors", rowClassFor(node.levelOfTrust) || "hover:bg-accent/50")}
                 >
                   <button
                     onClick={() => handleNodeClick(node.taxId)}

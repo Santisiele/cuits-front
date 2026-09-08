@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
-import { trustRowClass } from "@/lib/trustLevels"
+import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { useStore } from "@/store/useStore"
@@ -64,6 +64,7 @@ const TO_KNOW_COLUMNS = [
 export function ToKnowTable() {
   const { setEditTaxId, toKnowTable, setToKnowTable } = useStore()
   const navigate = useNavigate()
+  const { rowClassFor } = useTrustLevels()
 
   const { data: nodes = [], isLoading: loading, error } = useToKnowNodes()
   const search = toKnowTable.search
@@ -189,7 +190,7 @@ export function ToKnowTable() {
                 {filtered.map((node) => (
                   <tr
                     key={node.taxId}
-                    className={cn("border-b border-border transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
+                    className={cn("border-b border-border transition-colors", rowClassFor(node.levelOfTrust) || "hover:bg-accent/50")}
                   >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
@@ -236,7 +237,7 @@ export function ToKnowTable() {
               {filtered.map((node) => (
                 <div
                   key={node.taxId}
-                  className={cn("py-3 px-1 transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
+                  className={cn("py-3 px-1 transition-colors", rowClassFor(node.levelOfTrust) || "hover:bg-accent/50")}
                 >
                   <button
                     onClick={() => handleNodeClick(node.taxId)}

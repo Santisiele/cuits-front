@@ -12,7 +12,8 @@ import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks
 import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
 import { ApiError } from "@/services/api"
 import { formatActivityMonth } from "@/lib/activityMonths"
-import { TRUST_LEVELS, formatTrustLevel } from "@/lib/trustLevels"
+import { useTrustLevels } from "@/hooks/useTrustLevels"
+import { NO_LEVEL_LABEL, NO_LEVEL_VALUE } from "@/lib/trustLevels"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ export function EditNode() {
   const setEditTaxId = useStore((s) => s.setEditTaxId)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { levels: trustLevels, labelFor: trustLabelFor } = useTrustLevels()
 
   const [taxId, setTaxId] = useState("")
   const maxDepth = 1
@@ -351,7 +353,7 @@ export function EditNode() {
                   onValueChange={(value: string) => updateField("levelOfTrust", value)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={formatTrustLevel(Number(fields.levelOfTrust))} />
+                    <SelectValue placeholder={trustLabelFor(Number(fields.levelOfTrust))} />
                   </SelectTrigger>
                   {/* Anchored under the trigger instead of the default
                       "item-aligned", which slides the list so the chosen item
@@ -361,7 +363,8 @@ export function EditNode() {
                       scrolls rather than flipping above the field, so the
                       levels are always in the same place. */}
                   <SelectContent position="popper" side="bottom" avoidCollisions={false}>
-                    {TRUST_LEVELS.map((level) => (
+                    <SelectItem value={String(NO_LEVEL_VALUE)}>{NO_LEVEL_LABEL}</SelectItem>
+                    {trustLevels.map((level) => (
                       <SelectItem key={level.value} value={String(level.value)}>
                         {level.label}
                       </SelectItem>
