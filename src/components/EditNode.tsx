@@ -10,6 +10,8 @@ import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks
 import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
 import { ApiError } from "@/services/api"
 import { formatActivityMonth } from "@/lib/activityMonths"
+import { TRUST_LEVELS, formatTrustLevel } from "@/lib/trustLevels"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -22,6 +24,8 @@ interface FormFields {
   entryDate: string
   exitDate: string
   loadedAt: string
+  /** Kept as a string because that is what the Select speaks. */
+  levelOfTrust: string
 }
 
 const EMPTY_FIELDS: FormFields = {
@@ -31,6 +35,7 @@ const EMPTY_FIELDS: FormFields = {
   entryDate: "",
   exitDate: "",
   loadedAt: "",
+  levelOfTrust: "0",
 }
 
 // ─── Date conversion helpers ─────────────────────────────────────────────────
@@ -161,6 +166,7 @@ export function EditNode() {
       entryDate: (node as { entryDate?: string | null }).entryDate ?? "",
       exitDate:  (node as { exitDate?: string | null }).exitDate ?? "",
       loadedAt:  (node as { loadedAt?: string | null }).loadedAt ?? "",
+      levelOfTrust: String(node.levelOfTrust ?? 0),
     })
   }
 
@@ -201,6 +207,8 @@ export function EditNode() {
       entryDate: fields.entryDate || undefined,
       exitDate:  fields.exitDate  || undefined,
       loadedAt:  fields.loadedAt  || undefined,
+      /** Always sent: the form now shows the level, so it asserts it. */
+      levelOfTrust: Number(fields.levelOfTrust),
     })
   }
 
@@ -317,6 +325,25 @@ export function EditNode() {
                   value={toIsoDate(fields.birthday)}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateDateField("birthday", e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nivel de confianza</label>
+                <Select
+                  value={String(fields.levelOfTrust)}
+                  onValueChange={(value: string) => updateField("levelOfTrust", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={formatTrustLevel(Number(fields.levelOfTrust))} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TRUST_LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={String(level.value)}>
+                        {level.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

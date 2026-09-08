@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { GraphService } from "@/services/api"
+import type { NodeUpdateFields } from "@/types"
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -237,15 +238,23 @@ export function useDeleteRelationship() {
 }
 
 /**
- * Updates a node and invalidates its cached detail.
+ * Updates a node and invalidates every cache that shows it.
+ *
+ * The lists go too, not just the detail: they render the trust level, and
+ * leaving them cached means marking a CUIT as "Ignorar" and finding the table
+ * still showing it unmarked until the TTL runs out.
  */
 export function useUpdateNode(taxId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (fields: { phone?: string; email?: string; birthday?: string, entryDate?: string,exitDate?: string, loadedAt?: string }) =>
-      GraphService.updateNode(taxId, fields),
+    mutationFn: (fields: NodeUpdateFields) => GraphService.updateNode(taxId, fields),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.node(taxId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.myBase() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.toKnow() })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.fullBase() })
+      void queryClient.invalidateQueries({ queryKey: ["companyNodes"] })
+      void queryClient.invalidateQueries({ queryKey: ["crossing"] })
     },
   })
 }
