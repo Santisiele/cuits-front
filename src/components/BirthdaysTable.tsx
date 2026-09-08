@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
+import { trustRowClass } from "@/lib/trustLevels"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/store/useStore"
@@ -170,7 +172,7 @@ export function BirthdaysTable() {
                 {nodes.map((node) => (
                   <tr
                     key={node.taxId}
-                    className="border-b border-border hover:bg-accent/50 transition-colors"
+                    className={cn("border-b border-border transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
                   >
                     <td className="py-2 px-3 font-mono text-xs text-center">
                       <button
@@ -221,7 +223,7 @@ export function BirthdaysTable() {
               {nodes.map((node) => (
                 <div
                   key={node.taxId}
-                  className="py-3 px-1 hover:bg-accent/50 transition-colors"
+                  className={cn("py-3 px-1 transition-colors", trustRowClass(node.levelOfTrust) || "hover:bg-accent/50")}
                 >
                   <button
                     onClick={() => handleNodeClick(node.taxId)}

@@ -42,6 +42,23 @@ export function getTrustLevel(value: number | undefined): TrustLevel | undefined
 }
 
 /**
+ * The classes that tint a whole table row for a level, hover included.
+ *
+ * Returns the hover state too, rather than letting callers append a tint to
+ * their usual `hover:bg-accent/50`: two hover utilities on one element have
+ * equal specificity, so which one wins comes down to their order in the
+ * generated stylesheet, not the order in the class string. The caller picks
+ * one set or the other.
+ *
+ * Empty for a level with nothing to say, which the caller replaces with its
+ * normal row classes.
+ */
+export function trustRowClass(value: number | undefined): string {
+  if (getTrustLevel(value)?.tone !== "danger") return ""
+  return "bg-destructive/10 hover:bg-destructive/20"
+}
+
+/**
  * The label to show for a stored number. Falls back to the raw number so an
  * unknown level is visible instead of silently reading as "Sin nivel".
  */
