@@ -63,8 +63,8 @@ const CROSSING_OVER_COLUMNS = [
  * of the selected sources itself. Without that, crossing a source made of
  * people ("Residentes Senior Home" holds no company at all) against a source
  * made of companies returned nothing, which was the whole point of the view.
- * Those rows are marked, because "está acá por una relación" is a weaker
- * claim than "está cargada en las dos fuentes".
+ * Those rows are marked: reaching a source through a neighbour is a weaker
+ * claim than being loaded in it, and the table should not blur the two.
  *
  * Data source: GET /graph/crossing, resolved server-side and fetched per
  * selection. It used to filter a full download of the base (~27k rows) in
