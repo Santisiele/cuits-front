@@ -13,13 +13,15 @@ import type { OperationSummary } from "@/types"
  * affected nodes and can flip their isKnown/isToKnow flags, so every node list
  * is potentially stale — not just the source list. The birthdays key is
  * parameterised by date range, so it is matched by prefix rather than by an
- * exact key.
+ * exact key. The same goes for the full base and the crossings, which
+ * are cached per source selection.
  */
 function invalidateAllSourceRelated(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: ["sources"] })
   void queryClient.invalidateQueries({ queryKey: queryKeys.myBase() })
   void queryClient.invalidateQueries({ queryKey: queryKeys.toKnow() })
-  void queryClient.invalidateQueries({ queryKey: queryKeys.fullBase() })
+  void queryClient.invalidateQueries({ queryKey: ["fullBase"] })
+  void queryClient.invalidateQueries({ queryKey: ["crossing"] })
   void queryClient.invalidateQueries({ queryKey: ["companyNodes"] })
   void queryClient.invalidateQueries({ queryKey: ["birthdays"] })
   void queryClient.invalidateQueries({ queryKey: ["node"] })

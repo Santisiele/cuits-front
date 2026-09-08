@@ -86,11 +86,17 @@ export function FullBaseTable() {
   const { setEditTaxId, fullBaseTable, setFullBaseTable } = useStore()
   const navigate = useNavigate()
 
-  const { data: nodes = [], isLoading: loading, error } = useFullBaseNodes()
   const search = fullBaseTable.search
   const sortField = fullBaseTable.sortField as SortField
   const sortDir = fullBaseTable.sortDir as SortDir
   const activeSource = fullBaseTable.selectedSources[0] ?? null
+
+  /**
+   * Only the picked source is fetched, and nothing at all until one is picked.
+   * The table already showed nothing in that state, so the whole union used to
+   * be downloaded and thrown away.
+   */
+  const { data: nodes = [], isLoading: loading, error } = useFullBaseNodes(activeSource)
 
   const [openCategories, setOpenCategories] = useState<Set<CategoryId>>(
     new Set(CATEGORIES.map((c) => c.id))
@@ -110,9 +116,12 @@ export function FullBaseTable() {
 
   function setSearch(s: string) { setFullBaseTable({ search: s }) }
 
-  const sources = Array.from(
-    new Set(nodes.flatMap((n) => n.sources ?? []).filter(Boolean))
-  ).sort()
+  /**
+   * The picker lists every registered source, not the ones present in the
+   * rows: those now arrive already filtered to the source you picked, so
+   * deriving the list from them would leave a single chip on screen.
+   */
+  const sources = Object.keys(categoryMap).sort()
 
   const sourcesByCategory: Record<CategoryId, string[]> = { known: [], toKnow: [] }
   for (const source of sources) {
@@ -255,12 +264,14 @@ export function FullBaseTable() {
       </CardHeader>
 
       <CardContent className="flex-1 min-h-0 overflow-auto">
-        {loading ? (
+        {/* The source check comes first: with none picked nothing is fetched,
+            so there is neither loading nor error to report. */}
+        {!activeSource ? (
+          <p className="text-muted-foreground text-sm">Seleccioná una fuente para ver los cuits.</p>
+        ) : loading ? (
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : error ? (
           <p className="text-destructive text-sm">Error al cargar los cuits</p>
-        ) : !activeSource ? (
-          <p className="text-muted-foreground text-sm">Seleccioná una fuente para ver los cuits.</p>
         ) : (
           <>
             <table className="hidden sm:table w-full text-sm">

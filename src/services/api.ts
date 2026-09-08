@@ -120,8 +120,10 @@ export const GraphService = {
    * Union of "conocidos" (isKnown) and "por conocer" (isToKnow) nodes.
    * Corresponds to GET /graph/base-full on the backend.
    */
-  getFullBaseNodes: () =>
-    apiFetch<{nodes: BaseNode[]}>(`${API_BASE_URL}/graph/base-full`).then(res => res.nodes),
+  getFullBaseNodes: (source: string) =>
+    apiFetch<{nodes: BaseNode[]}>(
+      `${API_BASE_URL}/graph/base-full?source=${encodeURIComponent(source)}`
+    ).then(res => res.nodes),
 
   /**
    * Nodes belonging to every source in `sources` at once, resolved server-side.

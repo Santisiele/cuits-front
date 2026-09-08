@@ -16,7 +16,7 @@ export const queryKeys = {
   nodeRelationships: (taxId: string, maxDepth: number) => ["nodeRelationships", taxId, maxDepth] as const,
   birthdays: (from: string, to: string) => ["birthdays", from, to] as const,
   toKnow: () => ["toKnow"] as const,
-  fullBase: () => ["fullBase"] as const,
+  fullBase: (source: string | null) => ["fullBase", source] as const,
   crossing: (sources: string[]) => ["crossing", sources] as const,
   nameSearch: (query: string) => ["nameSearch", query] as const,
 }
@@ -61,13 +61,18 @@ export function useToKnowNodes() {
 }
 
 /**
- * Fetches and caches the union of "conocidos" and "por conocer" nodes.
- * Corresponds to GET /graph/full-base on the backend.
+ * The union of "conocidos" and "por conocer" nodes for one source.
+ *
+ * Scoped to a source and disabled without one, because the view it feeds shows
+ * nothing until you pick a chip: fetching the whole union first meant 4.3 MB
+ * and about eight seconds spent on rows that were then filtered away in the
+ * browser. One source is a tenth of that at most.
  */
-export function useFullBaseNodes() {
+export function useFullBaseNodes(source: string | null) {
   return useQuery({
-    queryKey: queryKeys.fullBase(),
-    queryFn: () => GraphService.getFullBaseNodes(),
+    queryKey: queryKeys.fullBase(source),
+    queryFn: () => GraphService.getFullBaseNodes(source!),
+    enabled: !!source,
   })
 }
 
@@ -252,7 +257,8 @@ export function useUpdateNode(taxId: string) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.node(taxId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.myBase() })
       void queryClient.invalidateQueries({ queryKey: queryKeys.toKnow() })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.fullBase() })
+      /* Prefixes, not exact keys: these two are cached per source. */
+      void queryClient.invalidateQueries({ queryKey: ["fullBase"] })
       void queryClient.invalidateQueries({ queryKey: ["companyNodes"] })
       void queryClient.invalidateQueries({ queryKey: ["crossing"] })
     },
