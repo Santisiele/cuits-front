@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { ArrowLeft } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -90,6 +92,7 @@ export function EditNode() {
   const editTaxId = useStore((s) => s.editTaxId)
   const setEditTaxId = useStore((s) => s.setEditTaxId)
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const [taxId, setTaxId] = useState("")
   const maxDepth = 1
@@ -97,11 +100,14 @@ export function EditNode() {
 
   /** taxId for which the form has been hydrated. */
   const [hydratedFor, setHydratedFor] = useState<string>("")
+  /** Whether a table sent us here, which is what a "Volver" can return to. */
+  const [cameFromList, setCameFromList] = useState(false)
   /** In-progress form edits. Hydrated from server data, mutated by the user. */
   const [fields, setFields] = useState<FormFields>(EMPTY_FIELDS)
 
   // ── Adopt the editTaxId pushed from NodeTable ──────────────────────────
   if (editTaxId && editTaxId !== searchedId) {
+    setCameFromList(true)
     setTaxId(editTaxId)
     setHydratedFor("")
     setFields(EMPTY_FIELDS)
@@ -214,6 +220,17 @@ export function EditNode() {
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Only when a table sent us here: arriving from the menu means there is
+          no list to go back to, and history would leave the app. */}
+      {cameFromList && (
+        <div>
+          <Button variant="outline" size="sm" onClick={() => void navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Volver
+          </Button>
+        </div>
+      )}
 
       {/* Search form */}
       <Card>
