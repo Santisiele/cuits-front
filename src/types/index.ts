@@ -104,6 +104,14 @@ export interface NodeData {
   /** All sources that contributed this node (e.g. ["poseidon", "seniorHome"]). */
   sources: string[]
   /**
+   * Trust level assigned to this CUIT. See `TRUST_LEVELS` for what each
+   * number means; 0 is "Sin nivel", the unclassified default.
+   *
+   * Optional because responses cached before the field existed will not
+   * carry it — treat undefined the same as 0.
+   */
+  levelOfTrust?: number
+  /**
    * Months the node has operations in, as `yyyy-mm`, most recent first.
    *
    * Derived by the backend from the operations its loader recorded, so it is
@@ -130,6 +138,8 @@ export interface NodeUpdateFields {
   entryDate?: string,
   exitDate?: string,
   loadedAt?: string
+  /** Omitting this leaves the stored level alone. Send 0 to clear it. */
+  levelOfTrust?: number
 }
 
 /**
@@ -141,6 +151,8 @@ export interface BaseNode {
   /** All sources that contributed this node. */
   sources: string[]
   relationshipCount: number
+  /** Trust level for this CUIT. See `TRUST_LEVELS`. */
+  levelOfTrust?: number
   relatedSources?: string[]
 }
 
@@ -173,6 +185,8 @@ export interface BirthdayNode {
   /** dd/mm/yyyy */
   birthday: string
   sources: string[]
+  /** Trust level for this CUIT. See `TRUST_LEVELS`. */
+  levelOfTrust?: number
   relationshipCount: number
 }
 
@@ -198,6 +212,8 @@ export interface NameSearchResult {
   businessName: string
   sources: string[]
   inMyBase: boolean
+  /** Trust level for this CUIT. See `TRUST_LEVELS`. */
+  levelOfTrust?: number
   relationshipCount: number
 }
 
