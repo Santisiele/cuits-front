@@ -17,6 +17,7 @@ import { ToKnowTable } from "@/components/ToKnowTable"
 import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { FullBaseTable } from "./components/FullBaseTable"
 import { SourcesTable } from "@/components/SourcesTable"
+import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useStore } from "@/store/useStore"
@@ -266,6 +267,7 @@ export default function App() {
             <Route path="/full-base"  element={<FullBaseTable />} />
             <Route path="/crossing-over"  element={<CrossingOverTable />} />
             <Route path="/sources"        element={<SourcesTable />} />
+            <Route path="/trust-levels"   element={<TrustLevelsTable />} />
           </Routes>
         </div>
 
