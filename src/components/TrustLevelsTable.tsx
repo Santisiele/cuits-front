@@ -83,7 +83,9 @@ export function TrustLevelsTable() {
         )}
       </CardContent>
 
-      <TrustLevelDialog open={creating} onClose={() => setCreating(false)} level={null} />
+      {creating && (
+        <TrustLevelDialog open onClose={() => setCreating(false)} level={null} />
+      )}
       {editing && (
         <TrustLevelDialog open onClose={() => setEditing(null)} level={editing} />
       )}
