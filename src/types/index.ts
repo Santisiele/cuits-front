@@ -271,6 +271,7 @@ export interface TrustLevelInfo {
   value: number
   label: string
   color: TrustLevelColor
+  description: string
   nodeCount: number
 }
 

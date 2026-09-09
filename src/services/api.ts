@@ -189,12 +189,16 @@ export const GraphService = {
   createTrustLevel: (
     label: string,
     color: TrustLevelColor,
+    description: string,
     password: string | null,
     dryRun: boolean
   ): Promise<TrustLevelOperationSummary> =>
     apiFetch(
       `${API_BASE_URL}/trust-levels?dryRun=${dryRun}`,
-      { method: "POST", body: JSON.stringify(dryRun ? { label, color } : { label, color, password }) },
+      {
+        method: "POST",
+        body: JSON.stringify(dryRun ? { label, color, description } : { label, color, description, password }),
+      },
       true
     ),
 
@@ -202,12 +206,16 @@ export const GraphService = {
     value: number,
     label: string,
     color: TrustLevelColor,
+    description: string,
     password: string | null,
     dryRun: boolean
   ): Promise<TrustLevelOperationSummary> =>
     apiFetch(
       `${API_BASE_URL}/trust-levels/${value}?dryRun=${dryRun}`,
-      { method: "PATCH", body: JSON.stringify(dryRun ? { label, color } : { label, color, password }) },
+      {
+        method: "PATCH",
+        body: JSON.stringify(dryRun ? { label, color, description } : { label, color, description, password }),
+      },
       true
     ),
 

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PasswordConfirmStep } from "@/components/sources/PasswordConfirmStep"
 import { useSourceOperationFlow } from "@/hooks/useSourceOperationFlow"
@@ -46,19 +47,21 @@ export function TrustLevelDialog({ open, onClose, level }: TrustLevelDialogProps
   const { create, update } = useTrustLevelMutations()
   const [label, setLabel] = useState(level?.label ?? "")
   const [color, setColor] = useState<TrustLevelColor>(level?.color ?? "slate")
+  const [description, setDescription] = useState(level?.description ?? "")
   const [adopted, setAdopted] = useState(level?.value ?? null)
 
   if ((level?.value ?? null) !== adopted) {
     setAdopted(level?.value ?? null)
     setLabel(level?.label ?? "")
     setColor(level?.color ?? "slate")
+    setDescription(level?.description ?? "")
   }
 
   const flow = useSourceOperationFlow<TrustLevelOperationSummary>(
     (password, dryRun) =>
       level
-        ? update.mutateAsync([level.value, label.trim(), color, password, dryRun])
-        : create.mutateAsync([label.trim(), color, password, dryRun]),
+        ? update.mutateAsync([level.value, label.trim(), color, description.trim(), password, dryRun])
+        : create.mutateAsync([label.trim(), color, description.trim(), password, dryRun]),
     onClose,
     describeTrustLevelOperation
   )
@@ -88,6 +91,17 @@ export function TrustLevelDialog({ open, onClose, level }: TrustLevelDialogProps
             <div className="space-y-2">
               <label className="text-sm font-medium">Color</label>
               <ColorPicker value={color} onChange={setColor} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descripción</label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Para qué usás este nivel (opcional)"
+                rows={3}
+                disabled={flow.loading}
+              />
             </div>
 
             {flow.error && <p className="text-destructive text-sm">{flow.error}</p>}

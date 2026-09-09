@@ -47,19 +47,24 @@ export function TrustLevelsTable() {
             {levels.map((level) => (
               <div
                 key={level.value}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between py-3"
+                className="flex flex-col sm:flex-row sm:items-start gap-2 justify-between py-3"
               >
-                <div className="flex items-center gap-3">
-                  <span className={cn("h-4 w-4 shrink-0", paletteFor(level.color).swatch)} />
-                  <Badge
-                    variant="outline"
-                    className={cn("border-transparent", paletteFor(level.color).badge)}
-                  >
-                    {level.label}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {level.nodeCount} {level.nodeCount === 1 ? "CUIT" : "CUITs"}
-                  </span>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-3">
+                    <span className={cn("h-4 w-4 shrink-0", paletteFor(level.color).swatch)} />
+                    <Badge
+                      variant="outline"
+                      className={cn("border-transparent", paletteFor(level.color).badge)}
+                    >
+                      {level.label}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {level.nodeCount} {level.nodeCount === 1 ? "CUIT" : "CUITs"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground pl-7">
+                    {level.description || "Sin descripción"}
+                  </p>
                 </div>
 
                 <div className="flex gap-2">
