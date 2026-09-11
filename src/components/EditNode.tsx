@@ -129,23 +129,9 @@ export function EditNode() {
   const graphResult = relationshipsQuery.data ?? null
   const isSearching = nodeQuery.isFetching
   const sources = node?.sources ?? []
-  const activityMonths = node?.activityMonths ?? []
-  /**
-   * The backend sorts the months most recent first, so the head of the list
-   * is the month of the node's last operation.
-   */
-  const lastActivityMonth = activityMonths[0]
-  /**
-   * Both sources that record operations land in the same two fields, so the
-   * label is the only thing that says which one a month came from. A node
-   * carrying both keeps the named labels — they are still true of it.
-   */
-  const lastActivityLabel = sources.includes("Deudores por financiera")
-    ? "Fecha de última operación con financiera"
-    : "Última operación"
-  const activityMonthsLabel = sources.includes("Bolsa")
-    ? "Meses con operaciones en bolsa"
-    : "Meses con operaciones"
+  const bolsaMonths = node?.bolsaMonths ?? []
+  const financieraMonths = node?.financieraMonths ?? []
+  const lastFinancieraMonth = financieraMonths[0]
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -284,17 +270,15 @@ export function EditNode() {
                 <span className="text-muted-foreground">CUIT</span>
                 <span className="font-mono">{node.taxId}</span>
 
-                {/* Named on its own because for a node with a long history, how
-                    recent the last operation is answers the question people
-                    actually open the node with. */}
-                {lastActivityMonth && (
+                {lastFinancieraMonth && (
                   <>
-                    <span className="text-muted-foreground">{lastActivityLabel}</span>
-                    <span>{formatActivityMonth(lastActivityMonth)}</span>
+                    <span className="text-muted-foreground">
+                      Fecha de última operación con financiera
+                    </span>
+                    <span>{formatActivityMonth(lastFinancieraMonth)}</span>
                   </>
                 )}
 
-                {/* Only "Empresas concursadas" carries a boletín oficial date. */}
                 {node.publicationDate && (
                   <>
                     <span className="text-muted-foreground">Fecha de publicación BO</span>
@@ -302,13 +286,26 @@ export function EditNode() {
                   </>
                 )}
 
-                {/* Dropped when the last operation is the only one there is:
-                    repeating that single month adds nothing to the row above. */}
-                {activityMonths.length > 1 && (
+                {bolsaMonths.length > 0 && (
                   <>
-                    <span className="text-muted-foreground">{activityMonthsLabel}</span>
+                    <span className="text-muted-foreground">Meses con operaciones en bolsa</span>
                     <span className="flex gap-1.5 flex-wrap">
-                      {activityMonths.map((month) => (
+                      {bolsaMonths.map((month) => (
+                        <Badge key={month} variant="outline">
+                          {formatActivityMonth(month)}
+                        </Badge>
+                      ))}
+                    </span>
+                  </>
+                )}
+
+                {financieraMonths.length > 1 && (
+                  <>
+                    <span className="text-muted-foreground">
+                      Meses con operaciones con financiera
+                    </span>
+                    <span className="flex gap-1.5 flex-wrap">
+                      {financieraMonths.map((month) => (
                         <Badge key={month} variant="outline">
                           {formatActivityMonth(month)}
                         </Badge>

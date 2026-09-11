@@ -111,19 +111,15 @@ export interface NodeData {
    * carry it — treat undefined the same as 0.
    */
   levelOfTrust?: number
-  /**
-   * Months the node has operations in, as `yyyy-mm`, most recent first.
-   *
-   * Derived by the backend from the operations its loader recorded, so it is
-   * empty for sources that do not track them. Optional because responses
-   * cached before the field existed will not carry it.
-   */
-  activityMonths?: string[]
+  /** Months with Bolsa operations, as `yyyy-mm`, most recent first. */
+  bolsaMonths?: string[]
+  /** Months with "Deudores por financiera" operations, most recent first. */
+  financieraMonths?: string[]
   /**
    * Date the company was published in the boletín oficial, as `dd/mm/yyyy`.
    *
    * Only "Empresas concursadas" records it, so it arrives empty for every
-   * other source. Optional for the same reason as {@link activityMonths}.
+   * other source. Optional for the same reason as {@link bolsaMonths}.
    */
   publicationDate?: string
 }
