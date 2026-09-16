@@ -48,6 +48,7 @@ interface TableState {
   sortField: string
   sortDir: SortDir
   selectedSources: string[]
+  hiddenTrustLevels: number[]
 }
 
 interface AppState {
@@ -77,14 +78,14 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
   editTaxId: null,
   setEditTaxId: (taxId) => set({ editTaxId: taxId }),
-  nodeTable:        { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [] },
+  nodeTable:        { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
   setNodeTable:     (s) => set((state) => ({ nodeTable: { ...state.nodeTable, ...s } })),
-  companyTable:     { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [] },
+  companyTable:     { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [], hiddenTrustLevels: [] },
   setCompanyTable:  (s) => set((state) => ({ companyTable: { ...state.companyTable, ...s } })),
-  toKnowTable:      { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [] },
+  toKnowTable:      { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
   setToKnowTable:   (s) => set((state) => ({ toKnowTable: { ...state.toKnowTable, ...s } })),
-  fullBaseTable:    { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [] },
+  fullBaseTable:    { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
   setFullBaseTable: (s) => set((state) => ({ fullBaseTable: { ...state.fullBaseTable, ...s } })),
-  crossingOverTable: { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [] },
+  crossingOverTable: { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
   setCrossingOverTable: (s) => set((state) => ({ crossingOverTable: { ...state.crossingOverTable, ...s } })),
 }))

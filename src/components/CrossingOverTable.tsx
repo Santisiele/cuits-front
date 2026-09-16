@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
+import { TrustLevelFilter } from "@/components/TrustLevelFilter"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -92,6 +93,7 @@ export function CrossingOverTable() {
   const sortField = crossingOverTable.sortField as SortField
   const sortDir = crossingOverTable.sortDir as SortDir
   const selectedSources = new Set(crossingOverTable.selectedSources)
+  const hiddenTrustLevels = new Set(crossingOverTable.hiddenTrustLevels)
 
   function setSearch(s: string) { setCrossingOverTable({ search: s }) }
 
@@ -122,6 +124,7 @@ export function CrossingOverTable() {
   /** The endpoint already resolved the intersection; only search is left. */
   const filtered = hasEnoughSelections
     ? nodes
+        .filter((node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0))
         .filter((node) => {
           if (!search) return true
           return (
@@ -144,7 +147,7 @@ export function CrossingOverTable() {
 
   const totalForIntersection = hasEnoughSelections ? nodes.length : 0
   const byRelationCount = nodes.filter((n) => n.indirectSources.length > 0).length
-  const isFiltered = hasEnoughSelections && search.length > 0
+  const isFiltered = hasEnoughSelections && (search.length > 0 || hiddenTrustLevels.size > 0)
   const title = hasEnoughSelections
     ? isFiltered
       ? `Coincidencias (${filtered.length} de ${totalForIntersection})`
@@ -175,6 +178,10 @@ export function CrossingOverTable() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre o CUIT..."
                 className="w-full sm:w-64"
+              />
+              <TrustLevelFilter
+                hidden={crossingOverTable.hiddenTrustLevels}
+                onChange={(next) => setCrossingOverTable({ hiddenTrustLevels: next })}
               />
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "csv")}>CSV</Button>
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "xlsx")}>XLSX</Button>

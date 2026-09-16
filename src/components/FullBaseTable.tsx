@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
+import { TrustLevelFilter } from "@/components/TrustLevelFilter"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -91,6 +92,7 @@ export function FullBaseTable() {
   const sortField = fullBaseTable.sortField as SortField
   const sortDir = fullBaseTable.sortDir as SortDir
   const activeSource = fullBaseTable.selectedSources[0] ?? null
+  const hiddenTrustLevels = new Set(fullBaseTable.hiddenTrustLevels)
 
   /**
    * Only the picked source is fetched, and nothing at all until one is picked.
@@ -168,6 +170,7 @@ export function FullBaseTable() {
   const filtered = activeSource
     ? nodes
         .filter((node) => (node.sources ?? []).includes(activeSource))
+        .filter((node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0))
         .filter((node) => {
           if (!search) return true
           return (
@@ -191,7 +194,7 @@ export function FullBaseTable() {
   const totalForSource = activeSource
     ? nodes.filter((n) => (n.sources ?? []).includes(activeSource)).length
     : 0
-  const isFiltered = activeSource !== null && search.length > 0
+  const isFiltered = activeSource !== null && (search.length > 0 || hiddenTrustLevels.size > 0)
   const title = activeSource
     ? isFiltered
       ? `${activeSource} (${filtered.length} de ${totalForSource})`
@@ -213,6 +216,10 @@ export function FullBaseTable() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                   placeholder="Buscar por nombre o CUIT..."
                   className="w-full sm:w-64"
+                />
+                <TrustLevelFilter
+                  hidden={fullBaseTable.hiddenTrustLevels}
+                  onChange={(next) => setFullBaseTable({ hiddenTrustLevels: next })}
                 />
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "csv")}>CSV</Button>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "xlsx")}>XLSX</Button>
