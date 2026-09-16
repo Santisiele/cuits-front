@@ -29,6 +29,7 @@ interface FormFields {
   loadedAt: string
   /** Kept as a string because that is what the Select speaks. */
   levelOfTrust: string
+  trustReason: string
 }
 
 const EMPTY_FIELDS: FormFields = {
@@ -39,6 +40,7 @@ const EMPTY_FIELDS: FormFields = {
   exitDate: "",
   loadedAt: "",
   levelOfTrust: "0",
+  trustReason: "",
 }
 
 // ─── Date conversion helpers ─────────────────────────────────────────────────
@@ -132,6 +134,8 @@ export function EditNode() {
   const bolsaMonths = node?.bolsaMonths ?? []
   const financieraMonths = node?.financieraMonths ?? []
   const lastFinancieraMonth = financieraMonths[0]
+  const hasTrustLevel = Number(fields.levelOfTrust) !== NO_LEVEL_VALUE
+  const trustReasonMissing = hasTrustLevel && fields.trustReason.trim().length === 0
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -161,6 +165,7 @@ export function EditNode() {
       exitDate:  (node as { exitDate?: string | null }).exitDate ?? "",
       loadedAt:  (node as { loadedAt?: string | null }).loadedAt ?? "",
       levelOfTrust: String(node.levelOfTrust ?? 0),
+      trustReason: node.trustReason ?? "",
     })
   }
 
@@ -193,7 +198,7 @@ export function EditNode() {
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
-    if (!node) return
+    if (!node || trustReasonMissing) return
     await updateMutation.mutateAsync({
       phone:     fields.phone     || undefined,
       email:     fields.email     || undefined,
@@ -203,6 +208,7 @@ export function EditNode() {
       loadedAt:  fields.loadedAt  || undefined,
       /** Always sent: the form now shows the level, so it asserts it. */
       levelOfTrust: Number(fields.levelOfTrust),
+      trustReason: fields.trustReason.trim(),
     })
   }
 
@@ -345,11 +351,12 @@ export function EditNode() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nivel de confianza</label>
+                <div className="flex flex-col sm:flex-row gap-2">
                 <Select
                   value={String(fields.levelOfTrust)}
                   onValueChange={(value: string) => updateField("levelOfTrust", value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full sm:w-56">
                     <SelectValue placeholder={trustLabelFor(Number(fields.levelOfTrust))} />
                   </SelectTrigger>
                   {/* Anchored under the trigger instead of the default
@@ -368,6 +375,21 @@ export function EditNode() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {hasTrustLevel && (
+                  <Input
+                    value={fields.trustReason}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("trustReason", e.target.value)}
+                    placeholder="Motivo por el que entra a este grupo"
+                    className="flex-1"
+                  />
+                )}
+                </div>
+                {trustReasonMissing && (
+                  <p className="text-destructive text-sm">
+                    Poné el motivo por el que entra a este nivel.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -405,7 +427,7 @@ export function EditNode() {
               )}
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending || trustReasonMissing}>
                   {updateMutation.isPending ? "Guardando..." : "Guardar"}
                 </Button>
                 {updateMutation.isSuccess && (

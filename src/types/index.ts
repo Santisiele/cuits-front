@@ -111,6 +111,8 @@ export interface NodeData {
    * carry it — treat undefined the same as 0.
    */
   levelOfTrust?: number
+  /** Why this CUIT was put in that level. Empty when it has no level. */
+  trustReason?: string
   /** Months with Bolsa operations, as `yyyy-mm`, most recent first. */
   bolsaMonths?: string[]
   /** Months with "Deudores por financiera" operations, most recent first. */
@@ -136,6 +138,7 @@ export interface NodeUpdateFields {
   loadedAt?: string
   /** Omitting this leaves the stored level alone. Send 0 to clear it. */
   levelOfTrust?: number
+  trustReason?: string
 }
 
 /**
