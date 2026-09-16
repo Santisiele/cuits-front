@@ -356,7 +356,7 @@ export const AuthApiService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null) as LoginErrorResponse | null
-      throw new Error(errorData?.message || "Login failed")
+      throw new ApiError(errorData?.message || "Login failed")
     }
 
     return response.json()

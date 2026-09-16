@@ -37,6 +37,9 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   "Invalid maxDepth": "Profundidad inválida",
   "Invalid relationship type code": "Tipo de relación inválido",
   "Invalid username or password": "Usuario o contraseña incorrectos",
+  "Login failed": "No se pudo iniciar sesión",
+  "A reason is required when a trust level is assigned":
+    "Poné el motivo por el que entra a este nivel",
   "Graph database unavailable": "Error del servidor. Intentá de nuevo",
   "Request failed": "No se pudo completar la operación",
 
