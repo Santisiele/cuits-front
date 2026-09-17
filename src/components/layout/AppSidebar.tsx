@@ -20,6 +20,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Search,
     items: [
       { path: "/search", label: "Buscar CUIT" },
+      { path: "/multi-search", label: "Buscar varios CUITs" },
       { path: "/path", label: "Buscar relación", hidden: true },
     ],
   },

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query"
 import { GraphService } from "@/services/api"
 import type { NodeUpdateFields } from "@/types"
 
@@ -109,6 +109,15 @@ export function useCuitSearch(taxId: string, maxDepth: number, enabled: boolean)
     queryKey: queryKeys.cuitSearch(taxId, maxDepth),
     queryFn: () => GraphService.searchCuit(taxId, maxDepth),
     enabled: enabled && !!taxId,
+  })
+}
+
+export function useCuitSearches(taxIds: string[], maxDepth: number) {
+  return useQueries({
+    queries: taxIds.map((taxId) => ({
+      queryKey: queryKeys.cuitSearch(taxId, maxDepth),
+      queryFn: () => GraphService.searchCuit(taxId, maxDepth),
+    })),
   })
 }
 

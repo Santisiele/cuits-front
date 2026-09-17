@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import { Switch } from "@/components/ui/switch"
 import { SearchBar } from "@/components/SearchBar"
 import { NameSearch } from "@/components/NameSearch"
+import { MultiSearch } from "@/components/MultiSearch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Hash, Type } from "lucide-react"
 import { PathSearchBar } from "@/components/PathSearchBar"
@@ -252,6 +253,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/search" replace />} />
             <Route path="/search"    element={<SearchTab />} />
+            <Route path="/multi-search" element={<MultiSearch />} />
             <Route path="/path"      element={<PathTab />} />
             <Route path="/add"       element={
               <div className="space-y-4">
