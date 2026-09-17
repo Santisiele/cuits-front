@@ -70,6 +70,8 @@ interface AppState {
    */
   crossingOverTable: TableState
   setCrossingOverTable: (state: Partial<TableState>) => void
+  birthdaysTable: TableState
+  setBirthdaysTable: (state: Partial<TableState>) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -88,4 +90,6 @@ export const useStore = create<AppState>((set) => ({
   setFullBaseTable: (s) => set((state) => ({ fullBaseTable: { ...state.fullBaseTable, ...s } })),
   crossingOverTable: { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
   setCrossingOverTable: (s) => set((state) => ({ crossingOverTable: { ...state.crossingOverTable, ...s } })),
+  birthdaysTable:   { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  setBirthdaysTable: (s) => set((state) => ({ birthdaysTable: { ...state.birthdaysTable, ...s } })),
 }))

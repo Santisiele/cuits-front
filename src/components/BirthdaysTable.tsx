@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
+import { TrustLevelFilter } from "@/components/TrustLevelFilter"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -72,7 +73,7 @@ const BIRTHDAY_COLUMNS = [
  * fixed at the top and avoids leaving an empty area below the table.
  */
 export function BirthdaysTable() {
-  const { setEditTaxId } = useStore()
+  const { setEditTaxId, birthdaysTable, setBirthdaysTable } = useStore()
   const navigate = useNavigate()
   const { rowClassFor } = useTrustLevels()
 
@@ -88,7 +89,11 @@ export function BirthdaysTable() {
     !!submittedRange
   )
 
-  const nodes = birthdaysQuery.data ?? []
+  const hiddenTrustLevels = new Set(birthdaysTable.hiddenTrustLevels)
+  const nodes = (birthdaysQuery.data ?? []).filter(
+    (node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0)
+  )
+  const total = birthdaysQuery.data?.length ?? 0
   const loading = birthdaysQuery.isFetching
   const error = birthdaysQuery.error ? (birthdaysQuery.error as Error).message : null
 
@@ -110,11 +115,20 @@ export function BirthdaysTable() {
       <CardHeader className="shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <CardTitle>
-            Cumpleaños{submittedRange ? ` (${nodes.length})` : ""}
+            Cumpleaños
+            {submittedRange
+              ? hiddenTrustLevels.size > 0
+                ? ` (${nodes.length} de ${total})`
+                : ` (${total})`
+              : ""}
           </CardTitle>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {submittedRange && (
               <>
+                <TrustLevelFilter
+                  hidden={birthdaysTable.hiddenTrustLevels}
+                  onChange={(next) => setBirthdaysTable({ hiddenTrustLevels: next })}
+                />
                 <Button variant="outline" size="sm" onClick={() => exportNodes(nodes, BIRTHDAY_COLUMNS, "cumpleanos", "csv")}>CSV</Button>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(nodes, BIRTHDAY_COLUMNS, "cumpleanos", "xlsx")}>XLSX</Button>
               </>
