@@ -34,6 +34,8 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   "Invalid CUIT format": "Formato de CUIT inválido. Se espera XX-XXXXXXXX-X",
   "All sources failed": "Fallaron todas las fuentes. Intentá de nuevo",
   "Invalid date format": "Formato de fecha inválido. Usá dd/mm/aaaa",
+  "The end date cannot be earlier than the start date":
+    "La fecha de fin no puede ser anterior a la de inicio",
   "Invalid maxDepth": "Profundidad inválida",
   "Invalid relationship type code": "Tipo de relación inválido",
   "Invalid username or password": "Usuario o contraseña incorrectos",

@@ -92,9 +92,11 @@ export function BirthdaysTable() {
   const loading = birthdaysQuery.isFetching
   const error = birthdaysQuery.error ? (birthdaysQuery.error as Error).message : null
 
+  const rangeInverted = !!from && !!to && toIsoDate(to) < toIsoDate(from)
+
   function handleSearch(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault()
-    if (!from || !to) return
+    if (!from || !to || rangeInverted) return
     setSubmittedRange({ from, to })
   }
 
@@ -135,14 +137,21 @@ export function BirthdaysTable() {
             <Input
               type="date"
               value={toIsoDate(to)}
+              min={toIsoDate(from)}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTo(fromIsoDate(e.target.value))}
               className="w-full sm:w-44"
             />
           </div>
-          <Button type="submit" disabled={!from || !to || loading}>
+          <Button type="submit" disabled={!from || !to || rangeInverted || loading}>
             {loading ? "Buscando..." : "Buscar"}
           </Button>
         </form>
+
+        {rangeInverted && (
+          <p className="text-destructive text-sm pt-1">
+            La fecha de fin no puede ser anterior a la de inicio
+          </p>
+        )}
       </CardHeader>
 
       {/*
