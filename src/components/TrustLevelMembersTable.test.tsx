@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { act } from "react"
-import { screen, fireEvent } from "@testing-library/react"
+import { screen, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { render } from "@/tests/render"
 import type { TrustLevelInfo, TrustLevelMember, TrustLevelMembersResponse } from "@/types"
@@ -151,7 +151,61 @@ describe("TrustLevelMembersTable", () => {
 
     it("says so when nothing matches the search", () => {
       type("no existe")
-      expect(screen.getAllByText("Ningún CUIT de este nivel coincide con la búsqueda").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("Ningún CUIT de este nivel coincide con la búsqueda o los filtros").length).toBeGreaterThan(0)
+    })
+  })
+
+  describe("filtering from the headers", () => {
+    beforeEach(() => {
+      answer = loaded([
+        { ...member("30500904557", "CHAMMAS SOC RESP LTDA", "de cordoba"), sources: ["Bolsa", "Deudores por financiera"] },
+        { ...member("30714208671", "CLEANPACK SRL"), sources: ["Deudores por financiera"] },
+        { ...member("27932381856", "Primitiva Orfelina Fernandez"), sources: ["Residentes Senior Home"] },
+      ])
+      open("/trust-levels/4")
+    })
+
+    function pick(column: string, value: string): void {
+      const header = screen.getByRole("columnheader", { name: new RegExp(column) })
+      act(() => {
+        fireEvent.click(within(header).getByRole("button"))
+      })
+      const list = screen.getByRole("dialog", { name: `Filtro de ${column}` })
+      act(() => {
+        fireEvent.click(within(list).getByRole("button", { name: value }))
+      })
+    }
+
+    it("offers a filter on the Fuentes and Motivo headers", () => {
+      expect(within(screen.getByRole("columnheader", { name: /Fuentes/ })).getByRole("button")).toBeInTheDocument()
+      expect(within(screen.getByRole("columnheader", { name: /Motivo/ })).getByRole("button")).toBeInTheDocument()
+    })
+
+    it("hides the CUITs whose only source is switched off", () => {
+      pick("Fuentes", "Residentes Senior Home")
+      expect(screen.queryAllByText("Primitiva Orfelina Fernandez")).toHaveLength(0)
+      expect(screen.getAllByText("CLEANPACK SRL").length).toBeGreaterThan(0)
+    })
+
+    it("keeps a CUIT while any of its sources is still on", () => {
+      pick("Fuentes", "Bolsa")
+      expect(screen.getAllByText("CHAMMAS SOC RESP LTDA").length).toBeGreaterThan(0)
+    })
+
+    it("hides the CUITs given the level without a reason", () => {
+      pick("Motivo", "Sin motivo")
+      expect(screen.queryAllByText("CLEANPACK SRL")).toHaveLength(0)
+      expect(screen.getAllByText("CHAMMAS SOC RESP LTDA").length).toBeGreaterThan(0)
+    })
+
+    it("counts what the filters leave against the total", () => {
+      pick("Motivo", "Sin motivo")
+      expect(screen.getByText("Interesante (1 de 3)")).toBeInTheDocument()
+    })
+
+    it("offers the same filters on a phone, where there are no headers", () => {
+      const buttons = screen.getAllByRole("button", { name: /^(Fuentes|Motivo)/ })
+      expect(buttons.length).toBe(4)
     })
   })
 

@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ColumnFilter } from "@/components/ColumnFilter"
 import { useTrustLevelMembers, useTrustLevelsQuery } from "@/hooks/useTrustLevels"
 import { useStore } from "@/store/useStore"
 import { exportNodes } from "@/lib/exportTable"
+import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { parseLevelParam, paletteFor } from "@/lib/trustLevels"
 import { cn } from "@/lib/utils"
 import type { TrustLevelMember } from "@/types"
@@ -21,6 +23,14 @@ const MEMBER_COLUMNS = [
 ]
 
 const NO_REASON = "Sin motivo"
+
+function sourcesOf(member: TrustLevelMember): string[] {
+  return member.sources
+}
+
+function reasonOf(member: TrustLevelMember): string[] {
+  return [member.trustReason]
+}
 const UNNAMED_TITLE = "Nivel de confianza"
 
 function fileNameFor(label: string): string {
@@ -62,6 +72,8 @@ export function TrustLevelMembersTable() {
   const { setEditTaxId } = useStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
+  const [hiddenSources, setHiddenSources] = useState<string[]>([])
+  const [hiddenReasons, setHiddenReasons] = useState<string[]>([])
 
   function openNode(taxId: string): void {
     setEditTaxId(taxId)
@@ -86,7 +98,23 @@ export function TrustLevelMembersTable() {
 
   const level = query.data?.level ?? knownLevels?.find((known) => known.value === value)
   const members = query.data?.members ?? []
-  const filtered = members.filter((member) => matches(member, search))
+  const hiddenSourceSet = new Set(hiddenSources)
+  const hiddenReasonSet = new Set(hiddenReasons)
+  const filtered = members.filter(
+    (member) =>
+      matches(member, search) &&
+      passesFilter(sourcesOf(member), hiddenSourceSet) &&
+      passesFilter(reasonOf(member), hiddenReasonSet)
+  )
+  const narrowed = search.length > 0 || hiddenSources.length > 0 || hiddenReasons.length > 0
+  const sourceOptions = optionsFrom(members, sourcesOf)
+  const reasonOptions = optionsFrom(members, reasonOf, { emptyLabel: NO_REASON })
+  const sourceFilter = (appearance: "header" | "button") => (
+    <ColumnFilter label="Fuentes" appearance={appearance} options={sourceOptions} hidden={hiddenSources} onChange={setHiddenSources} />
+  )
+  const reasonFilter = (appearance: "header" | "button") => (
+    <ColumnFilter label="Motivo" appearance={appearance} options={reasonOptions} hidden={hiddenReasons} onChange={setHiddenReasons} />
+  )
   const palette = paletteFor(level?.color)
   const error = query.error ? (query.error as Error).message : null
 
@@ -100,7 +128,7 @@ export function TrustLevelMembersTable() {
               {level && <span className={cn("h-4 w-4 shrink-0", palette.swatch)} />}
               <CardTitle>
                 {level ? level.label : UNNAMED_TITLE}
-                {query.data && (search ? ` (${filtered.length} de ${members.length})` : ` (${members.length})`)}
+                {query.data && (narrowed ? ` (${filtered.length} de ${members.length})` : ` (${members.length})`)}
               </CardTitle>
             </div>
             {level?.description && (
@@ -115,6 +143,10 @@ export function TrustLevelMembersTable() {
                 placeholder="Buscar por nombre o CUIT..."
                 className="w-full sm:w-64"
               />
+              <div className="flex gap-2 sm:hidden">
+                {sourceFilter("button")}
+                {reasonFilter("button")}
+              </div>
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, fileNameFor(level.label), "csv")}>CSV</Button>
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, fileNameFor(level.label), "xlsx")}>XLSX</Button>
             </div>
@@ -136,8 +168,8 @@ export function TrustLevelMembersTable() {
                 <tr className="border-b border-border">
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">CUIT</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Nombre</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Fuentes</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Motivo</th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">{sourceFilter("header")}</th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">{reasonFilter("header")}</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Relaciones</th>
                 </tr>
               </thead>
@@ -182,7 +214,7 @@ export function TrustLevelMembersTable() {
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                      Ningún CUIT de este nivel coincide con la búsqueda
+                      Ningún CUIT de este nivel coincide con la búsqueda o los filtros
                     </td>
                   </tr>
                 )}
@@ -217,7 +249,7 @@ export function TrustLevelMembersTable() {
               ))}
               {filtered.length === 0 && (
                 <p className="py-4 text-center text-muted-foreground text-sm">
-                  Ningún CUIT de este nivel coincide con la búsqueda
+                  Ningún CUIT de este nivel coincide con la búsqueda o los filtros
                 </p>
               )}
             </div>
