@@ -11,43 +11,7 @@ import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
 import { useBirthdays } from "@/hooks/useGraphQueries"
 import { exportNodes } from "@/lib/exportTable"
-
-// ─── Date helpers ─────────────────────────────────────────────────────────────
-
-/**
- * Converts dd/mm/yyyy → yyyy-mm-dd for the HTML date picker.
- * Returns "" when the input can't be parsed.
- */
-function toIsoDate(ddmmyyyy: string): string {
-  const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(ddmmyyyy.trim())
-  if (!match) return ""
-  const [, d, m, y] = match
-  return `${y}-${m!.padStart(2, "0")}-${d!.padStart(2, "0")}`
-}
-
-/**
- * Converts yyyy-mm-dd (from a date picker) into dd/mm/yyyy.
- * Returns "" when the input is empty/malformed.
- */
-function fromIsoDate(yyyymmdd: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyymmdd.trim())
-  if (!match) return ""
-  const [, y, m, d] = match
-  return `${d}/${m}/${y}`
-}
-
-/** Returns today as dd/mm/yyyy. */
-function todayString(): string {
-  const d = new Date()
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`
-}
-
-/** Returns today + N days as dd/mm/yyyy. */
-function daysFromTodayString(days: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + days)
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`
-}
+import { toIsoDate, fromIsoDate, todayString, daysFromTodayString, rangeEndsBeforeItStarts } from "@/lib/dates"
 
 // ─── Columns (for export) ────────────────────────────────────────────────────
 
@@ -97,7 +61,7 @@ export function BirthdaysTable() {
   const loading = birthdaysQuery.isFetching
   const error = birthdaysQuery.error ? (birthdaysQuery.error as Error).message : null
 
-  const rangeInverted = !!from && !!to && toIsoDate(to) < toIsoDate(from)
+  const rangeInverted = rangeEndsBeforeItStarts(from, to)
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault()

@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
@@ -17,5 +18,11 @@ export default defineConfig({
      * calls throw "Invalid hook call".
      */
     dedupe: ["react", "react-dom"],
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/tests/setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 })
