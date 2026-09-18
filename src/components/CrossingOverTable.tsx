@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { TrustLevelFilter } from "@/components/TrustLevelFilter"
+import { ColumnFilter } from "@/components/ColumnFilter"
+import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -79,6 +81,23 @@ const CROSSING_OVER_COLUMNS = [
  * selection would just replicate one of the other views (Full base, Mi base,
  * Por conocer). The point of this view is to find the intersection.
  */
+const RELATED_MARK = "↗ "
+
+function cellSources(node: CrossingNode): string[] {
+  return [...(node.sources ?? []), ...node.indirectSources.map((source) => RELATED_MARK + source)]
+}
+
+function directThenRelated(nodes: CrossingNode[]): string[] {
+  const direct = new Set<string>()
+  const related = new Set<string>()
+  for (const node of nodes) {
+    for (const source of node.sources ?? []) direct.add(source)
+    for (const source of node.indirectSources) related.add(RELATED_MARK + source)
+  }
+  const byName = (a: string, b: string) => a.localeCompare(b, "es")
+  return [...[...direct].sort(byName), ...[...related].sort(byName)]
+}
+
 export function CrossingOverTable() {
   const { setEditTaxId, crossingOverTable, setCrossingOverTable } = useStore()
   const navigate = useNavigate()
@@ -94,6 +113,8 @@ export function CrossingOverTable() {
   const sortDir = crossingOverTable.sortDir as SortDir
   const selectedSources = new Set(crossingOverTable.selectedSources)
   const hiddenTrustLevels = new Set(crossingOverTable.hiddenTrustLevels)
+  const hiddenSources = crossingOverTable.hiddenValues.sources ?? []
+  const hiddenSourceSet = new Set(hiddenSources)
 
   function setSearch(s: string) { setCrossingOverTable({ search: s }) }
 
@@ -125,6 +146,7 @@ export function CrossingOverTable() {
   const filtered = hasEnoughSelections
     ? nodes
         .filter((node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0))
+        .filter((node) => passesFilter(cellSources(node), hiddenSourceSet))
         .filter((node) => {
           if (!search) return true
           return (
@@ -147,7 +169,17 @@ export function CrossingOverTable() {
 
   const totalForIntersection = hasEnoughSelections ? nodes.length : 0
   const byRelationCount = nodes.filter((n) => n.indirectSources.length > 0).length
-  const isFiltered = hasEnoughSelections && (search.length > 0 || hiddenTrustLevels.size > 0)
+  const isFiltered =
+    hasEnoughSelections && (search.length > 0 || hiddenTrustLevels.size > 0 || hiddenSources.length > 0)
+  const sourceFilter = (appearance: "icon" | "button") => (
+    <ColumnFilter
+      label="Fuentes"
+      appearance={appearance}
+      options={optionsFrom(nodes, cellSources, { order: directThenRelated(nodes) })}
+      hidden={hiddenSources}
+      onChange={(next) => setCrossingOverTable({ hiddenValues: { ...crossingOverTable.hiddenValues, sources: next } })}
+    />
+  )
   const title = hasEnoughSelections
     ? isFiltered
       ? `Coincidencias (${filtered.length} de ${totalForIntersection})`
@@ -183,6 +215,7 @@ export function CrossingOverTable() {
                 hidden={crossingOverTable.hiddenTrustLevels}
                 onChange={(next) => setCrossingOverTable({ hiddenTrustLevels: next })}
               />
+              <div className="sm:hidden">{sourceFilter("button")}</div>
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "csv")}>CSV</Button>
               <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, CROSSING_OVER_COLUMNS, "crossing-over", "xlsx")}>XLSX</Button>
             </div>
@@ -230,9 +263,12 @@ export function CrossingOverTable() {
                     </SortButton>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
-                    <SortButton field="sources" current={sortField} dir={sortDir} onSort={handleSort}>
-                      Fuentes
-                    </SortButton>
+                    <div className="flex items-center justify-center gap-1">
+                      <SortButton field="sources" current={sortField} dir={sortDir} onSort={handleSort}>
+                        Fuentes
+                      </SortButton>
+                      {sourceFilter("icon")}
+                    </div>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
                     <SortButton field="relationshipCount" current={sortField} dir={sortDir} onSort={handleSort}>
