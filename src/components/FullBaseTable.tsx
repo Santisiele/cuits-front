@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { TrustLevelFilter } from "@/components/TrustLevelFilter"
+import { ColumnFilter } from "@/components/ColumnFilter"
+import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -167,10 +169,23 @@ export function FullBaseTable() {
     void navigate("/edit")
   }
 
+  const hiddenSources = fullBaseTable.hiddenValues.sources ?? []
+  const hiddenSourceSet = new Set(hiddenSources)
+  const inSource = activeSource ? nodes.filter((node) => (node.sources ?? []).includes(activeSource)) : []
+  const sourceFilter = (appearance: "icon" | "button") => (
+    <ColumnFilter
+      label="Fuentes"
+      appearance={appearance}
+      options={optionsFrom(inSource, (node) => node.sources ?? [])}
+      hidden={hiddenSources}
+      onChange={(next) => setFullBaseTable({ hiddenValues: { ...fullBaseTable.hiddenValues, sources: next } })}
+    />
+  )
+
   const filtered = activeSource
-    ? nodes
-        .filter((node) => (node.sources ?? []).includes(activeSource))
+    ? inSource
         .filter((node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0))
+        .filter((node) => passesFilter(node.sources ?? [], hiddenSourceSet))
         .filter((node) => {
           if (!search) return true
           return (
@@ -191,10 +206,9 @@ export function FullBaseTable() {
         })
     : []
 
-  const totalForSource = activeSource
-    ? nodes.filter((n) => (n.sources ?? []).includes(activeSource)).length
-    : 0
-  const isFiltered = activeSource !== null && (search.length > 0 || hiddenTrustLevels.size > 0)
+  const totalForSource = inSource.length
+  const isFiltered =
+    activeSource !== null && (search.length > 0 || hiddenTrustLevels.size > 0 || hiddenSources.length > 0)
   const title = activeSource
     ? isFiltered
       ? `${activeSource} (${filtered.length} de ${totalForSource})`
@@ -221,6 +235,7 @@ export function FullBaseTable() {
                   hidden={fullBaseTable.hiddenTrustLevels}
                   onChange={(next) => setFullBaseTable({ hiddenTrustLevels: next })}
                 />
+                <div className="sm:hidden">{sourceFilter("button")}</div>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "csv")}>CSV</Button>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "xlsx")}>XLSX</Button>
               </>
@@ -292,9 +307,12 @@ export function FullBaseTable() {
                     </SortButton>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
-                    <SortButton field="sources" current={sortField} dir={sortDir} onSort={handleSort}>
-                      Fuentes
-                    </SortButton>
+                    <div className="flex items-center justify-center gap-1">
+                      <SortButton field="sources" current={sortField} dir={sortDir} onSort={handleSort}>
+                        Fuentes
+                      </SortButton>
+                      {sourceFilter("icon")}
+                    </div>
                   </th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">
                     <SortButton field="relationshipCount" current={sortField} dir={sortDir} onSort={handleSort}>
