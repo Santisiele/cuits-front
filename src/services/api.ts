@@ -11,6 +11,7 @@ import type {
   SourceInfo,
   TrustLevelInfo,
   TrustLevelColor,
+  TrustLevelMembersResponse,
   TrustLevelOperationSummary,
   SourceCategory,
   OperationSummary
@@ -185,6 +186,9 @@ export const GraphService = {
 
   getTrustLevels: (): Promise<TrustLevelInfo[]> =>
     apiFetch<{ levels: TrustLevelInfo[] }>(`${API_BASE_URL}/trust-levels`).then((res) => res.levels),
+
+  getTrustLevelMembers: (value: number): Promise<TrustLevelMembersResponse> =>
+    apiFetch<TrustLevelMembersResponse>(`${API_BASE_URL}/trust-levels/nodes?level=${value}`),
 
   createTrustLevel: (
     label: string,

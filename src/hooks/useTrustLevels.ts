@@ -6,6 +6,7 @@ import type { TrustLevelInfo } from "@/types"
 
 export const trustLevelKeys = {
   all: () => ["trustLevels"] as const,
+  members: (value: number | null) => ["trustLevels", "members", value] as const,
 }
 
 export function useTrustLevelsQuery() {
@@ -13,6 +14,14 @@ export function useTrustLevelsQuery() {
     queryKey: trustLevelKeys.all(),
     queryFn: GraphService.getTrustLevels,
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useTrustLevelMembers(value: number | null) {
+  return useQuery({
+    queryKey: trustLevelKeys.members(value),
+    queryFn: () => GraphService.getTrustLevelMembers(value!),
+    enabled: value !== null,
   })
 }
 

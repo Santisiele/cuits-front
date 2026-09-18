@@ -274,6 +274,21 @@ export interface TrustLevelInfo {
   nodeCount: number
 }
 
+export interface TrustLevelMember {
+  taxId: string
+  businessName: string
+  sources: string[]
+  relationshipCount: number
+  isKnown: boolean
+  isToKnow: boolean
+  trustReason: string
+}
+
+export interface TrustLevelMembersResponse {
+  level: TrustLevelInfo
+  members: TrustLevelMember[]
+}
+
 export interface TrustLevelOperationSummary {
   operation: "create-level" | "update-level" | "delete-level"
   value: number

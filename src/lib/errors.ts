@@ -25,6 +25,7 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   "The label cannot be empty": "El nombre no puede estar vacío",
   "The label cannot be longer than": "El nombre es demasiado largo",
   "is not an available color": "Ese color no está disponible",
+  "There is no list for level 0": "El nivel 0 es la ausencia de nivel: no tiene lista de CUITs",
   "Level 0 stands for having no level":
     "El nivel 0 es la ausencia de nivel: no se puede editar ni borrar",
   "The level must be a whole number": "El nivel tiene que ser un número entero",

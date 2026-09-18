@@ -3,6 +3,12 @@ import type { TrustLevelColor } from "@/types"
 export const NO_LEVEL_VALUE = 0
 export const NO_LEVEL_LABEL = "Sin nivel"
 
+export function parseLevelParam(raw: string | undefined): number | null {
+  if (raw === undefined || !/^\d+$/.test(raw)) return null
+  const value = Number(raw)
+  return value === NO_LEVEL_VALUE ? null : value
+}
+
 interface PaletteEntry {
   label: string
   badge: string

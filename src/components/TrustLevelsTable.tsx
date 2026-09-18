@@ -1,8 +1,9 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useTrustLevelsQuery } from "@/hooks/useTrustLevels"
 import { TrustLevelDialog } from "@/components/trust-levels/TrustLevelDialog"
 import { DeleteTrustLevelDialog } from "@/components/trust-levels/DeleteTrustLevelDialog"
@@ -58,9 +59,17 @@ export function TrustLevelsTable() {
                     >
                       {level.label}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {level.nodeCount} {level.nodeCount === 1 ? "CUIT" : "CUITs"}
-                    </span>
+                    {level.nodeCount > 0 ? (
+                      <Link
+                        to={`/trust-levels/${level.value}`}
+                        className="inline-flex items-center gap-0.5 text-xs text-cyan-600 dark:text-cyan-400 hover:underline"
+                      >
+                        Ver {level.nodeCount} {level.nodeCount === 1 ? "CUIT" : "CUITs"}
+                        <ChevronRight className="w-3 h-3" />
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sin CUITs</span>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground pl-7">
                     {level.description || "Sin descripción"}

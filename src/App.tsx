@@ -19,6 +19,7 @@ import { BirthdaysTable } from "@/components/BirthdaysTable"
 import { FullBaseTable } from "./components/FullBaseTable"
 import { SourcesTable } from "@/components/SourcesTable"
 import { TrustLevelsTable } from "@/components/TrustLevelsTable"
+import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useStore } from "@/store/useStore"
@@ -270,6 +271,7 @@ export default function App() {
             <Route path="/crossing-over"  element={<CrossingOverTable />} />
             <Route path="/sources"        element={<SourcesTable />} />
             <Route path="/trust-levels"   element={<TrustLevelsTable />} />
+            <Route path="/trust-levels/:value" element={<TrustLevelMembersTable />} />
           </Routes>
         </div>
 
