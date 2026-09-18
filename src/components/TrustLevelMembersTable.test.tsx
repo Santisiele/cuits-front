@@ -3,7 +3,7 @@ import { act } from "react"
 import { screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { render } from "@/tests/render"
-import type { TrustLevelMember, TrustLevelMembersResponse } from "@/types"
+import type { TrustLevelInfo, TrustLevelMember, TrustLevelMembersResponse } from "@/types"
 
 interface FakeQuery {
   data?: TrustLevelMembersResponse
@@ -12,6 +12,7 @@ interface FakeQuery {
 }
 
 let answer: FakeQuery = { isLoading: false }
+let knownLevels: TrustLevelInfo[] | undefined = undefined
 const askedFor: (number | null)[] = []
 
 vi.mock("@/hooks/useTrustLevels", () => ({
@@ -19,11 +20,17 @@ vi.mock("@/hooks/useTrustLevels", () => ({
     askedFor.push(value)
     return value === null ? { isLoading: false } : answer
   },
+  useTrustLevelsQuery: () => ({ data: knownLevels }),
 }))
 
 vi.mock("@/lib/exportTable", () => ({ exportNodes: vi.fn() }))
 
 const { TrustLevelMembersTable } = await import("@/components/TrustLevelMembersTable")
+const { exportNodes } = await import("@/lib/exportTable")
+
+function expectNoLevelIdOnScreen(): void {
+  expect(document.body.textContent).not.toMatch(/Nivel \d/)
+}
 
 function member(taxId: string, businessName: string, trustReason = ""): TrustLevelMember {
   return { taxId, businessName, sources: ["Bolsa"], relationshipCount: 2, isKnown: false, isToKnow: true, trustReason }
@@ -58,7 +65,9 @@ function type(text: string): void {
 describe("TrustLevelMembersTable", () => {
   beforeEach(() => {
     answer = { isLoading: false }
+    knownLevels = undefined
     askedFor.length = 0
+    vi.mocked(exportNodes).mockClear()
   })
 
   describe("a level with CUITs", () => {
@@ -116,9 +125,52 @@ describe("TrustLevelMembersTable", () => {
       expect(screen.getByText("Interesante (1 de 2)")).toBeInTheDocument()
     })
 
+    it("names the exported file after the level, not its number", () => {
+      act(() => {
+        fireEvent.click(screen.getByRole("button", { name: "CSV" }))
+      })
+      expect(vi.mocked(exportNodes).mock.calls[0]![2]).toBe("nivel-interesante")
+    })
+
     it("says so when nothing matches the search", () => {
       type("no existe")
       expect(screen.getAllByText("Ningún CUIT de este nivel coincide con la búsqueda").length).toBeGreaterThan(0)
+    })
+  })
+
+  describe("while the list is loading", () => {
+    it("never shows the level number in place of its name", () => {
+      answer = { isLoading: true }
+      open("/trust-levels/4")
+      expectNoLevelIdOnScreen()
+    })
+
+    it("uses a neutral title when the name is not known yet", () => {
+      answer = { isLoading: true }
+      open("/trust-levels/4")
+      expect(screen.getByText("Nivel de confianza")).toBeInTheDocument()
+    })
+
+    it("shows the name at once when the levels screen already loaded it", () => {
+      answer = { isLoading: true }
+      knownLevels = [{ value: 4, label: "Interesante", color: "green", description: "Vale la pena", nodeCount: 2 }]
+      open("/trust-levels/4")
+      expect(screen.getByText("Interesante")).toBeInTheDocument()
+      expect(screen.getByText("Vale la pena")).toBeInTheDocument()
+    })
+
+    it("does not borrow another level's name from the cache", () => {
+      answer = { isLoading: true }
+      knownLevels = [{ value: 3, label: "Frio", color: "red", description: "", nodeCount: 1 }]
+      open("/trust-levels/4")
+      expect(screen.queryByText("Frio")).not.toBeInTheDocument()
+    })
+
+    it("holds back the count until the list arrives", () => {
+      answer = { isLoading: true }
+      knownLevels = [{ value: 4, label: "Interesante", color: "green", description: "", nodeCount: 2 }]
+      open("/trust-levels/4")
+      expect(screen.queryByText(/Interesante \(/)).not.toBeInTheDocument()
     })
   })
 
@@ -144,6 +196,11 @@ describe("TrustLevelMembersTable", () => {
       expect(askedFor.every((value) => value === null)).toBe(true)
     })
 
+    it("does not repeat back what was typed in the address", () => {
+      open("/trust-levels/0")
+      expect(document.body.textContent).not.toMatch(/"0"/)
+    })
+
     it("refuses level 0 without asking the API", () => {
       open("/trust-levels/0")
       expect(screen.getByText("Nivel inválido")).toBeInTheDocument()
@@ -161,6 +218,12 @@ describe("TrustLevelMembersTable", () => {
       answer = { isLoading: false, error: new Error("Ese nivel no existe") }
       open("/trust-levels/99")
       expect(screen.getByText("Ese nivel no existe")).toBeInTheDocument()
+    })
+
+    it("does not fall back to showing the level number", () => {
+      answer = { isLoading: false, error: new Error("Ese nivel no existe") }
+      open("/trust-levels/99")
+      expectNoLevelIdOnScreen()
     })
   })
 })

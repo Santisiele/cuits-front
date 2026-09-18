@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useTrustLevelMembers } from "@/hooks/useTrustLevels"
+import { useTrustLevelMembers, useTrustLevelsQuery } from "@/hooks/useTrustLevels"
 import { useStore } from "@/store/useStore"
 import { exportNodes } from "@/lib/exportTable"
 import { parseLevelParam, paletteFor } from "@/lib/trustLevels"
@@ -21,6 +21,17 @@ const MEMBER_COLUMNS = [
 ]
 
 const NO_REASON = "Sin motivo"
+const UNNAMED_TITLE = "Nivel de confianza"
+
+function fileNameFor(label: string): string {
+  const slug = label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return slug ? `nivel-${slug}` : "nivel"
+}
 
 function matches(member: TrustLevelMember, search: string): boolean {
   if (!search) return true
@@ -47,6 +58,7 @@ export function TrustLevelMembersTable() {
   const { value: rawValue } = useParams()
   const value = parseLevelParam(rawValue)
   const query = useTrustLevelMembers(value)
+  const { data: knownLevels } = useTrustLevelsQuery()
   const { setEditTaxId } = useStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
@@ -65,14 +77,14 @@ export function TrustLevelMembersTable() {
         </CardHeader>
         <CardContent>
           <p className="text-destructive text-sm">
-            "{rawValue}" no es un nivel. Elegí uno desde la lista de niveles.
+            Esa dirección no corresponde a ningún nivel. Elegí uno desde la lista de niveles.
           </p>
         </CardContent>
       </Card>
     )
   }
 
-  const level = query.data?.level
+  const level = query.data?.level ?? knownLevels?.find((known) => known.value === value)
   const members = query.data?.members ?? []
   const filtered = members.filter((member) => matches(member, search))
   const palette = paletteFor(level?.color)
@@ -87,8 +99,8 @@ export function TrustLevelMembersTable() {
             <div className="flex items-center gap-3">
               {level && <span className={cn("h-4 w-4 shrink-0", palette.swatch)} />}
               <CardTitle>
-                {level ? level.label : `Nivel ${value}`}
-                {level && (search ? ` (${filtered.length} de ${members.length})` : ` (${members.length})`)}
+                {level ? level.label : UNNAMED_TITLE}
+                {query.data && (search ? ` (${filtered.length} de ${members.length})` : ` (${members.length})`)}
               </CardTitle>
             </div>
             {level?.description && (
@@ -103,8 +115,8 @@ export function TrustLevelMembersTable() {
                 placeholder="Buscar por nombre o CUIT..."
                 className="w-full sm:w-64"
               />
-              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, `nivel-${value}`, "csv")}>CSV</Button>
-              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, `nivel-${value}`, "xlsx")}>XLSX</Button>
+              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, fileNameFor(level.label), "csv")}>CSV</Button>
+              <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, MEMBER_COLUMNS, fileNameFor(level.label), "xlsx")}>XLSX</Button>
             </div>
           )}
         </div>
