@@ -270,6 +270,7 @@ export function useUpdateNode(taxId: string) {
       void queryClient.invalidateQueries({ queryKey: ["fullBase"] })
       void queryClient.invalidateQueries({ queryKey: ["companyNodes"] })
       void queryClient.invalidateQueries({ queryKey: ["crossing"] })
+      void queryClient.invalidateQueries({ queryKey: ["trustLevels"] })
     },
   })
 }
