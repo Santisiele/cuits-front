@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { screen, within } from "@testing-library/react"
+import { act } from "react"
+import { screen, within, fireEvent } from "@testing-library/react"
 import { render } from "@/tests/render"
 import { FinancieraLenders } from "@/components/FinancieraLenders"
 import type { FinancieraLender } from "@/types"
@@ -21,7 +22,7 @@ describe("FinancieraLenders", () => {
 
   it("names the three columns", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(screen.getByRole("columnheader", { name: "Financiera" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: /Financiera/ })).toBeInTheDocument()
     expect(screen.getByRole("columnheader", { name: "Veces" })).toBeInTheDocument()
     expect(screen.getByRole("columnheader", { name: "Préstamo total" })).toBeInTheDocument()
   })
@@ -56,5 +57,40 @@ describe("FinancieraLenders", () => {
   it("draws nothing for someone who owes no lender", () => {
     const { container } = render(<FinancieraLenders lenders={[]} />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  describe("filtering by lender", () => {
+    function click(element: Element): void {
+      act(() => {
+        fireEvent.click(element)
+      })
+    }
+
+    function openFilter(): void {
+      click(screen.getByRole("button", { name: /^Financiera/ }))
+    }
+
+    it("offers every lender in the header's list", () => {
+      render(<FinancieraLenders lenders={LENDERS} />)
+      openFilter()
+      const list = screen.getByRole("dialog", { name: "Filtro de Financiera" })
+      expect(within(list).getByRole("button", { name: "FINARES S.A." })).toBeInTheDocument()
+      expect(within(list).getByRole("button", { name: /Unicred/ })).toBeInTheDocument()
+    })
+
+    it("hides a lender when it is unticked", () => {
+      render(<FinancieraLenders lenders={LENDERS} />)
+      openFilter()
+      click(within(screen.getByRole("dialog", { name: "Filtro de Financiera" })).getByRole("button", { name: "FINARES S.A." }))
+      expect(rows()).toHaveLength(1)
+      expect(within(rows()[0]!).getByText(/Unicred/)).toBeInTheDocument()
+    })
+
+    it("says so when every lender is filtered out", () => {
+      render(<FinancieraLenders lenders={LENDERS} />)
+      openFilter()
+      click(within(screen.getByRole("dialog", { name: "Filtro de Financiera" })).getByRole("button", { name: "Seleccionar todos" }))
+      expect(screen.getByText("Ninguna financiera coincide con el filtro")).toBeInTheDocument()
+    })
   })
 })
