@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.include=src/**/*.{ts,tsx} --coverage.exclude=src/**/*.test.* --coverage.exclude=src/tests/**",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -43,6 +44,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^5.0.1",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
