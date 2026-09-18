@@ -7,33 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { GraphView } from "@/components/GraphView"
 import { useCuitSearches } from "@/hooks/useGraphQueries"
+import { parseCuitList, formatTaxId } from "@/lib/cuit"
 
 const MAX_CUITS = 20
-
-interface ParsedInput {
-  taxIds: string[]
-  rejected: string[]
-}
-
-function parseInput(raw: string): ParsedInput {
-  const taxIds: string[] = []
-  const rejected: string[] = []
-
-  for (const token of raw.split(/[\s,;]+/).filter(Boolean)) {
-    const digits = token.replace(/\D/g, "")
-    if (digits.length !== 11) {
-      rejected.push(token)
-      continue
-    }
-    if (!taxIds.includes(digits)) taxIds.push(digits)
-  }
-
-  return { taxIds, rejected }
-}
-
-function formatTaxId(taxId: string): string {
-  return `${taxId.slice(0, 2)}-${taxId.slice(2, 10)}-${taxId.slice(10)}`
-}
 
 export function MultiSearch() {
   const [draft, setDraft] = useState("")
@@ -44,7 +20,7 @@ export function MultiSearch() {
   })
   const [openTaxIds, setOpenTaxIds] = useState<Set<string>>(new Set())
 
-  const parsed = useMemo(() => parseInput(draft), [draft])
+  const parsed = useMemo(() => parseCuitList(draft), [draft])
   const queries = useCuitSearches(search.taxIds, search.maxDepth)
 
   const overflowed = parsed.taxIds.length - MAX_CUITS
