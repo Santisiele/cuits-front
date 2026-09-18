@@ -5,6 +5,8 @@ import {
   todayString,
   daysFromTodayString,
   rangeEndsBeforeItStarts,
+  monthNameOf,
+  MONTH_NAMES,
 } from "@/lib/dates"
 
 describe("toIsoDate", () => {
@@ -94,5 +96,37 @@ describe("rangeEndsBeforeItStarts", () => {
     const from = todayString(new Date(2026, 11, 20))
     const to = daysFromTodayString(30, new Date(2026, 11, 20))
     expect(rangeEndsBeforeItStarts(from, to)).toBe(false)
+  })
+})
+
+describe("monthNameOf", () => {
+  it("names the month of a birthday", () => {
+    expect(monthNameOf("30/07/2004")).toBe("Julio")
+  })
+
+  it("reads a single-digit month", () => {
+    expect(monthNameOf("5/1/1950")).toBe("Enero")
+  })
+
+  it("reads December, the last one", () => {
+    expect(monthNameOf("25/12/1990")).toBe("Diciembre")
+  })
+
+  it("accepts dashes", () => {
+    expect(monthNameOf("01-03-2000")).toBe("Marzo")
+  })
+
+  it("gives nothing for a month that does not exist", () => {
+    expect(monthNameOf("01/13/2000")).toBeNull()
+  })
+
+  it("gives nothing for an empty birthday", () => {
+    expect(monthNameOf("")).toBeNull()
+  })
+
+  it("lists the twelve months in calendar order", () => {
+    expect(MONTH_NAMES).toHaveLength(12)
+    expect(MONTH_NAMES[0]).toBe("Enero")
+    expect(MONTH_NAMES[11]).toBe("Diciembre")
   })
 })

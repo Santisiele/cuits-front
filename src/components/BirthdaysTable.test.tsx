@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { act } from "react"
-import { screen, fireEvent } from "@testing-library/react"
+import { screen, fireEvent, within } from "@testing-library/react"
 import { render } from "@/tests/render"
 import type { BirthdayNode, TrustLevelInfo } from "@/types"
 
@@ -62,7 +62,7 @@ describe("BirthdaysTable", () => {
   beforeEach(() => {
     rows = []
     act(() => {
-      useStore.getState().setBirthdaysTable({ hiddenTrustLevels: [] })
+      useStore.getState().setBirthdaysTable({ hiddenTrustLevels: [], hiddenValues: {} })
     })
     render(<BirthdaysTable />)
   })
@@ -189,6 +189,69 @@ describe("BirthdaysTable", () => {
     it("says nobody is left when every level is hidden", () => {
       act(() => {
         useStore.getState().setBirthdaysTable({ hiddenTrustLevels: [0, 1, 2] })
+      })
+      expect(screen.getAllByText("Nadie cumple años en ese rango").length).toBeGreaterThan(0)
+    })
+  })
+
+  describe("filtering from the headers", () => {
+    beforeEach(() => {
+      rows = [
+        { ...node("20111111119", "Ana", 0), birthday: "30/07/2004", sources: ["Poseidon"] },
+        { ...node("27222222224", "Beto", 0), birthday: "02/08/1960", sources: ["Residentes Senior Home"] },
+        { ...node("20333333336", "Caro", 0), birthday: "15/07/1955", sources: ["Residentes Senior Home", "Poseidon"] },
+      ]
+      act(() => {
+        fireEvent.click(buscar())
+      })
+    })
+
+    function pick(column: string, value: string): void {
+      const header = screen.getByRole("columnheader", { name: new RegExp(column) })
+      act(() => {
+        fireEvent.click(within(header).getByRole("button"))
+      })
+      act(() => {
+        fireEvent.click(within(screen.getByRole("dialog", { name: `Filtro de ${column}` })).getByRole("button", { name: value }))
+      })
+    }
+
+    it("lists the months present, in calendar order", () => {
+      const header = screen.getByRole("columnheader", { name: /Cumpleaños/ })
+      act(() => {
+        fireEvent.click(within(header).getByRole("button"))
+      })
+      const list = screen.getByRole("dialog", { name: "Filtro de Cumpleaños" })
+      const labels = within(list).getAllByRole("button").map((b) => b.textContent)
+      expect(labels).toEqual(["Seleccionar todos", "Julio", "Agosto"])
+    })
+
+    it("hides everyone born in a month that is switched off", () => {
+      pick("Cumpleaños", "Julio")
+      expect(screen.queryAllByText("Ana")).toHaveLength(0)
+      expect(screen.queryAllByText("Caro")).toHaveLength(0)
+      expect(screen.getAllByText("Beto").length).toBeGreaterThan(0)
+    })
+
+    it("hides whoever only comes from a source that is switched off", () => {
+      pick("Fuentes", "Residentes Senior Home")
+      expect(screen.queryAllByText("Beto")).toHaveLength(0)
+      expect(screen.getAllByText("Caro").length).toBeGreaterThan(0)
+    })
+
+    it("counts what the filters leave against the total", () => {
+      pick("Cumpleaños", "Agosto")
+      expect(screen.getByText("Cumpleaños (2 de 3)")).toBeInTheDocument()
+    })
+
+    it("keeps the filters in the store so they survive leaving the screen", () => {
+      pick("Fuentes", "Poseidon")
+      expect(useStore.getState().birthdaysTable.hiddenValues.sources).toEqual(["Poseidon"])
+    })
+
+    it("combines the column filters with the level filter", () => {
+      act(() => {
+        useStore.getState().setBirthdaysTable({ hiddenTrustLevels: [0] })
       })
       expect(screen.getAllByText("Nadie cumple años en ese rango").length).toBeGreaterThan(0)
     })

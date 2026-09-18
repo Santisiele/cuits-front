@@ -49,6 +49,7 @@ interface TableState {
   sortDir: SortDir
   selectedSources: string[]
   hiddenTrustLevels: number[]
+  hiddenValues: Record<string, string[]>
 }
 
 interface AppState {
@@ -80,16 +81,16 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
   editTaxId: null,
   setEditTaxId: (taxId) => set({ editTaxId: taxId }),
-  nodeTable:        { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  nodeTable:        { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setNodeTable:     (s) => set((state) => ({ nodeTable: { ...state.nodeTable, ...s } })),
-  companyTable:     { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [], hiddenTrustLevels: [] },
+  companyTable:     { search: "", sortField: "relationshipCount", sortDir: "desc", selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setCompanyTable:  (s) => set((state) => ({ companyTable: { ...state.companyTable, ...s } })),
-  toKnowTable:      { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  toKnowTable:      { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setToKnowTable:   (s) => set((state) => ({ toKnowTable: { ...state.toKnowTable, ...s } })),
-  fullBaseTable:    { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  fullBaseTable:    { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setFullBaseTable: (s) => set((state) => ({ fullBaseTable: { ...state.fullBaseTable, ...s } })),
-  crossingOverTable: { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  crossingOverTable: { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setCrossingOverTable: (s) => set((state) => ({ crossingOverTable: { ...state.crossingOverTable, ...s } })),
-  birthdaysTable:   { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [] },
+  birthdaysTable:   { search: "", sortField: "businessName",      sortDir: "asc",  selectedSources: [], hiddenTrustLevels: [], hiddenValues: {} },
   setBirthdaysTable: (s) => set((state) => ({ birthdaysTable: { ...state.birthdaysTable, ...s } })),
 }))

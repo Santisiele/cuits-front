@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
 import { TrustLevelFilter } from "@/components/TrustLevelFilter"
+import { ColumnFilter } from "@/components/ColumnFilter"
+import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -11,7 +13,8 @@ import { useStore } from "@/store/useStore"
 import { useNavigate } from "react-router-dom"
 import { useBirthdays } from "@/hooks/useGraphQueries"
 import { exportNodes } from "@/lib/exportTable"
-import { toIsoDate, fromIsoDate, todayString, daysFromTodayString, rangeEndsBeforeItStarts } from "@/lib/dates"
+import { toIsoDate, fromIsoDate, todayString, daysFromTodayString, rangeEndsBeforeItStarts, MONTH_NAMES, monthNameOf } from "@/lib/dates"
+import type { BirthdayNode } from "@/types"
 
 // ─── Columns (for export) ────────────────────────────────────────────────────
 
@@ -36,6 +39,15 @@ const BIRTHDAY_COLUMNS = [
  * and only the table body scrolls inside it. This keeps the search controls
  * fixed at the top and avoids leaving an empty area below the table.
  */
+function sourcesOf(node: BirthdayNode): string[] {
+  return node.sources ?? []
+}
+
+function monthOf(node: BirthdayNode): string[] {
+  const month = monthNameOf(node.birthday ?? "")
+  return month ? [month] : []
+}
+
 export function BirthdaysTable() {
   const { setEditTaxId, birthdaysTable, setBirthdaysTable } = useStore()
   const navigate = useNavigate()
@@ -54,10 +66,30 @@ export function BirthdaysTable() {
   )
 
   const hiddenTrustLevels = new Set(birthdaysTable.hiddenTrustLevels)
-  const nodes = (birthdaysQuery.data ?? []).filter(
-    (node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0)
+  const hiddenSources = birthdaysTable.hiddenValues.sources ?? []
+  const hiddenMonths = birthdaysTable.hiddenValues.month ?? []
+  const hiddenSourceSet = new Set(hiddenSources)
+  const hiddenMonthSet = new Set(hiddenMonths)
+  const allNodes = birthdaysQuery.data ?? []
+  const nodes = allNodes.filter(
+    (node) =>
+      !hiddenTrustLevels.has(node.levelOfTrust ?? 0) &&
+      passesFilter(sourcesOf(node), hiddenSourceSet) &&
+      passesFilter(monthOf(node), hiddenMonthSet)
   )
-  const total = birthdaysQuery.data?.length ?? 0
+  const total = allNodes.length
+  const narrowed = hiddenTrustLevels.size > 0 || hiddenSources.length > 0 || hiddenMonths.length > 0
+
+  function setHidden(column: "sources" | "month", next: string[]): void {
+    setBirthdaysTable({ hiddenValues: { ...birthdaysTable.hiddenValues, [column]: next } })
+  }
+
+  const sourceFilter = (appearance: "header" | "button") => (
+    <ColumnFilter label="Fuentes" appearance={appearance} options={optionsFrom(allNodes, sourcesOf)} hidden={hiddenSources} onChange={(next) => setHidden("sources", next)} />
+  )
+  const monthFilter = (appearance: "header" | "button") => (
+    <ColumnFilter label="Cumpleaños" appearance={appearance} options={optionsFrom(allNodes, monthOf, { order: MONTH_NAMES })} hidden={hiddenMonths} onChange={(next) => setHidden("month", next)} />
+  )
   const loading = birthdaysQuery.isFetching
   const error = birthdaysQuery.error ? (birthdaysQuery.error as Error).message : null
 
@@ -81,7 +113,7 @@ export function BirthdaysTable() {
           <CardTitle>
             Cumpleaños
             {submittedRange
-              ? hiddenTrustLevels.size > 0
+              ? narrowed
                 ? ` (${nodes.length} de ${total})`
                 : ` (${total})`
               : ""}
@@ -93,6 +125,10 @@ export function BirthdaysTable() {
                   hidden={birthdaysTable.hiddenTrustLevels}
                   onChange={(next) => setBirthdaysTable({ hiddenTrustLevels: next })}
                 />
+                <div className="flex gap-2 sm:hidden">
+                  {sourceFilter("button")}
+                  {monthFilter("button")}
+                </div>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(nodes, BIRTHDAY_COLUMNS, "cumpleanos", "csv")}>CSV</Button>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(nodes, BIRTHDAY_COLUMNS, "cumpleanos", "xlsx")}>XLSX</Button>
               </>
@@ -151,8 +187,8 @@ export function BirthdaysTable() {
                 <tr className="border-b border-border">
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">CUIT</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Nombre</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Fuentes</th>
-                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">Cumpleaños</th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">{sourceFilter("header")}</th>
+                  <th className="text-center py-2 px-3 text-muted-foreground font-medium">{monthFilter("header")}</th>
                   <th className="text-center py-2 px-3 text-muted-foreground font-medium">Relaciones</th>
                 </tr>
               </thead>

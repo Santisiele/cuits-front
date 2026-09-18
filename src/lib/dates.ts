@@ -22,6 +22,17 @@ export function daysFromTodayString(days: number, now: Date = new Date()): strin
   return todayString(shifted)
 }
 
+export const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+] as const
+
+export function monthNameOf(ddmmyyyy: string): string | null {
+  const match = /^\d{1,2}[/-](\d{1,2})[/-]\d{4}$/.exec(ddmmyyyy.trim())
+  if (!match) return null
+  return MONTH_NAMES[Number(match[1]) - 1] ?? null
+}
+
 export function rangeEndsBeforeItStarts(from: string, to: string): boolean {
   const start = toIsoDate(from)
   const end = toIsoDate(to)
