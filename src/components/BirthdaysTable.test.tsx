@@ -30,7 +30,9 @@ vi.mock("@/hooks/useTrustLevels", () => ({
   }),
 }))
 
-vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }))
+const { navigate } = vi.hoisted(() => ({ navigate: vi.fn() }))
+
+vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }))
 vi.mock("@/lib/exportTable", () => ({ exportNodes: vi.fn() }))
 
 const { BirthdaysTable } = await import("@/components/BirthdaysTable")
@@ -128,6 +130,15 @@ describe("BirthdaysTable", () => {
 
     it("shows the trust level next to the name", () => {
       expect(screen.getAllByText("Alto").length).toBeGreaterThan(0)
+    })
+
+    it("opens a person for editing when their name is clicked", () => {
+      navigate.mockClear()
+      act(() => {
+        fireEvent.click(screen.getAllByText("Ana")[0]!)
+      })
+      expect(navigate).toHaveBeenCalledWith("/edit")
+      expect(useStore.getState().editTaxId).toBe("20111111119")
     })
 
     it("offers the level filter", () => {

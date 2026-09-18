@@ -27,6 +27,7 @@ vi.mock("@/lib/exportTable", () => ({ exportNodes: vi.fn() }))
 
 const { TrustLevelMembersTable } = await import("@/components/TrustLevelMembersTable")
 const { exportNodes } = await import("@/lib/exportTable")
+const { useStore } = await import("@/store/useStore")
 
 function expectNoLevelIdOnScreen(): void {
   expect(document.body.textContent).not.toMatch(/Nivel \d/)
@@ -51,6 +52,7 @@ function open(path: string): void {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/trust-levels/:value" element={<TrustLevelMembersTable />} />
+        <Route path="/edit" element={<p>pantalla de edición</p>} />
       </Routes>
     </MemoryRouter>
   )
@@ -123,6 +125,21 @@ describe("TrustLevelMembersTable", () => {
     it("says how many of the total match the search", () => {
       type("chammas")
       expect(screen.getByText("Interesante (1 de 2)")).toBeInTheDocument()
+    })
+
+    it("opens a CUIT for editing when its name is clicked", () => {
+      act(() => {
+        fireEvent.click(screen.getAllByText("CHAMMAS SOC RESP LTDA")[0]!)
+      })
+      expect(screen.getByText("pantalla de edición")).toBeInTheDocument()
+      expect(useStore.getState().editTaxId).toBe("30500904557")
+    })
+
+    it("opens a CUIT for editing when its number is clicked", () => {
+      act(() => {
+        fireEvent.click(screen.getAllByText("30714208671")[0]!)
+      })
+      expect(useStore.getState().editTaxId).toBe("30714208671")
     })
 
     it("names the exported file after the level, not its number", () => {
