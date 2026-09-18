@@ -91,6 +91,12 @@ export interface GraphEdge {
 /**
  * Full detail of a single node as returned by `GET /graph/node/:taxId`.
  */
+export interface FinancieraLender {
+  entityName: string
+  operationCount: number
+  totalLoan: number
+}
+
 export interface NodeData {
   taxId: string
   businessName: string | null
@@ -117,6 +123,7 @@ export interface NodeData {
   bolsaMonths?: string[]
   /** Months with "Deudores por financiera" operations, most recent first. */
   financieraMonths?: string[]
+  financieraLenders?: FinancieraLender[]
   /**
    * Date the company was published in the boletín oficial, as `dd/mm/yyyy`.
    *
