@@ -233,7 +233,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-sm text-muted-foreground hidden sm:inline">
-              {theme === "dark" ? "Dark" : "Light"}
+              {theme === "dark" ? "Oscuro" : "Claro"}
             </span>
             <Switch checked={theme === "light"} onCheckedChange={toggleTheme} />
             {isAuthenticated ? (
