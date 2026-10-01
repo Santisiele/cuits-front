@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useNameSearch } from "@/hooks/useGraphQueries"
 import type { NameSearchResult } from "@/types"
+import { relationshipSummary } from "@/lib/relationships"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -223,7 +224,7 @@ function ResultRow({ node, onSelect }: ResultRowProps) {
           </Badge>
         ))}
         <span className="text-xs text-muted-foreground">
-          {node.relationshipCount} relaciones
+          {relationshipSummary(node.relationshipCount, node.baseRelationshipCount)}
         </span>
       </div>
     </button>
