@@ -221,7 +221,7 @@ export interface NameSearchResult {
   /** Trust level for this CUIT. See `TRUST_LEVELS`. */
   levelOfTrust?: number
   relationshipCount: number
-  baseRelationshipCount: number
+  knownRelationshipCount: number
 }
 
 // ─── Source administration types ─────────────────────────────────────────────

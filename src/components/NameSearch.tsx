@@ -224,7 +224,7 @@ function ResultRow({ node, onSelect }: ResultRowProps) {
           </Badge>
         ))}
         <span className="text-xs text-muted-foreground">
-          {relationshipSummary(node.relationshipCount, node.baseRelationshipCount)}
+          {relationshipSummary(node.relationshipCount, node.knownRelationshipCount)}
         </span>
       </div>
     </button>
