@@ -97,7 +97,7 @@ export function AiCreditsScreen() {
             </>
           )}
           <p className="text-xs text-muted-foreground">
-            El tope de la app no reemplaza el límite configurado en la consola de Anthropic
+            El tope de la app es una estimación: no reemplaza el límite configurado en Google Cloud o en la consola de Anthropic
           </p>
         </CardContent>
       </Card>
