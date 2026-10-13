@@ -8,6 +8,7 @@ import { formatIsoDateTime } from "@/lib/dates"
 import { getErrorMessage } from "@/lib/errors"
 import { formatUsd, researchButtonLabel, researchCuit } from "@/lib/research"
 import type { WebResearch } from "@/types"
+import { ResearchSummary } from "@/components/research/ResearchSummary"
 
 function ResearchResult({ research }: { research: WebResearch }) {
   return (
@@ -19,22 +20,25 @@ function ResearchResult({ research }: { research: WebResearch }) {
         <Badge variant="destructive">La búsqueda falló</Badge>
       ) : (
         <>
-          <p className="text-sm whitespace-pre-line">{research.summary}</p>
+          <ResearchSummary text={research.summary} />
           {research.sources.length > 0 && (
-            <ul className="space-y-1 text-sm list-disc pl-5">
-              {research.sources.map((source) => (
-                <li key={source.url}>
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-cyan-600 dark:text-cyan-400 hover:underline break-all"
-                  >
-                    {source.title || source.url}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <>
+              <h4 className="text-sm font-semibold pt-2">Fuentes</h4>
+              <ul className="space-y-1 text-sm list-disc pl-5">
+                {research.sources.map((source) => (
+                  <li key={source.url}>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-600 dark:text-cyan-400 hover:underline break-all"
+                    >
+                      {source.title || source.url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </>
       )}
