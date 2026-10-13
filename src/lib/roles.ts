@@ -13,3 +13,7 @@ export function toRole(value: unknown): Role | null {
 export function isAdminRole(role: Role | null | undefined): boolean {
   return role === "creator" || role === "admin"
 }
+
+export function isCreatorRole(role: Role | null | undefined): boolean {
+  return role === "creator"
+}

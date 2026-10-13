@@ -6,7 +6,7 @@ const me = vi.fn()
 
 vi.mock("@/services/api", () => ({ AuthApiService: { me: () => me() } }))
 
-const { useSessionRole, useIsAdmin } = await import("@/hooks/useSessionRole")
+const { useSessionRole, useIsAdmin, useIsCreator } = await import("@/hooks/useSessionRole")
 const { useAuthStore } = await import("@/store/useAuthStore")
 
 async function flush(): Promise<void> {
@@ -84,6 +84,20 @@ describe("useIsAdmin", () => {
     const { result } = renderHook(() => useIsAdmin())
     expect(result.current).toBe(true)
     act(() => useAuthStore.getState().setRole("member"))
+    expect(result.current).toBe(false)
+  })
+})
+
+describe("useIsCreator", () => {
+  afterEach(() => {
+    act(() => useAuthStore.getState().clearAuth())
+  })
+
+  it("is true only while the creator is logged in", () => {
+    act(() => useAuthStore.getState().setAuth("t1", "santi", "creator"))
+    const { result } = renderHook(() => useIsCreator())
+    expect(result.current).toBe(true)
+    act(() => useAuthStore.getState().setRole("admin"))
     expect(result.current).toBe(false)
   })
 })

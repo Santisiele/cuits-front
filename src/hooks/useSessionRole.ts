@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { AuthApiService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
-import { isAdminRole, toRole } from "@/lib/roles"
+import { isAdminRole, isCreatorRole, toRole } from "@/lib/roles"
 
 export function useSessionRole(): void {
   const token = useAuthStore((state) => state.token)
@@ -18,4 +18,8 @@ export function useSessionRole(): void {
 
 export function useIsAdmin(): boolean {
   return useAuthStore((state) => isAdminRole(state.role))
+}
+
+export function useIsCreator(): boolean {
+  return useAuthStore((state) => isCreatorRole(state.role))
 }

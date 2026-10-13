@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { ROLE_LABELS, isAdminRole, toRole } from "@/lib/roles"
+import { ROLE_LABELS, isAdminRole, isCreatorRole, toRole } from "@/lib/roles"
 
 describe("toRole", () => {
   it("accepts the three roles", () => {
@@ -33,5 +33,18 @@ describe("isAdminRole", () => {
 describe("ROLE_LABELS", () => {
   it("names each role in Spanish", () => {
     expect(ROLE_LABELS).toEqual({ creator: "Creador", admin: "Admin", member: "Común" })
+  })
+})
+
+describe("isCreatorRole", () => {
+  it("is true only for the creator", () => {
+    expect(isCreatorRole("creator")).toBe(true)
+  })
+
+  it("is false for an admin, a member or no role", () => {
+    expect(isCreatorRole("admin")).toBe(false)
+    expect(isCreatorRole("member")).toBe(false)
+    expect(isCreatorRole(null)).toBe(false)
+    expect(isCreatorRole(undefined)).toBe(false)
   })
 })
