@@ -8,6 +8,7 @@ import {
   monthNameOf,
   MONTH_NAMES,
   formatIsoDate,
+  formatIsoDateTime,
 } from "@/lib/dates"
 
 describe("toIsoDate", () => {
@@ -139,5 +140,15 @@ describe("formatIsoDate", () => {
 
   it("shows nothing for a broken date", () => {
     expect(formatIsoDate("not a date")).toBe("")
+  })
+})
+
+describe("formatIsoDateTime", () => {
+  it("shows the day and time in Buenos Aires", () => {
+    expect(formatIsoDateTime("2026-10-13T02:30:00.000Z")).toBe("12/10/2026, 23:30")
+  })
+
+  it("shows nothing for a broken date", () => {
+    expect(formatIsoDateTime("")).toBe("")
   })
 })

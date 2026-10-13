@@ -312,3 +312,31 @@ export interface AppUser {
   createdAt: string
   disabled: boolean
 }
+
+export interface WebResearchSource {
+  url: string
+  title: string
+}
+
+export interface WebResearch {
+  id: string
+  taxId: string
+  requestedAt: string
+  requestedBy: string
+  status: "done" | "failed"
+  summary: string
+  sources: WebResearchSource[]
+  model: string
+  costUsd: number
+  webSearches: number
+}
+
+export interface RecentWebResearch extends WebResearch {
+  businessName: string
+}
+
+export interface ResearchBudget {
+  monthlyLimitUsd: number
+  spentThisMonthUsd: number
+  researchCountThisMonth: number
+}

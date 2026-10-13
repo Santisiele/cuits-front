@@ -15,7 +15,10 @@ import type {
   TrustLevelOperationSummary,
   SourceCategory,
   OperationSummary,
-  AppUser
+  AppUser,
+  WebResearch,
+  RecentWebResearch,
+  ResearchBudget
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiFailure } from "@/lib/errors"
@@ -415,5 +418,26 @@ export const UsersService = {
     apiFetch<{ message: string }>(`${API_BASE_URL}/users/${encodeURIComponent(username)}/password`, {
       method: "POST",
       body: JSON.stringify({ password }),
+    }),
+}
+
+export const ResearchService = {
+  run: (taxId: string) =>
+    apiFetch<WebResearch>(`${API_BASE_URL}/research/${encodeURIComponent(taxId)}`, { method: "POST" }),
+
+  history: (taxId: string) =>
+    apiFetch<{ research: WebResearch[] }>(`${API_BASE_URL}/research/${encodeURIComponent(taxId)}`).then(
+      (res) => res.research
+    ),
+
+  recent: () =>
+    apiFetch<{ research: RecentWebResearch[] }>(`${API_BASE_URL}/research/recent`).then((res) => res.research),
+
+  budget: () => apiFetch<ResearchBudget>(`${API_BASE_URL}/research/budget`),
+
+  setLimit: (monthlyLimitUsd: number) =>
+    apiFetch<ResearchBudget>(`${API_BASE_URL}/research/budget`, {
+      method: "PATCH",
+      body: JSON.stringify({ monthlyLimitUsd }),
     }),
 }

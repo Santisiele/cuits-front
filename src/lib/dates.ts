@@ -51,3 +51,18 @@ export function formatIsoDate(iso: string): string {
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? "" : BUENOS_AIRES_DATE.format(date)
 }
+
+const BUENOS_AIRES_DATE_TIME = new Intl.DateTimeFormat("es-AR", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
+
+export function formatIsoDateTime(iso: string): string {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? "" : BUENOS_AIRES_DATE_TIME.format(date)
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { GraphService, ApiError, UsersService, AuthApiService } from "@/services/api"
+import { GraphService, ApiError, UsersService, AuthApiService, ResearchService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { TrustLevelMembersResponse } from "@/types"
 
@@ -147,5 +147,57 @@ describe("AuthApiService.changePassword", () => {
     const error = await AuthApiService.changePassword("mala", "nueva-clave").catch((e: unknown) => e)
     expect((error as Error).message).toBe("La contraseña actual es incorrecta")
     expect(useAuthStore.getState().token).toBe("token-123")
+  })
+})
+
+describe("ResearchService", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "santi", "creator")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("asks for a new research with a POST", async () => {
+    fetchMock.mockResolvedValue(answer(201, { id: "r1" }))
+    await ResearchService.run("30501677643")
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/research\/30501677643$/)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("POST")
+  })
+
+  it("reads the history of a CUIT", async () => {
+    fetchMock.mockResolvedValue(answer(200, { research: [{ id: "r1" }] }))
+    expect(await ResearchService.history("30501677643")).toEqual([{ id: "r1" }])
+  })
+
+  it("reads the recent research", async () => {
+    fetchMock.mockResolvedValue(answer(200, { research: [] }))
+    expect(await ResearchService.recent()).toEqual([])
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/research\/recent$/)
+  })
+
+  it("reads the budget", async () => {
+    const budget = { monthlyLimitUsd: 20, spentThisMonthUsd: 1.5, researchCountThisMonth: 3 }
+    fetchMock.mockResolvedValue(answer(200, budget))
+    expect(await ResearchService.budget()).toEqual(budget)
+  })
+
+  it("changes the limit", async () => {
+    fetchMock.mockResolvedValue(answer(200, {}))
+    await ResearchService.setLimit(12.5)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("PATCH")
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ monthlyLimitUsd: 12.5 })
+  })
+
+  it("turns a spent budget into Spanish", async () => {
+    fetchMock.mockResolvedValue(answer(409, { error: "budget_exhausted", message: "The monthly budget is spent" }))
+    const error = await ResearchService.run("30501677643").catch((e: unknown) => e)
+    expect((error as Error).message).toBe("Se alcanzó el tope de gasto del mes")
   })
 })
