@@ -342,6 +342,12 @@ export const GraphService = {
 interface LoginResponse {
   token: string
   username: string
+  role: string
+}
+
+interface MeResponse {
+  username: string
+  role: string
 }
 
 interface LoginErrorResponse {
@@ -367,6 +373,8 @@ export const AuthApiService = {
 
     return response.json()
   },
+
+  me: () => apiFetch<MeResponse>(`${API_BASE_URL}/auth/me`),
 
   logout: async (): Promise<void> => {
     try {

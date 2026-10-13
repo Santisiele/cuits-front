@@ -18,7 +18,7 @@ describe("GraphService.getTrustLevelMembers", () => {
   beforeEach(() => {
     fetchMock.mockReset()
     vi.stubGlobal("fetch", fetchMock)
-    useAuthStore.getState().setAuth("token-123", "santi")
+    useAuthStore.getState().setAuth("token-123", "santi", "admin")
   })
 
   afterEach(() => {

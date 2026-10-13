@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthApiService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
+import { toRole } from "@/lib/roles"
 
 type LoginStatus = "idle" | "loading" | "error"
 
@@ -46,11 +47,11 @@ export function LoginModal({ open, onClose, theme }: LoginModalProps) {
     setErrorMessage("")
 
     try {
-      const { token, username: loggedInAs } = await AuthApiService.login(
+      const { token, username: loggedInAs, role } = await AuthApiService.login(
         username.trim(),
         password
       )
-      setAuth(token, loggedInAs)
+      setAuth(token, loggedInAs, toRole(role))
       handleClose()
     } catch (error) {
       setStatus("error")

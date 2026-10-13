@@ -1,15 +1,18 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { queryClient } from "@/lib/queryClient"
+import type { Role } from "@/lib/roles"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthState {
   token: string | null
   username: string | null
+  role: Role | null
   isAuthenticated: boolean
   /** Sets the token and username after a successful login. */
-  setAuth: (token: string, username: string) => void
+  setAuth: (token: string, username: string, role: Role | null) => void
+  setRole: (role: Role | null) => void
   /**
    * Clears the token and username on logout.
    * Also clears the entire React Query cache so stale data
@@ -29,10 +32,11 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       token: null,
       username: null,
+      role: null,
       isAuthenticated: false,
 
-      setAuth: (token, username) => {
-        set({ token, username, isAuthenticated: true })
+      setAuth: (token, username, role) => {
+        set({ token, username, role, isAuthenticated: true })
         // Refetch every query that had failed (typically with 401 because
         // the user wasn't authenticated yet). This makes the page the user
         // is currently viewing populate automatically right after login,
@@ -42,6 +46,8 @@ export const useAuthStore = create<AuthState>()(
           predicate: (query) => query.state.status === "error",
         })
       },
+
+      setRole: (role) => set({ role }),
 
       clearAuth: () => {
         /**
@@ -55,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Clear all cached queries so the next user starts fresh
         queryClient.clear()
-        set({ token: null, username: null, isAuthenticated: false })
+        set({ token: null, username: null, role: null, isAuthenticated: false })
       },
     }),
     {
@@ -63,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         token: state.token,
         username: state.username,
+        role: state.role,
         isAuthenticated: state.isAuthenticated,
       }),
     }

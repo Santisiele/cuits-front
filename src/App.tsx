@@ -28,6 +28,7 @@ import { LoginModal } from "@/components/LoginModal"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
+import { useSessionRole } from "@/hooks/useSessionRole"
 import { useState, useEffect, useRef } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
@@ -202,6 +203,7 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
   const { isAuthenticated, username } = useAuthStore()
   const { theme, toggleTheme } = useStore()
+  useSessionRole()
 
   /**
    * The theme class has to live on <html>, not on a wrapper div.
