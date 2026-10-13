@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/sources", label: "Fuentes", adminOnly: true },
       { path: "/trust-levels", label: "Niveles de confianza", adminOnly: true },
       { path: "/users", label: "Usuarios", adminOnly: true },
+      { path: "/ai-credits", label: "Créditos IA", adminOnly: true },
     ],
   },
 ]

@@ -21,6 +21,7 @@ import { SourcesTable } from "@/components/SourcesTable"
 import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { UsersTable } from "@/components/UsersTable"
+import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { AdminRoute } from "@/components/layout/AdminRoute"
@@ -285,6 +286,7 @@ export default function App() {
             <Route path="/trust-levels"   element={<AdminRoute><TrustLevelsTable /></AdminRoute>} />
             <Route path="/trust-levels/:value" element={<AdminRoute><TrustLevelMembersTable /></AdminRoute>} />
             <Route path="/users"          element={<AdminRoute><UsersTable /></AdminRoute>} />
+            <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
           </Routes>
         </div>
 

@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { Role } from "@/lib/roles"
 
-const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios"]
+const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Créditos IA"]
 
 async function openMenu(role: Role): Promise<void> {
   act(() => useAuthStore.getState().setAuth("t1", "santi", role))
