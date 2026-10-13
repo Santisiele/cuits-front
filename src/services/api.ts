@@ -17,7 +17,7 @@ import type {
   OperationSummary
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
-import { translateApiError } from "@/lib/errors"
+import { translateApiFailure } from "@/lib/errors"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
@@ -33,11 +33,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
  */
 export class ApiError extends Error {
   readonly rawMessage: string
+  readonly code: string | undefined
 
-  constructor(rawMessage: string) {
-    super(translateApiError(rawMessage))
+  constructor(rawMessage: string, code?: string) {
+    super(translateApiFailure(code, rawMessage))
     this.name = "ApiError"
     this.rawMessage = rawMessage
+    this.code = code
   }
 }
 
@@ -80,7 +82,7 @@ async function apiFetch<T>(
       }
     }
     const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string; message?: string }
-    throw new ApiError(error.message || error.error || "Request failed")
+    throw new ApiError(error.message || error.error || "Request failed", error.error)
   }
   return response.json()
 }

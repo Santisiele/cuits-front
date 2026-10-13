@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { translateApiError, getErrorMessage } from "@/lib/errors"
+import { translateApiError, translateApiFailure, getErrorMessage } from "@/lib/errors"
 
 describe("translateApiError", () => {
   it("translates the refusal to list level 0", () => {
@@ -50,5 +50,38 @@ describe("getErrorMessage", () => {
 
   it("uses the fallback it is given", () => {
     expect(getErrorMessage(null, "otra cosa")).toBe("otra cosa")
+  })
+})
+
+describe("translateApiFailure", () => {
+  it("translates by the error code when it knows it", () => {
+    expect(translateApiFailure("username_taken", "That username is already taken")).toBe("Ese usuario ya existe")
+  })
+
+  it("does not let the loose not found match swallow a missing user", () => {
+    expect(translateApiFailure("user_not_found", "User not found")).toBe("El usuario no existe")
+  })
+
+  it("translates a refusal to a member", () => {
+    expect(translateApiFailure("forbidden", "Only an admin can do this")).toBe("No tenés permiso para esto")
+  })
+
+  it("falls back to the message for an unknown code", () => {
+    expect(translateApiFailure("level_not_found", "That trust level does not exist")).toBe("Ese nivel no existe")
+  })
+
+  it("falls back to the message when there is no code", () => {
+    expect(translateApiFailure(undefined, "Invalid password")).toBe("Contraseña incorrecta")
+  })
+
+  it("translates the refusals that protect the creator", () => {
+    expect(translateApiFailure("creator_only", "Only the creator can do this")).toBe("Solo el creador puede hacer esto")
+    expect(translateApiFailure("cannot_change_creator", "The creator cannot be changed")).toBe(
+      "El creador no se puede modificar"
+    )
+  })
+
+  it("ignores codes inherited from Object", () => {
+    expect(translateApiFailure("toString", "Something new")).toBe("Something new")
   })
 })

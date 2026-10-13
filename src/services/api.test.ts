@@ -53,6 +53,14 @@ describe("GraphService.getTrustLevelMembers", () => {
     expect((error as ApiError).message).toBe("El nivel 0 es la ausencia de nivel: no tiene lista de CUITs")
   })
 
+  it("translates by the error code and keeps it", async () => {
+    fetchMock.mockResolvedValue(answer(403, { error: "forbidden", message: "Only an admin can do this" }))
+    const error = (await GraphService.getTrustLevelMembers(4).catch((e: unknown) => e)) as ApiError
+    expect(error.message).toBe("No tenés permiso para esto")
+    expect(error.code).toBe("forbidden")
+    expect(useAuthStore.getState().token).toBe("token-123")
+  })
+
   it("keeps the English original for code that branches on it", async () => {
     fetchMock.mockResolvedValue(answer(404, { error: "level_not_found", message: "That trust level does not exist" }))
     const error = (await GraphService.getTrustLevelMembers(99).catch((e: unknown) => e)) as ApiError

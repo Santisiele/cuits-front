@@ -64,6 +64,24 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
 }
 
 
+export const API_ERROR_CODES: Record<string, string> = {
+  forbidden: "No tenés permiso para esto",
+  invalid_username: "El usuario tiene que tener entre 3 y 32 letras, números, puntos, guiones o guiones bajos",
+  invalid_password: "La contraseña tiene que tener entre 8 y 72 caracteres",
+  invalid_role: "El rol no es válido",
+  invalid_disabled: "El estado no es válido",
+  username_taken: "Ese usuario ya existe",
+  user_not_found: "El usuario no existe",
+  wrong_password: "La contraseña actual es incorrecta",
+  creator_only: "Solo el creador puede hacer esto",
+  cannot_change_creator: "El creador no se puede modificar",
+}
+
+export function translateApiFailure(code: string | undefined, message: string): string {
+  if (code && Object.prototype.hasOwnProperty.call(API_ERROR_CODES, code)) return API_ERROR_CODES[code]!
+  return translateApiError(message)
+}
+
 /**
  * Translates a known API error message to Spanish.
  * Returns the original message if no translation is found.
