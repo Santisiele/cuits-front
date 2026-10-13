@@ -10,6 +10,7 @@ export interface NavItem {
    * either, so listing them would be adding navigation, not restoring it.
    */
   hidden?: boolean
+  adminOnly?: boolean
 }
 
 export interface NavGroup {
@@ -20,6 +21,7 @@ export interface NavGroup {
 
 interface SidebarGroupProps {
   group: NavGroup
+  isAdmin: boolean
   /** Called after a link is followed, so the drawer can close itself. */
   onNavigate: () => void
 }
@@ -31,8 +33,10 @@ interface SidebarGroupProps {
  * drawer closed there is nothing on screen naming the current view, so this
  * is the only place that answers "where am I".
  */
-export function SidebarGroup({ group, onNavigate }: SidebarGroupProps) {
+export function SidebarGroup({ group, isAdmin, onNavigate }: SidebarGroupProps) {
   const Icon = group.icon
+  const items = group.items.filter((item) => !item.hidden && (isAdmin || !item.adminOnly))
+  if (items.length === 0) return null
 
   return (
     <div className="flex flex-col gap-1">
@@ -41,9 +45,7 @@ export function SidebarGroup({ group, onNavigate }: SidebarGroupProps) {
         {group.label}
       </div>
 
-      {group.items
-        .filter((item) => !item.hidden)
-        .map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.path}
           to={item.path}

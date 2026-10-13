@@ -22,6 +22,7 @@ import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { AdminRoute } from "@/components/layout/AdminRoute"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -259,10 +260,12 @@ export default function App() {
             <Route path="/multi-search" element={<MultiSearch />} />
             <Route path="/path"      element={<PathTab />} />
             <Route path="/add"       element={
-              <div className="space-y-4">
-                <AddRelationship />
-                <DeleteRelationship />
-              </div>
+              <AdminRoute>
+                <div className="space-y-4">
+                  <AddRelationship />
+                  <DeleteRelationship />
+                </div>
+              </AdminRoute>
             } />
             <Route path="/edit"      element={<EditNode />} />
             <Route path="/base"      element={<NodeTable />} />
@@ -271,9 +274,9 @@ export default function App() {
             <Route path="/birthdays" element={<BirthdaysTable />} />
             <Route path="/full-base"  element={<FullBaseTable />} />
             <Route path="/crossing-over"  element={<CrossingOverTable />} />
-            <Route path="/sources"        element={<SourcesTable />} />
-            <Route path="/trust-levels"   element={<TrustLevelsTable />} />
-            <Route path="/trust-levels/:value" element={<TrustLevelMembersTable />} />
+            <Route path="/sources"        element={<AdminRoute><SourcesTable /></AdminRoute>} />
+            <Route path="/trust-levels"   element={<AdminRoute><TrustLevelsTable /></AdminRoute>} />
+            <Route path="/trust-levels/:value" element={<AdminRoute><TrustLevelMembersTable /></AdminRoute>} />
           </Routes>
         </div>
 

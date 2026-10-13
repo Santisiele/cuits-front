@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, Search, Database, Settings } from "lucide-react"
 import { SidebarGroup } from "./SidebarGroup"
 import type { NavGroup } from "./SidebarGroup"
+import { useIsAdmin } from "@/hooks/useSessionRole"
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
@@ -40,10 +41,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Administración",
     icon: Settings,
     items: [
-      { path: "/add", label: "Manejar relación" },
+      { path: "/add", label: "Manejar relación", adminOnly: true },
       { path: "/edit", label: "Editar persona" },
-      { path: "/sources", label: "Fuentes" },
-      { path: "/trust-levels", label: "Niveles de confianza" },
+      { path: "/sources", label: "Fuentes", adminOnly: true },
+      { path: "/trust-levels", label: "Niveles de confianza", adminOnly: true },
     ],
   },
 ]
@@ -58,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
  */
 export function AppSidebar() {
   const [open, setOpen] = useState(false)
+  const isAdmin = useIsAdmin()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -82,7 +84,7 @@ export function AppSidebar() {
 
         <nav className="flex flex-col gap-6 px-2 pb-6">
           {NAV_GROUPS.map((group) => (
-            <SidebarGroup key={group.label} group={group} onNavigate={() => setOpen(false)} />
+            <SidebarGroup key={group.label} group={group} isAdmin={isAdmin} onNavigate={() => setOpen(false)} />
           ))}
         </nav>
       </SheetContent>
