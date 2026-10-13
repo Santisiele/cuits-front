@@ -77,7 +77,7 @@ export const API_ERROR_CODES: Record<string, string> = {
   cannot_change_creator: "El creador no se puede modificar",
   invalid_cuit: "El CUIT no es válido",
   invalid_limit: "El tope tiene que ser un número mayor o igual a 0",
-  not_in_base: "Ese CUIT no está en tu base",
+  cuit_not_found: "Ese CUIT no existe en la base",
   budget_exhausted: "Se alcanzó el tope de gasto del mes",
   research_failed: "No se pudo completar la búsqueda. Intentá de nuevo",
   research_off: "La investigación web no está configurada",

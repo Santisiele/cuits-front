@@ -87,7 +87,7 @@ describe("translateApiFailure", () => {
 
   it("translates the web research refusals", () => {
     expect(translateApiFailure("budget_exhausted", "Monthly budget reached")).toBe("Se alcanzó el tope de gasto del mes")
-    expect(translateApiFailure("not_in_base", "Tax ID not found")).toBe("Ese CUIT no está en tu base")
+    expect(translateApiFailure("cuit_not_found", "That CUIT is not in the graph")).toBe("Ese CUIT no existe en la base")
     expect(translateApiFailure("research_off", "No API key")).toBe("La investigación web no está configurada")
   })
 
