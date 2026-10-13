@@ -72,4 +72,19 @@ describe("AppSidebar creator items", () => {
     await openMenu("member")
     expect(screen.queryByRole("link", { name: "Carga de cumpleaños" })).not.toBeInTheDocument()
   })
+
+  it("shows the creator the archived research", async () => {
+    await openMenu("creator")
+    expect(screen.getByRole("link", { name: "Búsquedas archivadas" })).toHaveAttribute("href", "/archived-research")
+  })
+
+  it("hides the archived research from an admin", async () => {
+    await openMenu("admin")
+    expect(screen.queryByRole("link", { name: "Búsquedas archivadas" })).not.toBeInTheDocument()
+  })
+
+  it("hides the archived research from a member", async () => {
+    await openMenu("member")
+    expect(screen.queryByRole("link", { name: "Búsquedas archivadas" })).not.toBeInTheDocument()
+  })
 })
