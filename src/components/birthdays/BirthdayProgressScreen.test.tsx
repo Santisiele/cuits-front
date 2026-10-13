@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { render } from "@/tests/render"
 import type { BirthdayProgress } from "@/types"
 import type { Role } from "@/lib/roles"
+import { apiError } from "@/tests/apiError"
 
 const get = vi.fn()
 
@@ -157,7 +158,7 @@ describe("BirthdayProgressScreen", () => {
   })
 
   it("shows a progress that could not load", async () => {
-    get.mockRejectedValue(new Error("No tenés permiso para esto"))
+    get.mockRejectedValue(apiError("No tenés permiso para esto"))
     show()
     expect(await screen.findByText("No tenés permiso para esto")).toBeInTheDocument()
   })

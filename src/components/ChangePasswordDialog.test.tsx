@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/tests/render"
+import { apiError } from "@/tests/apiError"
 
 const changePassword = vi.fn()
 const onClose = vi.fn()
@@ -52,7 +53,7 @@ describe("ChangePasswordDialog", () => {
   })
 
   it("shows a wrong current password in Spanish and stays open", async () => {
-    changePassword.mockRejectedValue(new Error("La contraseña actual es incorrecta"))
+    changePassword.mockRejectedValue(apiError("La contraseña actual es incorrecta"))
     await fill("mala-clave", "nueva-clave", "nueva-clave")
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }))
     expect(await screen.findByText("La contraseña actual es incorrecta")).toBeInTheDocument()

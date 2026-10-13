@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render } from "@/tests/render"
 import type { RecentWebResearch, ResearchBudget } from "@/types"
+import { apiError } from "@/tests/apiError"
 
 const budget = vi.fn()
 const recent = vi.fn()
@@ -122,7 +123,7 @@ describe("AiCreditsScreen", () => {
   })
 
   it("shows a refused limit in Spanish", async () => {
-    setLimit.mockRejectedValue(new Error("El tope tiene que ser un número mayor o igual a 0"))
+    setLimit.mockRejectedValue(apiError("El tope tiene que ser un número mayor o igual a 0"))
     await show()
     await userEvent.click(screen.getByRole("button", { name: "Guardar tope" }))
     expect(await screen.findByText("El tope tiene que ser un número mayor o igual a 0")).toBeInTheDocument()
@@ -142,7 +143,7 @@ describe("AiCreditsScreen", () => {
   })
 
   it("shows a budget that could not load", async () => {
-    budget.mockRejectedValue(new Error("La investigación web no está configurada"))
+    budget.mockRejectedValue(apiError("La investigación web no está configurada"))
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     render(
       <QueryClientProvider client={client}>

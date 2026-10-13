@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render } from "@/tests/render"
 import type { WebResearch } from "@/types"
+import { apiError } from "@/tests/apiError"
 
 const history = vi.fn()
 const run = vi.fn()
@@ -113,7 +114,7 @@ describe("WebResearchSection", () => {
   })
 
   it("shows a refusal in Spanish", async () => {
-    run.mockRejectedValue(new Error("Se alcanzó el tope de gasto del mes"))
+    run.mockRejectedValue(apiError("Se alcanzó el tope de gasto del mes"))
     show()
     await screen.findByText("Todavía no se buscó este CUIT en la web.")
     await userEvent.click(screen.getByRole("button", { name: /Buscar en la web/ }))
@@ -121,7 +122,7 @@ describe("WebResearchSection", () => {
   })
 
   it("shows a history that could not load", async () => {
-    history.mockRejectedValue(new Error("No tenés permiso para esto"))
+    history.mockRejectedValue(apiError("No tenés permiso para esto"))
     show()
     expect(await screen.findByText("No tenés permiso para esto")).toBeInTheDocument()
   })

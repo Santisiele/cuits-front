@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { translateApiError, translateApiFailure, getErrorMessage } from "@/lib/errors"
+import { translateApiError, translateApiFailure, getErrorMessage, GENERIC_API_ERROR } from "@/lib/errors"
 
 describe("translateApiError", () => {
   it("translates the refusal to list level 0", () => {
@@ -34,14 +34,18 @@ describe("translateApiError", () => {
     )
   })
 
-  it("passes an unknown message through untouched", () => {
-    expect(translateApiError("Something new")).toBe("Something new")
+  it("leaves an unknown message untranslated so the caller can fall back", () => {
+    expect(translateApiError("Something new")).toBeUndefined()
   })
 })
 
 describe("getErrorMessage", () => {
-  it("reads the message of an error", () => {
-    expect(getErrorMessage(new Error("se cayó"))).toBe("se cayó")
+  it("reads the message of an api error, which is already in Spanish", () => {
+    expect(getErrorMessage(Object.assign(new Error("se cayó"), { name: "ApiError" }))).toBe("se cayó")
+  })
+
+  it("never shows the message of any other error, which can be English", () => {
+    expect(getErrorMessage(new TypeError("Failed to fetch"))).toBe("Error desconocido")
   })
 
   it("falls back for anything that is not an error", () => {
@@ -88,6 +92,19 @@ describe("translateApiFailure", () => {
   })
 
   it("ignores codes inherited from Object", () => {
-    expect(translateApiFailure("toString", "Something new")).toBe("Something new")
+    expect(translateApiFailure("toString", "Something new")).toBe(GENERIC_API_ERROR)
+  })
+
+  it("never passes an unknown English message through", () => {
+    expect(translateApiFailure("Bad Request", "Body cannot be empty when content-type is set to 'application/json'", 400)).toBe(GENERIC_API_ERROR)
+  })
+
+  it("falls back by status when nothing else matches", () => {
+    expect(translateApiFailure(undefined, "Too Many Requests", 429)).toBe("Demasiadas solicitudes, intentá de nuevo en un minuto")
+    expect(translateApiFailure(undefined, "boom", 503)).toBe("Error del servidor. Intentá de nuevo")
+  })
+
+  it("translates a network failure", () => {
+    expect(translateApiFailure("network_error", "Network error")).toBe("No se pudo conectar con el servidor. Revisá tu conexión")
   })
 })

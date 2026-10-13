@@ -4,7 +4,7 @@
  * @param fallback - Fallback message if the error has no message
  */
 export function getErrorMessage(error: unknown, fallback = "Error desconocido"): string {
-  if (error instanceof Error) return error.message
+  if (error instanceof Error && error.name === "ApiError") return error.message
   return fallback
 }
 
@@ -81,21 +81,30 @@ export const API_ERROR_CODES: Record<string, string> = {
   budget_exhausted: "Se alcanzó el tope de gasto del mes",
   research_failed: "No se pudo completar la búsqueda. Intentá de nuevo",
   research_off: "La investigación web no está configurada",
+  network_error: "No se pudo conectar con el servidor. Revisá tu conexión",
 }
 
-export function translateApiFailure(code: string | undefined, message: string): string {
+export const GENERIC_API_ERROR = "No se pudo completar la operación. Intentá de nuevo"
+
+export function translateByStatus(status: number | undefined): string {
+  if (status === 429) return "Demasiadas solicitudes, intentá de nuevo en un minuto"
+  if (status !== undefined && status >= 500) return "Error del servidor. Intentá de nuevo"
+  return GENERIC_API_ERROR
+}
+
+export function translateApiFailure(code: string | undefined, message: string, status?: number): string {
   if (code && Object.prototype.hasOwnProperty.call(API_ERROR_CODES, code)) return API_ERROR_CODES[code]!
-  return translateApiError(message)
+  return translateApiError(message) ?? translateByStatus(status)
 }
 
 /**
  * Translates a known API error message to Spanish.
- * Returns the original message if no translation is found.
+ * Returns undefined if no translation is found.
  * @param message - Raw error message from the API
  */
-export function translateApiError(message: string): string {
+export function translateApiError(message: string): string | undefined {
   for (const [key, translation] of Object.entries(API_ERROR_MESSAGES)) {
     if (message.includes(key)) return translation
   }
-  return message
+  return undefined
 }

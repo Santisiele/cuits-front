@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { getErrorMessage, translateApiError } from "@/lib/errors"
+import { getErrorMessage } from "@/lib/errors"
 import { describeOperation } from "@/lib/operationMessages"
 import type { OperationSummary } from "@/types"
 
@@ -45,7 +45,7 @@ export function useSourceOperationFlow<S = OperationSummary>(
       setPreview(await run(null, true))
       setStep("preview")
     } catch (err) {
-      setError(translateApiError(getErrorMessage(err, "Error inesperado")))
+      setError(getErrorMessage(err, "Error inesperado"))
     } finally {
       setLoading(false)
     }
@@ -59,7 +59,7 @@ export function useSourceOperationFlow<S = OperationSummary>(
       toast.success(describe(summary))
       onClose()
     } catch (err) {
-      setError(translateApiError(getErrorMessage(err, "Error inesperado")))
+      setError(getErrorMessage(err, "Error inesperado"))
     } finally {
       setLoading(false)
     }

@@ -258,3 +258,58 @@ describe("apiFetch request headers", () => {
     expect(headers.get("Content-Type")).toBe("application/json")
   })
 })
+
+describe("apiFetch failures", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "santi", "admin")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("never shows an untranslated English message", async () => {
+    fetchMock.mockResolvedValue(
+      answer(400, { statusCode: 400, error: "Bad Request", message: "Body cannot be empty when content-type is set to 'application/json'" })
+    )
+    const error = (await ResearchService.run("30501677643").catch((e: unknown) => e)) as ApiError
+    expect(error.message).toBe("No se pudo completar la operación. Intentá de nuevo")
+  })
+
+  it("says the server could not be reached when the network fails", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+    const error = (await ResearchService.run("30501677643").catch((e: unknown) => e)) as ApiError
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.message).toBe("No se pudo conectar con el servidor. Revisá tu conexión")
+  })
+})
+
+describe("AuthApiService.login failures", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("translates the rate limit by its status", async () => {
+    fetchMock.mockResolvedValue(answer(429, { statusCode: 429, error: "Too Many Requests", message: "Rate limit exceeded" }))
+    const error = (await AuthApiService.login("santi", "x").catch((e: unknown) => e)) as ApiError
+    expect(error.message).toBe("Demasiadas solicitudes, intentá de nuevo en un minuto")
+  })
+
+  it("says the server could not be reached when the network fails", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+    const error = (await AuthApiService.login("santi", "x").catch((e: unknown) => e)) as ApiError
+    expect(error.message).toBe("No se pudo conectar con el servidor. Revisá tu conexión")
+  })
+})

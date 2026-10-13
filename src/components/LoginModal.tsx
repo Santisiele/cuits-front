@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { AuthApiService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
 import { toRole } from "@/lib/roles"
+import { getErrorMessage } from "@/lib/errors"
 
 type LoginStatus = "idle" | "loading" | "error"
 
@@ -55,9 +56,7 @@ export function LoginModal({ open, onClose, theme }: LoginModalProps) {
       handleClose()
     } catch (error) {
       setStatus("error")
-      setErrorMessage(
-        error instanceof Error ? error.message : "Error al iniciar sesión"
-      )
+      setErrorMessage(getErrorMessage(error, "Error al iniciar sesión"))
     }
   }
 

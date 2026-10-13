@@ -40,8 +40,8 @@ export class ApiError extends Error {
   readonly rawMessage: string
   readonly code: string | undefined
 
-  constructor(rawMessage: string, code?: string) {
-    super(translateApiFailure(code, rawMessage))
+  constructor(rawMessage: string, code?: string, status?: number) {
+    super(translateApiFailure(code, rawMessage, status))
     this.name = "ApiError"
     this.rawMessage = rawMessage
     this.code = code
@@ -70,7 +70,12 @@ async function apiFetch<T>(
   if (token) {
     headers.set("Authorization", `Bearer ${token}`)
   }
-  const response = await fetch(url, { ...options, headers })
+  let response: Response
+  try {
+    response = await fetch(url, { ...options, headers })
+  } catch {
+    throw new ApiError("Network error", "network_error")
+  }
   if (!response.ok) {
     /**
      * Only tear down the session this request was actually made under.
@@ -87,7 +92,7 @@ async function apiFetch<T>(
       }
     }
     const error = await response.json().catch(() => ({ error: "Request failed" })) as { error?: string; message?: string }
-    throw new ApiError(error.message || error.error || "Request failed", error.error)
+    throw new ApiError(error.message || error.error || "Request failed", error.error, response.status)
   }
   return response.json()
 }
@@ -365,15 +370,20 @@ interface LoginErrorResponse {
  */
 export const AuthApiService = {
   login: async (username: string, password: string): Promise<LoginResponse> => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    })
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+    } catch {
+      throw new ApiError("Network error", "network_error")
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null) as LoginErrorResponse | null
-      throw new ApiError(errorData?.message || "Login failed")
+      throw new ApiError(errorData?.message || "Login failed", undefined, response.status)
     }
 
     return response.json()

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render } from "@/tests/render"
 import type { AppUser } from "@/types"
 import type { Role } from "@/lib/roles"
+import { apiError } from "@/tests/apiError"
 
 const list = vi.fn()
 const create = vi.fn()
@@ -99,7 +100,7 @@ describe("UsersTable", () => {
   })
 
   it("shows a refusal in Spanish", async () => {
-    update.mockRejectedValue(new Error("Solo el creador puede hacer esto"))
+    update.mockRejectedValue(apiError("Solo el creador puede hacer esto"))
     await show("jefa", "admin")
     await userEvent.click(row("ana").getByRole("button", { name: /Hacer admin/ }))
     expect(await screen.findByText("Solo el creador puede hacer esto")).toBeInTheDocument()
@@ -170,7 +171,7 @@ describe("UsersTable — new user", () => {
   })
 
   it("shows a taken username in Spanish", async () => {
-    create.mockRejectedValue(new Error("Ese usuario ya existe"))
+    create.mockRejectedValue(apiError("Ese usuario ya existe"))
     await openForm()
     await userEvent.type(screen.getByLabelText("Usuario"), "ana")
     await userEvent.type(screen.getByLabelText("Contraseña"), "12345678")
