@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { GraphService, ApiError, UsersService } from "@/services/api"
+import { GraphService, ApiError, UsersService, AuthApiService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { TrustLevelMembersResponse } from "@/types"
 
@@ -114,5 +114,38 @@ describe("UsersService", () => {
     fetchMock.mockResolvedValue(answer(409, { error: "username_taken", message: 'User "ana" already exists' }))
     const error = await UsersService.create("ana", "12345678", "member").catch((e: unknown) => e)
     expect((error as Error).message).toBe("Ese usuario ya existe")
+  })
+})
+
+describe("AuthApiService.changePassword", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "ana", "member")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("sends both passwords", async () => {
+    fetchMock.mockResolvedValue(answer(200, { message: "Password changed" }))
+    await AuthApiService.changePassword("vieja-clave", "nueva-clave")
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/auth\/password$/)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("PATCH")
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
+      currentPassword: "vieja-clave",
+      newPassword: "nueva-clave",
+    })
+  })
+
+  it("keeps the session on a wrong current password", async () => {
+    fetchMock.mockResolvedValue(answer(400, { error: "wrong_password", message: "Current password is wrong" }))
+    const error = await AuthApiService.changePassword("mala", "nueva-clave").catch((e: unknown) => e)
+    expect((error as Error).message).toBe("La contraseña actual es incorrecta")
+    expect(useAuthStore.getState().token).toBe("token-123")
   })
 })

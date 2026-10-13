@@ -5,7 +5,7 @@ import { SearchBar } from "@/components/SearchBar"
 import { NameSearch } from "@/components/NameSearch"
 import { MultiSearch } from "@/components/MultiSearch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Hash, Type } from "lucide-react"
+import { Hash, KeyRound, Type } from "lucide-react"
 import { PathSearchBar } from "@/components/PathSearchBar"
 import { GraphView } from "@/components/GraphView"
 import { AddRelationship } from "@/components/AddRelationship"
@@ -27,6 +27,7 @@ import { AdminRoute } from "@/components/layout/AdminRoute"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog"
 import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
@@ -203,6 +204,7 @@ function PathTab() {
  */
 export default function App() {
   const [loginOpen, setLoginOpen] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
   const { isAuthenticated, username } = useAuthStore()
   const { theme, toggleTheme } = useStore()
   useSessionRole()
@@ -243,6 +245,10 @@ export default function App() {
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground hidden sm:inline">{username}</span>
+                <Button variant="ghost" size="sm" aria-label="Cambiar contraseña" onClick={() => setChangingPassword(true)}>
+                  <KeyRound className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">Cambiar contraseña</span>
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => void AuthApiService.logout()}>Salir</Button>
               </div>
             ) : (
@@ -284,6 +290,7 @@ export default function App() {
 
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} theme={theme} />
+      {isAuthenticated && changingPassword && <ChangePasswordDialog onClose={() => setChangingPassword(false)} />}
       <Toaster />
     </div>
   )

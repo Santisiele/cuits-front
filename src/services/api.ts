@@ -377,6 +377,12 @@ export const AuthApiService = {
 
   me: () => apiFetch<MeResponse>(`${API_BASE_URL}/auth/me`),
 
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiFetch<{ message: string }>(`${API_BASE_URL}/auth/password`, {
+      method: "PATCH",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
   logout: async (): Promise<void> => {
     try {
       const token = useAuthStore.getState().token
