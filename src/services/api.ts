@@ -14,7 +14,8 @@ import type {
   TrustLevelMembersResponse,
   TrustLevelOperationSummary,
   SourceCategory,
-  OperationSummary
+  OperationSummary,
+  AppUser
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiFailure } from "@/lib/errors"
@@ -388,4 +389,25 @@ export const AuthApiService = {
       useAuthStore.getState().clearAuth()
     }
   }
+}
+export const UsersService = {
+  list: () => apiFetch<{ users: AppUser[] }>(`${API_BASE_URL}/users`).then((res) => res.users),
+
+  create: (username: string, password: string, role: string) =>
+    apiFetch<AppUser>(`${API_BASE_URL}/users`, {
+      method: "POST",
+      body: JSON.stringify({ username, password, role }),
+    }),
+
+  update: (username: string, changes: { role?: string; disabled?: boolean }) =>
+    apiFetch<AppUser>(`${API_BASE_URL}/users/${encodeURIComponent(username)}`, {
+      method: "PATCH",
+      body: JSON.stringify(changes),
+    }),
+
+  resetPassword: (username: string, password: string) =>
+    apiFetch<{ message: string }>(`${API_BASE_URL}/users/${encodeURIComponent(username)}/password`, {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
 }

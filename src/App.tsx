@@ -20,6 +20,7 @@ import { FullBaseTable } from "./components/FullBaseTable"
 import { SourcesTable } from "@/components/SourcesTable"
 import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
+import { UsersTable } from "@/components/UsersTable"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { AdminRoute } from "@/components/layout/AdminRoute"
@@ -277,6 +278,7 @@ export default function App() {
             <Route path="/sources"        element={<AdminRoute><SourcesTable /></AdminRoute>} />
             <Route path="/trust-levels"   element={<AdminRoute><TrustLevelsTable /></AdminRoute>} />
             <Route path="/trust-levels/:value" element={<AdminRoute><TrustLevelMembersTable /></AdminRoute>} />
+            <Route path="/users"          element={<AdminRoute><UsersTable /></AdminRoute>} />
           </Routes>
         </div>
 

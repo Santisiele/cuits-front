@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { GraphService, ApiError } from "@/services/api"
+import { GraphService, ApiError, UsersService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { TrustLevelMembersResponse } from "@/types"
 
@@ -66,5 +66,53 @@ describe("GraphService.getTrustLevelMembers", () => {
     const error = (await GraphService.getTrustLevelMembers(99).catch((e: unknown) => e)) as ApiError
     expect(error.message).toBe("Ese nivel no existe")
     expect(error.rawMessage).toBe("That trust level does not exist")
+  })
+})
+
+describe("UsersService", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "santi", "creator")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("lists the users", async () => {
+    fetchMock.mockResolvedValue(answer(200, { users: [] }))
+    expect(await UsersService.list()).toEqual([])
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/users$/)
+  })
+
+  it("creates a user with the role it was given", async () => {
+    fetchMock.mockResolvedValue(answer(201, {}))
+    await UsersService.create("ana", "12345678", "member")
+    expect(fetchMock.mock.calls[0]![1].method).toBe("POST")
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ username: "ana", password: "12345678", role: "member" })
+  })
+
+  it("changes a user by its encoded name", async () => {
+    fetchMock.mockResolvedValue(answer(200, {}))
+    await UsersService.update("ana.b", { disabled: true })
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/users\/ana\.b$/)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("PATCH")
+  })
+
+  it("resets a password", async () => {
+    fetchMock.mockResolvedValue(answer(200, { message: "Password reset" }))
+    await UsersService.resetPassword("ana", "12345678")
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/users\/ana\/password$/)
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({ password: "12345678" })
+  })
+
+  it("turns a taken username into Spanish", async () => {
+    fetchMock.mockResolvedValue(answer(409, { error: "username_taken", message: 'User "ana" already exists' }))
+    const error = await UsersService.create("ana", "12345678", "member").catch((e: unknown) => e)
+    expect((error as Error).message).toBe("Ese usuario ya existe")
   })
 })

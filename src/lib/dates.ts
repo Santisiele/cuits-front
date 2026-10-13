@@ -39,3 +39,15 @@ export function rangeEndsBeforeItStarts(from: string, to: string): boolean {
   if (!start || !end) return false
   return end < start
 }
+
+const BUENOS_AIRES_DATE = new Intl.DateTimeFormat("es-AR", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+})
+
+export function formatIsoDate(iso: string): string {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? "" : BUENOS_AIRES_DATE.format(date)
+}

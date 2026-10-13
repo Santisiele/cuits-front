@@ -7,6 +7,7 @@ import {
   rangeEndsBeforeItStarts,
   monthNameOf,
   MONTH_NAMES,
+  formatIsoDate,
 } from "@/lib/dates"
 
 describe("toIsoDate", () => {
@@ -128,5 +129,15 @@ describe("monthNameOf", () => {
     expect(MONTH_NAMES).toHaveLength(12)
     expect(MONTH_NAMES[0]).toBe("Enero")
     expect(MONTH_NAMES[11]).toBe("Diciembre")
+  })
+})
+
+describe("formatIsoDate", () => {
+  it("shows the day in Buenos Aires", () => {
+    expect(formatIsoDate("2026-10-13T02:30:00.000Z")).toBe("12/10/2026")
+  })
+
+  it("shows nothing for a broken date", () => {
+    expect(formatIsoDate("not a date")).toBe("")
   })
 })

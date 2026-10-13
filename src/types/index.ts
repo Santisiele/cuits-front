@@ -305,3 +305,10 @@ export interface TrustLevelOperationSummary {
   dryRun: boolean
   message: string
 }
+
+export interface AppUser {
+  username: string
+  role: "creator" | "admin" | "member"
+  createdAt: string
+  disabled: boolean
+}
