@@ -11,6 +11,7 @@ import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
 import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
 import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSourcesDialog"
+import { WebResearchSection } from "@/components/research/WebResearchSection"
 import { ApiError } from "@/services/api"
 import { formatActivityMonth } from "@/lib/activityMonths"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
@@ -456,6 +457,8 @@ export function EditNode() {
           </CardContent>
         </Card>
       )}
+
+      {isAdmin && node && <WebResearchSection taxId={node.taxId} />}
 
       {/* Relationship graph — grows with content, no internal scroll. */}
       {graphResult && (

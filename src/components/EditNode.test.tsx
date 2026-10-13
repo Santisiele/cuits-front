@@ -26,6 +26,9 @@ vi.mock("@/hooks/useTrustLevels", () => ({
 
 vi.mock("@/components/GraphView", () => ({ GraphView: () => null }))
 vi.mock("@/components/node-sources/EditNodeSourcesDialog", () => ({ EditNodeSourcesDialog: () => null }))
+vi.mock("@/components/research/WebResearchSection", () => ({
+  WebResearchSection: ({ taxId }: { taxId: string }) => <p>Investigación web de {taxId}</p>,
+}))
 
 const { EditNode } = await import("@/components/EditNode")
 const { useStore } = await import("@/store/useStore")
@@ -106,6 +109,7 @@ describe("EditNode — admin actions", () => {
     node = debtor()
     openNode("30501677643")
     expect(screen.queryByRole("button", { name: "Editar fuentes" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Investigación web/)).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument()
   })
 
@@ -114,5 +118,19 @@ describe("EditNode — admin actions", () => {
     node = debtor()
     openNode("30501677643")
     expect(screen.getByRole("button", { name: "Editar fuentes" })).toBeInTheDocument()
+  })
+
+  it("shows an admin the web research of the CUIT", () => {
+    act(() => useAuthStore.getState().setAuth("t1", "santi", "admin"))
+    node = debtor()
+    openNode("30501677643")
+    expect(screen.getByText("Investigación web de 30501677643")).toBeInTheDocument()
+  })
+
+  it("shows the creator the web research too", () => {
+    act(() => useAuthStore.getState().setAuth("t1", "santi", "creator"))
+    node = debtor()
+    openNode("30501677643")
+    expect(screen.getByText("Investigación web de 30501677643")).toBeInTheDocument()
   })
 })
