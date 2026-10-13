@@ -14,6 +14,7 @@ import { EditNodeSourcesDialog } from "@/components/node-sources/EditNodeSources
 import { ApiError } from "@/services/api"
 import { formatActivityMonth } from "@/lib/activityMonths"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
+import { useIsAdmin } from "@/hooks/useSessionRole"
 import { NO_LEVEL_LABEL, NO_LEVEL_VALUE } from "@/lib/trustLevels"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -98,6 +99,7 @@ export function EditNode() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { levels: trustLevels, labelFor: trustLabelFor } = useTrustLevels()
+  const isAdmin = useIsAdmin()
 
   const [taxId, setTaxId] = useState("")
   const maxDepth = 1
@@ -440,13 +442,15 @@ export function EditNode() {
                 {updateMutation.isError && (
                   <Badge variant="destructive">Error al guardar</Badge>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSourcesDialogOpen(true)}
-                >
-                  Editar fuentes
-                </Button>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSourcesDialogOpen(true)}
+                  >
+                    Editar fuentes
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>
@@ -465,7 +469,7 @@ export function EditNode() {
         </Card>
       )}
 
-      {sourcesDialogOpen && node && (
+      {isAdmin && sourcesDialogOpen && node && (
         <EditNodeSourcesDialog node={node} onClose={() => setSourcesDialogOpen(false)} />
       )}
     </div>

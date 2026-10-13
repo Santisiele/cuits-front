@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { act } from "react"
 import { screen } from "@testing-library/react"
 import { render } from "@/tests/render"
@@ -29,6 +29,7 @@ vi.mock("@/components/node-sources/EditNodeSourcesDialog", () => ({ EditNodeSour
 
 const { EditNode } = await import("@/components/EditNode")
 const { useStore } = await import("@/store/useStore")
+const { useAuthStore } = await import("@/store/useAuthStore")
 
 function debtor(overrides: Partial<NodeData> = {}): NodeData {
   return {
@@ -86,5 +87,32 @@ describe("EditNode — lenders", () => {
     node = debtor()
     openNode("30501677643")
     expect(screen.queryByText("Financieras a las que le pidió")).not.toBeInTheDocument()
+  })
+})
+
+describe("EditNode — admin actions", () => {
+  beforeEach(() => {
+    act(() => {
+      useStore.getState().setEditTaxId(null)
+    })
+  })
+
+  afterEach(() => {
+    act(() => useAuthStore.getState().clearAuth())
+  })
+
+  it("does not offer a member to edit the sources", () => {
+    act(() => useAuthStore.getState().setAuth("t1", "ana", "member"))
+    node = debtor()
+    openNode("30501677643")
+    expect(screen.queryByRole("button", { name: "Editar fuentes" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument()
+  })
+
+  it("offers an admin to edit the sources", () => {
+    act(() => useAuthStore.getState().setAuth("t1", "santi", "admin"))
+    node = debtor()
+    openNode("30501677643")
+    expect(screen.getByRole("button", { name: "Editar fuentes" })).toBeInTheDocument()
   })
 })
