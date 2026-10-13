@@ -18,7 +18,8 @@ import type {
   AppUser,
   WebResearch,
   RecentWebResearch,
-  ResearchBudget
+  ResearchBudget,
+  BirthdayProgress
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiFailure } from "@/lib/errors"
@@ -440,4 +441,8 @@ export const ResearchService = {
       method: "PATCH",
       body: JSON.stringify({ monthlyLimitUsd }),
     }),
+}
+
+export const BirthdayProgressService = {
+  get: () => apiFetch<BirthdayProgress>(`${API_BASE_URL}/birthdays/progress`),
 }

@@ -340,3 +340,39 @@ export interface ResearchBudget {
   spentThisMonthUsd: number
   researchCountThisMonth: number
 }
+
+export interface BirthdaySourceProgress {
+  source: string
+  people: number
+  withBirthday: number
+  missing: number
+}
+
+export interface BirthdaySweep {
+  day: string | null
+  consultedToday: number
+  dailyLimit: number
+  updatedAt: string | null
+}
+
+export interface BirthdayMiss {
+  taxId: string
+  businessName: string
+  missedOn: string
+}
+
+export interface BirthdayPending {
+  taxId: string
+  businessName: string
+  sources: string[]
+}
+
+export interface BirthdayProgress {
+  knownPeople: number
+  withBirthday: number
+  missing: number
+  bySource: BirthdaySourceProgress[]
+  sweep: BirthdaySweep
+  misses: BirthdayMiss[]
+  pending: BirthdayPending[]
+}

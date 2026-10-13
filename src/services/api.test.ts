@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { GraphService, ApiError, UsersService, AuthApiService, ResearchService } from "@/services/api"
+import { GraphService, ApiError, UsersService, AuthApiService, ResearchService, BirthdayProgressService } from "@/services/api"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { TrustLevelMembersResponse } from "@/types"
 
@@ -199,5 +199,33 @@ describe("ResearchService", () => {
     fetchMock.mockResolvedValue(answer(409, { error: "budget_exhausted", message: "The monthly budget is spent" }))
     const error = await ResearchService.run("30501677643").catch((e: unknown) => e)
     expect((error as Error).message).toBe("Se alcanzó el tope de gasto del mes")
+  })
+})
+
+describe("BirthdayProgressService", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "santi", "creator")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("reads the progress of the birthday sweep", async () => {
+    fetchMock.mockResolvedValue(answer(200, { knownPeople: 2 }))
+    expect(await BirthdayProgressService.get()).toEqual({ knownPeople: 2 })
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/birthdays\/progress$/)
+  })
+
+  it("turns a refusal into Spanish", async () => {
+    fetchMock.mockResolvedValue(answer(403, { error: "forbidden", message: "Only the creator can do this" }))
+    const error = await BirthdayProgressService.get().catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as Error).message).toBe("No tenés permiso para esto")
   })
 })
