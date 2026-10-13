@@ -81,7 +81,7 @@ describe("AiCreditsScreen", () => {
   it("reminds that the console limit still matters", async () => {
     await show()
     expect(
-      screen.getByText("El tope de la app es una estimación: no reemplaza el límite configurado en Google Cloud o en la consola de Anthropic")
+      screen.getByText("El tope de la app no reemplaza el límite configurado en la consola de Anthropic")
     ).toBeInTheDocument()
   })
 
