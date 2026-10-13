@@ -8,13 +8,18 @@ import { apiError } from "@/tests/apiError"
 
 const history = vi.fn()
 const run = vi.fn()
+const archive = vi.fn()
+const toastSuccess = vi.fn()
 
 vi.mock("@/services/api", () => ({
   ResearchService: {
     history: (...args: unknown[]) => history(...args),
     run: (...args: unknown[]) => run(...args),
+    archive: (...args: unknown[]) => archive(...args),
   },
 }))
+
+vi.mock("sonner", () => ({ toast: { success: (...args: unknown[]) => toastSuccess(...args) } }))
 
 const { WebResearchSection } = await import("@/components/research/WebResearchSection")
 
@@ -49,6 +54,8 @@ describe("WebResearchSection", () => {
   beforeEach(() => {
     history.mockReset().mockResolvedValue([])
     run.mockReset()
+    archive.mockReset()
+    toastSuccess.mockReset()
   })
 
   it("asks for the history by the CUIT without dashes", async () => {
@@ -134,5 +141,71 @@ describe("WebResearchSection", () => {
     show()
     const card = within(await screen.findByTestId("research-r1"))
     expect(card.getByRole("link", { name: "https://example.com/x" })).toBeInTheDocument()
+  })
+})
+
+describe("WebResearchSection archiving", () => {
+  beforeEach(() => {
+    history.mockReset().mockResolvedValue([research()])
+    archive.mockReset()
+    toastSuccess.mockReset()
+  })
+
+  async function openConfirm(): Promise<void> {
+    show()
+    const card = within(await screen.findByTestId("research-r1"))
+    await userEvent.click(card.getByRole("button", { name: /Archivar/ }))
+  }
+
+  it("asks before archiving", async () => {
+    await openConfirm()
+    expect(screen.getByRole("dialog", { name: "¿Archivar esta búsqueda?" })).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Va a dejar de verse en la ficha y en Créditos IA. No se borra: el creador la puede ver en Búsquedas archivadas."
+      )
+    ).toBeInTheDocument()
+    expect(archive).not.toHaveBeenCalled()
+  })
+
+  it("archives on confirm, says so and reloads the history", async () => {
+    archive.mockResolvedValue(research({ archivedAt: "2026-10-13T16:00:00.000Z", archivedBy: "santi" }))
+    await openConfirm()
+    history.mockResolvedValue([])
+    const dialog = within(screen.getByRole("dialog"))
+    await userEvent.click(dialog.getByRole("button", { name: "Archivar" }))
+    expect(archive).toHaveBeenCalledWith("r1")
+    expect(toastSuccess).toHaveBeenCalledWith("Búsqueda archivada")
+    expect(await screen.findByText("Todavía no se buscó este CUIT en la web.")).toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  })
+
+  it("does nothing on cancel", async () => {
+    await openConfirm()
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }))
+    expect(archive).not.toHaveBeenCalled()
+    expect(toastSuccess).not.toHaveBeenCalled()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(screen.getByText("Cooperativa de seguros de Sunchales.")).toBeInTheDocument()
+  })
+
+  it("shows a refusal in Spanish inside the dialog", async () => {
+    archive.mockRejectedValue(apiError("La búsqueda ya estaba archivada"))
+    await openConfirm()
+    const dialog = within(screen.getByRole("dialog"))
+    await userEvent.click(dialog.getByRole("button", { name: "Archivar" }))
+    expect(await dialog.findByText("La búsqueda ya estaba archivada")).toBeInTheDocument()
+    expect(toastSuccess).not.toHaveBeenCalled()
+  })
+
+  it("offers to archive each earlier research", async () => {
+    history.mockResolvedValue([research(), research({ id: "r0", summary: "Un resumen viejo." })])
+    archive.mockResolvedValue(research({ id: "r0" }))
+    show()
+    await userEvent.click(await screen.findByRole("button", { name: /Búsquedas anteriores/ }))
+    const card = within(screen.getByTestId("research-r0"))
+    await userEvent.click(card.getByRole("button", { name: /Archivar/ }))
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Archivar" }))
+    expect(archive).toHaveBeenCalledWith("r0")
   })
 })

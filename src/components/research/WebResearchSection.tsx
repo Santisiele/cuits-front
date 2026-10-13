@@ -1,47 +1,28 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, Globe, Loader2 } from "lucide-react"
+import { Archive, ChevronDown, ChevronRight, Globe, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useResearchHistory, useRunResearch } from "@/hooks/useResearch"
 import { formatIsoDateTime } from "@/lib/dates"
 import { getErrorMessage } from "@/lib/errors"
 import { formatUsd, researchButtonLabel, researchCuit } from "@/lib/research"
 import type { WebResearch } from "@/types"
-import { ResearchSummary } from "@/components/research/ResearchSummary"
+import { ResearchDetails } from "@/components/research/ResearchDetails"
+import { ArchiveResearchDialog } from "@/components/research/ArchiveResearchDialog"
 
-function ResearchResult({ research }: { research: WebResearch }) {
+function ResearchResult({ research, onArchive }: { research: WebResearch; onArchive: (id: string) => void }) {
   return (
     <div className="space-y-2" data-testid={`research-${research.id}`}>
-      <p className="text-xs text-muted-foreground">
-        {formatIsoDateTime(research.requestedAt)} · pedida por {research.requestedBy} · {formatUsd(research.costUsd)}
-      </p>
-      {research.status === "failed" ? (
-        <Badge variant="destructive">La búsqueda falló</Badge>
-      ) : (
-        <>
-          <ResearchSummary text={research.summary} />
-          {research.sources.length > 0 && (
-            <>
-              <h4 className="text-sm font-semibold pt-2">Fuentes</h4>
-              <ul className="space-y-1 text-sm list-disc pl-5">
-                {research.sources.map((source) => (
-                  <li key={source.url}>
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-600 dark:text-cyan-400 hover:underline break-all"
-                    >
-                      {source.title || source.url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {formatIsoDateTime(research.requestedAt)} · pedida por {research.requestedBy} · {formatUsd(research.costUsd)}
+        </p>
+        <Button variant="ghost" size="sm" onClick={() => onArchive(research.id)}>
+          <Archive className="w-4 h-4 mr-1" />
+          Archivar
+        </Button>
+      </div>
+      <ResearchDetails research={research} />
     </div>
   )
 }
@@ -51,6 +32,7 @@ export function WebResearchSection({ taxId }: { taxId: string }) {
   const { data: history = [], isLoading, error } = useResearchHistory(cuit)
   const run = useRunResearch(cuit)
   const [showEarlier, setShowEarlier] = useState(false)
+  const [archiving, setArchiving] = useState<string | null>(null)
 
   const [latest, ...earlier] = history
 
@@ -78,7 +60,7 @@ export function WebResearchSection({ taxId }: { taxId: string }) {
         ) : !latest ? (
           !run.isPending && <p className="text-muted-foreground text-sm">Todavía no se buscó este CUIT en la web.</p>
         ) : (
-          <ResearchResult research={latest} />
+          <ResearchResult research={latest} onArchive={setArchiving} />
         )}
 
         {earlier.length > 0 && (
@@ -90,13 +72,14 @@ export function WebResearchSection({ taxId }: { taxId: string }) {
             {showEarlier && (
               <div className="space-y-4 border-l border-border pl-4">
                 {earlier.map((research) => (
-                  <ResearchResult key={research.id} research={research} />
+                  <ResearchResult key={research.id} research={research} onArchive={setArchiving} />
                 ))}
               </div>
             )}
           </div>
         )}
       </CardContent>
+      {archiving && <ArchiveResearchDialog researchId={archiving} onClose={() => setArchiving(null)} />}
     </Card>
   )
 }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { ResearchService } from "@/services/api"
 import type { RecentWebResearch, ResearchBudget, WebResearch } from "@/types"
 
@@ -6,6 +6,22 @@ export const researchKeys = {
   history: (taxId: string) => ["research", "history", taxId] as const,
   recent: () => ["research", "recent"] as const,
   budget: () => ["research", "budget"] as const,
+  allHistories: () => ["research", "history"] as const,
+  archived: () => ["research", "archived"] as const,
+}
+
+function refreshResearchLists(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: researchKeys.allHistories() })
+  void queryClient.invalidateQueries({ queryKey: researchKeys.recent() })
+  void queryClient.invalidateQueries({ queryKey: researchKeys.archived() })
+}
+
+export function useArchiveResearch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => ResearchService.archive(id),
+    onSuccess: () => refreshResearchLists(queryClient),
+  })
 }
 
 export function useResearchHistory(taxId: string) {
