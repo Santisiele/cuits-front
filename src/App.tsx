@@ -22,9 +22,11 @@ import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { UsersTable } from "@/components/UsersTable"
 import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
+import { BirthdayProgressScreen } from "@/components/birthdays/BirthdayProgressScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { AdminRoute } from "@/components/layout/AdminRoute"
+import { CreatorRoute } from "@/components/layout/CreatorRoute"
 import { useStore } from "@/store/useStore"
 import { AuthApiService } from "@/services/api"
 import { LoginModal } from "@/components/LoginModal"
@@ -287,6 +289,7 @@ export default function App() {
             <Route path="/trust-levels/:value" element={<AdminRoute><TrustLevelMembersTable /></AdminRoute>} />
             <Route path="/users"          element={<AdminRoute><UsersTable /></AdminRoute>} />
             <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
+            <Route path="/birthday-progress" element={<CreatorRoute><BirthdayProgressScreen /></CreatorRoute>} />
           </Routes>
         </div>
 

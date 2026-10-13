@@ -11,6 +11,7 @@ export interface NavItem {
    */
   hidden?: boolean
   adminOnly?: boolean
+  creatorOnly?: boolean
 }
 
 export interface NavGroup {
@@ -22,6 +23,7 @@ export interface NavGroup {
 interface SidebarGroupProps {
   group: NavGroup
   isAdmin: boolean
+  isCreator: boolean
   /** Called after a link is followed, so the drawer can close itself. */
   onNavigate: () => void
 }
@@ -33,9 +35,11 @@ interface SidebarGroupProps {
  * drawer closed there is nothing on screen naming the current view, so this
  * is the only place that answers "where am I".
  */
-export function SidebarGroup({ group, isAdmin, onNavigate }: SidebarGroupProps) {
+export function SidebarGroup({ group, isAdmin, isCreator, onNavigate }: SidebarGroupProps) {
   const Icon = group.icon
-  const items = group.items.filter((item) => !item.hidden && (isAdmin || !item.adminOnly))
+  const items = group.items.filter(
+    (item) => !item.hidden && (isAdmin || !item.adminOnly) && (isCreator || !item.creatorOnly)
+  )
   if (items.length === 0) return null
 
   return (

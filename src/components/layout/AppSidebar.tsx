@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, Search, Database, Settings } from "lucide-react"
 import { SidebarGroup } from "./SidebarGroup"
 import type { NavGroup } from "./SidebarGroup"
-import { useIsAdmin } from "@/hooks/useSessionRole"
+import { useIsAdmin, useIsCreator } from "@/hooks/useSessionRole"
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
@@ -47,6 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/trust-levels", label: "Niveles de confianza", adminOnly: true },
       { path: "/users", label: "Usuarios", adminOnly: true },
       { path: "/ai-credits", label: "Créditos IA", adminOnly: true },
+      { path: "/birthday-progress", label: "Carga de cumpleaños", creatorOnly: true },
     ],
   },
 ]
@@ -62,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
 export function AppSidebar() {
   const [open, setOpen] = useState(false)
   const isAdmin = useIsAdmin()
+  const isCreator = useIsCreator()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -86,7 +88,7 @@ export function AppSidebar() {
 
         <nav className="flex flex-col gap-6 px-2 pb-6">
           {NAV_GROUPS.map((group) => (
-            <SidebarGroup key={group.label} group={group} isAdmin={isAdmin} onNavigate={() => setOpen(false)} />
+            <SidebarGroup key={group.label} group={group} isAdmin={isAdmin} isCreator={isCreator} onNavigate={() => setOpen(false)} />
           ))}
         </nav>
       </SheetContent>

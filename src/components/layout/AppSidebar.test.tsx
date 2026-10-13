@@ -52,3 +52,24 @@ describe("AppSidebar", () => {
     }
   })
 })
+
+describe("AppSidebar creator items", () => {
+  afterEach(() => {
+    act(() => useAuthStore.getState().clearAuth())
+  })
+
+  it("shows the creator the birthday progress", async () => {
+    await openMenu("creator")
+    expect(screen.getByRole("link", { name: "Carga de cumpleaños" })).toHaveAttribute("href", "/birthday-progress")
+  })
+
+  it("hides the birthday progress from an admin", async () => {
+    await openMenu("admin")
+    expect(screen.queryByRole("link", { name: "Carga de cumpleaños" })).not.toBeInTheDocument()
+  })
+
+  it("hides the birthday progress from a member", async () => {
+    await openMenu("member")
+    expect(screen.queryByRole("link", { name: "Carga de cumpleaños" })).not.toBeInTheDocument()
+  })
+})
