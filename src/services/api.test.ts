@@ -229,3 +229,32 @@ describe("BirthdayProgressService", () => {
     expect((error as Error).message).toBe("No tenés permiso para esto")
   })
 })
+
+describe("apiFetch request headers", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+    useAuthStore.getState().setAuth("token-123", "santi", "admin")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useAuthStore.getState().clearAuth()
+  })
+
+  it("does not declare a JSON body on a request that has none", async () => {
+    fetchMock.mockResolvedValue(answer(201, { id: "r1" }))
+    await ResearchService.run("30501677643")
+    const headers = fetchMock.mock.calls[0]![1].headers as Headers
+    expect(headers.has("Content-Type")).toBe(false)
+  })
+
+  it("declares the JSON body when there is one", async () => {
+    fetchMock.mockResolvedValue(answer(200, { monthlyLimitUsd: 12.5, spentThisMonthUsd: 0, researchCountThisMonth: 0 }))
+    await ResearchService.setLimit(12.5)
+    const headers = fetchMock.mock.calls[0]![1].headers as Headers
+    expect(headers.get("Content-Type")).toBe("application/json")
+  })
+})

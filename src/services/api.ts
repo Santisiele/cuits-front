@@ -66,7 +66,7 @@ async function apiFetch<T>(
 ): Promise<T> {
   const token = useAuthStore.getState().token
   const headers = new Headers(options.headers)
-  headers.set("Content-Type", "application/json")
+  if (options.body != null) headers.set("Content-Type", "application/json")
   if (token) {
     headers.set("Authorization", `Bearer ${token}`)
   }
