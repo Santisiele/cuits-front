@@ -1,3 +1,5 @@
+import { formatIsoDateTime } from "@/lib/dates"
+
 export const LIMIT_ERROR = "El tope tiene que ser un número mayor o igual a 0"
 
 const USD = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -27,4 +29,9 @@ export function researchButtonLabel(previousCount: number): string {
 
 export function researchCuit(taxId: string): string {
   return taxId.replace(/\D/g, "")
+}
+
+export function archivedText(archivedBy: string | null, archivedAt: string | null): string {
+  const parts = [archivedBy, archivedAt ? formatIsoDateTime(archivedAt) : null].filter(Boolean)
+  return parts.length > 0 ? parts.join(" · ") : "—"
 }

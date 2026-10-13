@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import {
   LIMIT_ERROR,
+  archivedText,
   formatUsd,
   limitError,
   parseLimit,
@@ -87,5 +88,20 @@ describe("researchButtonLabel", () => {
 describe("researchCuit", () => {
   it("drops the dashes", () => {
     expect(researchCuit("30-50167764-3")).toBe("30501677643")
+  })
+})
+
+describe("archivedText", () => {
+  it("says who archived it and when", () => {
+    expect(archivedText("santi", "2026-10-13T15:00:00.000Z")).toBe("santi · 13/10/2026, 12:00")
+  })
+
+  it("keeps what it knows when a part is missing", () => {
+    expect(archivedText(null, "2026-10-13T15:00:00.000Z")).toBe("13/10/2026, 12:00")
+    expect(archivedText("santi", null)).toBe("santi")
+  })
+
+  it("shows a dash when nothing is known", () => {
+    expect(archivedText(null, null)).toBe("—")
   })
 })

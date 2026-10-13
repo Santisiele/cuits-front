@@ -22,6 +22,7 @@ import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { UsersTable } from "@/components/UsersTable"
 import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
+import { ArchivedResearchScreen } from "@/components/research/ArchivedResearchScreen"
 import { BirthdayProgressScreen } from "@/components/birthdays/BirthdayProgressScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
@@ -290,6 +291,7 @@ export default function App() {
             <Route path="/users"          element={<AdminRoute><UsersTable /></AdminRoute>} />
             <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
             <Route path="/birthday-progress" element={<CreatorRoute><BirthdayProgressScreen /></CreatorRoute>} />
+            <Route path="/archived-research" element={<CreatorRoute><ArchivedResearchScreen /></CreatorRoute>} />
           </Routes>
         </div>
 

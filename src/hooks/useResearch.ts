@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { ResearchService } from "@/services/api"
-import type { RecentWebResearch, ResearchBudget, WebResearch } from "@/types"
+import type { ArchivedWebResearch, RecentWebResearch, ResearchBudget, WebResearch } from "@/types"
 
 export const researchKeys = {
   history: (taxId: string) => ["research", "history", taxId] as const,
@@ -65,5 +65,21 @@ export function useUpdateResearchLimit() {
   return useMutation({
     mutationFn: (monthlyLimitUsd: number) => ResearchService.setLimit(monthlyLimitUsd),
     onSuccess: (budget) => queryClient.setQueryData(researchKeys.budget(), budget),
+  })
+}
+
+export function useArchivedResearch() {
+  return useQuery<ArchivedWebResearch[]>({
+    queryKey: researchKeys.archived(),
+    queryFn: ResearchService.archived,
+    staleTime: 0,
+  })
+}
+
+export function useRestoreResearch() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => ResearchService.restore(id),
+    onSuccess: () => refreshResearchLists(queryClient),
   })
 }
