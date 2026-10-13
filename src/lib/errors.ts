@@ -81,6 +81,9 @@ export const API_ERROR_CODES: Record<string, string> = {
   budget_exhausted: "Se alcanzó el tope de gasto del mes",
   research_failed: "No se pudo completar la búsqueda. Intentá de nuevo",
   research_off: "La investigación web no está configurada",
+  research_not_found: "La búsqueda no existe",
+  already_archived: "La búsqueda ya estaba archivada",
+  not_archived: "La búsqueda no está archivada",
   network_error: "No se pudo conectar con el servidor. Revisá tu conexión",
 }
 

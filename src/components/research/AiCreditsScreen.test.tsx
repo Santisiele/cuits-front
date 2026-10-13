@@ -37,6 +37,8 @@ const RECENT: RecentWebResearch[] = [
     model: "claude",
     costUsd: 0.4567,
     webSearches: 3,
+    archivedAt: null,
+    archivedBy: null,
   },
   {
     id: "r2",
@@ -50,6 +52,8 @@ const RECENT: RecentWebResearch[] = [
     model: "claude",
     costUsd: 0.01,
     webSearches: 0,
+    archivedAt: null,
+    archivedBy: null,
   },
 ]
 

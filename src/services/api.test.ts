@@ -200,6 +200,38 @@ describe("ResearchService", () => {
     const error = await ResearchService.run("30501677643").catch((e: unknown) => e)
     expect((error as Error).message).toBe("Se alcanzó el tope de gasto del mes")
   })
+
+  it("archives a research with a POST and no body", async () => {
+    fetchMock.mockResolvedValue(answer(200, { id: "r1" }))
+    expect(await ResearchService.archive("r1")).toEqual({ id: "r1" })
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/research\/r1\/archive$/)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("POST")
+    expect(fetchMock.mock.calls[0]![1].body).toBeUndefined()
+    expect((fetchMock.mock.calls[0]![1].headers as Headers).has("Content-Type")).toBe(false)
+  })
+
+  it("restores a research with a POST and no body", async () => {
+    fetchMock.mockResolvedValue(answer(200, { id: "r1" }))
+    expect(await ResearchService.restore("r1")).toEqual({ id: "r1" })
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/research\/r1\/restore$/)
+    expect(fetchMock.mock.calls[0]![1].method).toBe("POST")
+    expect(fetchMock.mock.calls[0]![1].body).toBeUndefined()
+    expect((fetchMock.mock.calls[0]![1].headers as Headers).has("Content-Type")).toBe(false)
+  })
+
+  it("reads the archived research", async () => {
+    fetchMock.mockResolvedValue(answer(200, { research: [{ id: "r1" }] }))
+    expect(await ResearchService.archived()).toEqual([{ id: "r1" }])
+    expect(String(fetchMock.mock.calls[0]![0])).toMatch(/\/research\/archived$/)
+    expect(fetchMock.mock.calls[0]![1].method ?? "GET").toBe("GET")
+    expect((fetchMock.mock.calls[0]![1].headers as Headers).has("Content-Type")).toBe(false)
+  })
+
+  it("turns an archived research into Spanish", async () => {
+    fetchMock.mockResolvedValue(answer(409, { error: "already_archived", message: "Already archived" }))
+    const error = await ResearchService.archive("r1").catch((e: unknown) => e)
+    expect((error as Error).message).toBe("La búsqueda ya estaba archivada")
+  })
 })
 
 describe("BirthdayProgressService", () => {

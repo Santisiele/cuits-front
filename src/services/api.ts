@@ -18,6 +18,7 @@ import type {
   AppUser,
   WebResearch,
   RecentWebResearch,
+  ArchivedWebResearch,
   ResearchBudget,
   BirthdayProgress
 } from "@/types"
@@ -443,6 +444,15 @@ export const ResearchService = {
 
   recent: () =>
     apiFetch<{ research: RecentWebResearch[] }>(`${API_BASE_URL}/research/recent`).then((res) => res.research),
+
+  archived: () =>
+    apiFetch<{ research: ArchivedWebResearch[] }>(`${API_BASE_URL}/research/archived`).then((res) => res.research),
+
+  archive: (id: string) =>
+    apiFetch<WebResearch>(`${API_BASE_URL}/research/${encodeURIComponent(id)}/archive`, { method: "POST" }),
+
+  restore: (id: string) =>
+    apiFetch<WebResearch>(`${API_BASE_URL}/research/${encodeURIComponent(id)}/restore`, { method: "POST" }),
 
   budget: () => apiFetch<ResearchBudget>(`${API_BASE_URL}/research/budget`),
 

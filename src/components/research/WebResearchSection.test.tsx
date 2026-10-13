@@ -30,6 +30,8 @@ function research(overrides: Partial<WebResearch> = {}): WebResearch {
     model: "claude",
     costUsd: 0.4567,
     webSearches: 3,
+    archivedAt: null,
+    archivedBy: null,
     ...overrides,
   }
 }

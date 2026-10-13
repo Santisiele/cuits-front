@@ -91,6 +91,12 @@ describe("translateApiFailure", () => {
     expect(translateApiFailure("research_off", "No API key")).toBe("La investigación web no está configurada")
   })
 
+  it("translates the archive refusals", () => {
+    expect(translateApiFailure("research_not_found", "That research does not exist")).toBe("La búsqueda no existe")
+    expect(translateApiFailure("already_archived", "Already archived")).toBe("La búsqueda ya estaba archivada")
+    expect(translateApiFailure("not_archived", "Not archived")).toBe("La búsqueda no está archivada")
+  })
+
   it("ignores codes inherited from Object", () => {
     expect(translateApiFailure("toString", "Something new")).toBe(GENERIC_API_ERROR)
   })

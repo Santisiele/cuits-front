@@ -329,11 +329,15 @@ export interface WebResearch {
   model: string
   costUsd: number
   webSearches: number
+  archivedAt: string | null
+  archivedBy: string | null
 }
 
 export interface RecentWebResearch extends WebResearch {
   businessName: string
 }
+
+export type ArchivedWebResearch = RecentWebResearch
 
 export interface ResearchBudget {
   monthlyLimitUsd: number
