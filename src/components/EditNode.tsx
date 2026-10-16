@@ -291,7 +291,7 @@ export function EditNode() {
 
                 {node.publicationDate && (
                   <>
-                    <span className="text-muted-foreground">Fecha de publicación BO</span>
+                    <span className="text-muted-foreground">Fecha de concurso</span>
                     <span>{node.publicationDate}</span>
                   </>
                 )}
