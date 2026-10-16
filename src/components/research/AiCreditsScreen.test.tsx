@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
+import { act } from "react"
 import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -25,6 +26,7 @@ vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }))
 
 const { AiCreditsScreen } = await import("@/components/research/AiCreditsScreen")
 const { useStore } = await import("@/store/useStore")
+const { useAuthStore } = await import("@/store/useAuthStore")
 
 const BUDGET: ResearchBudget = { monthlyLimitUsd: 20, spentThisMonthUsd: 5, researchCountThisMonth: 3 }
 
@@ -61,14 +63,17 @@ const RECENT: RecentWebResearch[] = [
   },
 ]
 
-async function show(): Promise<void> {
+async function show(role: "creator" | "admin" = "creator"): Promise<void> {
+  act(() => {
+    useAuthStore.getState().setAuth("token", role === "creator" ? "admin" : "luchi", role)
+  })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
       <AiCreditsScreen />
     </QueryClientProvider>
   )
-  await screen.findByLabelText("Tope mensual (US$)")
+  await screen.findByRole("progressbar")
 }
 
 describe("AiCreditsScreen", () => {
@@ -76,6 +81,20 @@ describe("AiCreditsScreen", () => {
     budget.mockReset().mockResolvedValue(BUDGET)
     recent.mockReset().mockResolvedValue(RECENT)
     setLimit.mockReset()
+  })
+
+  it("lets the creator change the limit", async () => {
+    await show("creator")
+    expect(screen.getByLabelText("Tope mensual (US$)")).toBeInTheDocument()
+    expect(screen.getByText(/consola de Anthropic/)).toBeInTheDocument()
+  })
+
+  it("shows an admin what was spent but not the limit form", async () => {
+    await show("admin")
+    expect(screen.getByText(/de US\$ 20,00/)).toBeInTheDocument()
+    expect(screen.queryByLabelText("Tope mensual (US$)")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Guardar tope" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/consola de Anthropic/)).not.toBeInTheDocument()
   })
 
   it("shows what was spent against the limit", async () => {

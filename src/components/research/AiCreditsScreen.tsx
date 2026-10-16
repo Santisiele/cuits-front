@@ -11,6 +11,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { formatUsd, limitError, parseLimit, spentShare } from "@/lib/research"
 import { cn } from "@/lib/utils"
 import { useStore } from "@/store/useStore"
+import { useIsCreator } from "@/hooks/useSessionRole"
 
 function LimitForm({ current }: { current: number }) {
   const update = useUpdateResearchLimit()
@@ -56,6 +57,7 @@ function LimitForm({ current }: { current: number }) {
 export function AiCreditsScreen() {
   const budget = useResearchBudget()
   const recent = useRecentResearch()
+  const isCreator = useIsCreator()
   const { setEditTaxId } = useStore()
   const navigate = useNavigate()
 
@@ -102,12 +104,14 @@ export function AiCreditsScreen() {
                   {budget.data.researchCountThisMonth === 1 ? "búsqueda" : "búsquedas"} este mes
                 </p>
               </div>
-              <LimitForm key={budget.data.monthlyLimitUsd} current={budget.data.monthlyLimitUsd} />
+              {isCreator && <LimitForm key={budget.data.monthlyLimitUsd} current={budget.data.monthlyLimitUsd} />}
             </>
           )}
-          <p className="text-xs text-muted-foreground">
-            El tope de la app no reemplaza el límite configurado en la consola de Anthropic
-          </p>
+          {isCreator && (
+            <p className="text-xs text-muted-foreground">
+              El tope de la app no reemplaza el límite configurado en la consola de Anthropic
+            </p>
+          )}
         </CardContent>
       </Card>
 
