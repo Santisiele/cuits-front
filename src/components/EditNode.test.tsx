@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { act } from "react"
-import { screen } from "@testing-library/react"
+import { fireEvent, screen } from "@testing-library/react"
 import { render } from "@/tests/render"
 import type { NodeData } from "@/types"
 
 let node: NodeData | undefined
+const updateNode = vi.fn()
 
 vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }))
 
@@ -16,7 +17,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 vi.mock("@/hooks/useGraphQueries", () => ({
   useNode: () => ({ data: node, isFetching: false, error: null }),
   useNodeRelationships: () => ({ data: null, isFetching: false, error: null }),
-  useUpdateNode: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateNode: () => ({ mutate: vi.fn(), mutateAsync: updateNode, isPending: false }),
   queryKeys: { node: (id: string) => ["node", id], nodeRelationships: (id: string, d: number) => ["nr", id, d] },
 }))
 
@@ -132,5 +133,29 @@ describe("EditNode — admin actions", () => {
     node = debtor()
     openNode("30501677643")
     expect(screen.getByText("Investigación web de 30501677643")).toBeInTheDocument()
+  })
+})
+
+describe("EditNode — trust reason", () => {
+  beforeEach(() => {
+    updateNode.mockReset()
+    act(() => {
+      useStore.getState().setEditTaxId(null)
+    })
+  })
+
+  it("saves a level without a reason", async () => {
+    node = debtor({ levelOfTrust: 4, trustReason: "" })
+    openNode("30501677643")
+
+    expect(screen.getByPlaceholderText("Motivo (opcional)")).toBeInTheDocument()
+    expect(screen.queryByText(/Poné el motivo/)).not.toBeInTheDocument()
+    const save = screen.getByRole("button", { name: "Guardar" })
+    expect(save).toBeEnabled()
+
+    await act(async () => {
+      fireEvent.click(save)
+    })
+    expect(updateNode).toHaveBeenCalledWith(expect.objectContaining({ levelOfTrust: 4, trustReason: "" }))
   })
 })

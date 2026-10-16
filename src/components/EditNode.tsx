@@ -140,7 +140,6 @@ export function EditNode() {
   const lastFinancieraMonth = financieraMonths[0]
   const financieraLenders = node?.financieraLenders ?? []
   const hasTrustLevel = Number(fields.levelOfTrust) !== NO_LEVEL_VALUE
-  const trustReasonMissing = hasTrustLevel && fields.trustReason.trim().length === 0
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
   const searchStatus: SearchStatus = (() => {
@@ -203,7 +202,7 @@ export function EditNode() {
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
-    if (!node || trustReasonMissing) return
+    if (!node) return
     await updateMutation.mutateAsync({
       phone:     fields.phone     || undefined,
       email:     fields.email     || undefined,
@@ -387,16 +386,11 @@ export function EditNode() {
                   <Input
                     value={fields.trustReason}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("trustReason", e.target.value)}
-                    placeholder="Motivo por el que entra a este grupo"
+                    placeholder="Motivo (opcional)"
                     className="flex-1"
                   />
                 )}
                 </div>
-                {trustReasonMissing && (
-                  <p className="text-destructive text-sm">
-                    Poné el motivo por el que entra a este nivel.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -434,7 +428,7 @@ export function EditNode() {
               )}
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={updateMutation.isPending || trustReasonMissing}>
+                <Button type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? "Guardando..." : "Guardar"}
                 </Button>
                 {updateMutation.isSuccess && (
