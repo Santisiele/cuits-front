@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrustBadge } from "@/components/TrustBadge"
+import { TrustLevelFilter } from "@/components/TrustLevelFilter"
 import { useTrustLevels } from "@/hooks/useTrustLevels"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -79,6 +80,7 @@ export function CompanyTable() {
   // selectedSources is persisted in the store as string[] for serialisability;
   // we keep a Set locally for O(1) lookups during filtering.
   const selectedSources = new Set(companyTable.selectedSources)
+  const hiddenTrustLevels = new Set(companyTable.hiddenTrustLevels)
 
   function setSearch(s: string) { setCompanyTable({ search: s }) }
 
@@ -119,7 +121,7 @@ export function CompanyTable() {
       const matchesSource =
         selectedSources.size === 0 ||
         (node.relatedSources ?? []).some((s) => selectedSources.has(s))
-      return matchesSearch && matchesSource
+      return matchesSearch && matchesSource && !hiddenTrustLevels.has(node.levelOfTrust ?? 0)
     })
     .sort((a: BaseNode, b: BaseNode) => {
       let cmp = 0
@@ -131,7 +133,7 @@ export function CompanyTable() {
       return sortDir === "asc" ? cmp : -cmp
     })
     
-  const isFiltered = search.length > 0 || selectedSources.size > 0
+  const isFiltered = search.length > 0 || selectedSources.size > 0 || hiddenTrustLevels.size > 0
   const title = isFiltered
     ? `Empresas a buscar (${filtered.length} de ${nodes.length})`
     : `Empresas a buscar (${nodes.length})`
@@ -141,7 +143,11 @@ export function CompanyTable() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
           <CardTitle>{title}</CardTitle>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
+            <TrustLevelFilter
+              hidden={companyTable.hiddenTrustLevels}
+              onChange={(next) => setCompanyTable({ hiddenTrustLevels: next })}
+            />
             <Input
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
