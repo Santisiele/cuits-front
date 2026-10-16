@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,7 @@ import { formatIsoDateTime } from "@/lib/dates"
 import { getErrorMessage } from "@/lib/errors"
 import { formatUsd, limitError, parseLimit, spentShare } from "@/lib/research"
 import { cn } from "@/lib/utils"
+import { useStore } from "@/store/useStore"
 
 function LimitForm({ current }: { current: number }) {
   const update = useUpdateResearchLimit()
@@ -54,6 +56,13 @@ function LimitForm({ current }: { current: number }) {
 export function AiCreditsScreen() {
   const budget = useResearchBudget()
   const recent = useRecentResearch()
+  const { setEditTaxId } = useStore()
+  const navigate = useNavigate()
+
+  function openNode(taxId: string): void {
+    setEditTaxId(taxId)
+    void navigate("/edit")
+  }
   const research = recent.data ?? []
   const share = budget.data ? spentShare(budget.data.spentThisMonthUsd, budget.data.monthlyLimitUsd) : 0
 
@@ -126,7 +135,11 @@ export function AiCreditsScreen() {
               </thead>
               <tbody>
                 {research.map((item) => (
-                  <tr key={item.id} className="border-b border-border last:border-0">
+                  <tr
+                    key={item.id}
+                    onClick={() => openNode(item.taxId)}
+                    className="border-b border-border last:border-0 cursor-pointer hover:bg-accent/50 transition-colors"
+                  >
                     <td className="py-1.5 pr-3 font-mono">{item.taxId}</td>
                     <td className="py-1.5 px-3">
                       {item.businessName}

@@ -20,7 +20,11 @@ vi.mock("@/services/api", () => ({
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }))
 
+const navigate = vi.fn()
+vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }))
+
 const { AiCreditsScreen } = await import("@/components/research/AiCreditsScreen")
+const { useStore } = await import("@/store/useStore")
 
 const BUDGET: ResearchBudget = { monthlyLimitUsd: 20, spentThisMonthUsd: 5, researchCountThisMonth: 3 }
 
@@ -97,6 +101,13 @@ describe("AiCreditsScreen", () => {
     expect(screen.getByText("13/10/2026, 12:00")).toBeInTheDocument()
     expect(screen.getByText("US$ 0,46")).toBeInTheDocument()
     expect(screen.getByText("Falló")).toBeInTheDocument()
+  })
+
+  it("opens the CUIT when a recent research is clicked", async () => {
+    await show()
+    await userEvent.click(await screen.findByText("SANCOR COOPERATIVAS UNIDAS LIMITADA"))
+    expect(useStore.getState().editTaxId).toBe("30501677643")
+    expect(navigate).toHaveBeenCalledWith("/edit")
   })
 
   it("refuses a negative limit without calling the API", async () => {
