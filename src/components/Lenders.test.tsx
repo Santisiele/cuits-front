@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest"
 import { act } from "react"
 import { screen, within, fireEvent } from "@testing-library/react"
 import { render } from "@/tests/render"
-import { FinancieraLenders } from "@/components/FinancieraLenders"
-import type { FinancieraLender } from "@/types"
+import { Lenders } from "@/components/Lenders"
+import type { Lender } from "@/types"
 
-const LENDERS: FinancieraLender[] = [
+const LENDERS: Lender[] = [
   {
     entityName: "BANCO DE COMERCIO S.A.",
     months: [
@@ -22,6 +22,28 @@ const LENDERS: FinancieraLender[] = [
   },
 ]
 
+function FinancieraLenders({ lenders }: { lenders: Lender[] }) {
+  return (
+    <Lenders
+      lenders={lenders}
+      title="Financieras a las que le pidió"
+      columnLabel="Financiera"
+      noMatchText="Ninguna financiera coincide con el filtro"
+    />
+  )
+}
+
+function BancoLenders({ lenders }: { lenders: Lender[] }) {
+  return (
+    <Lenders
+      lenders={lenders}
+      title="Bancos a los que le pidió"
+      columnLabel="Banco"
+      noMatchText="Ningún banco coincide con el filtro"
+    />
+  )
+}
+
 function lenderBlocks(): HTMLElement[] {
   return screen.getAllByRole("rowgroup").slice(1)
 }
@@ -30,7 +52,7 @@ function monthRows(block: HTMLElement): HTMLElement[] {
   return within(block).getAllByRole("row").slice(1)
 }
 
-describe("FinancieraLenders", () => {
+describe("Lenders", () => {
   it("titles the list the way it was asked for", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
     expect(screen.getByText("Financieras a las que le pidió")).toBeInTheDocument()
@@ -116,6 +138,35 @@ describe("FinancieraLenders", () => {
       openFilter()
       click(within(screen.getByRole("dialog", { name: "Filtro de Financiera" })).getByRole("button", { name: "Seleccionar todos" }))
       expect(screen.getByText("Ninguna financiera coincide con el filtro")).toBeInTheDocument()
+    })
+  })
+  describe("with the bank labels", () => {
+    function openFilter(): void {
+      act(() => {
+        fireEvent.click(screen.getByRole("button", { name: /^Banco/ }))
+      })
+    }
+
+    it("titles the list for banks", () => {
+      render(<BancoLenders lenders={LENDERS} />)
+      expect(screen.getByText("Bancos a los que le pidió")).toBeInTheDocument()
+      expect(screen.queryByText("Financieras a las que le pidió")).not.toBeInTheDocument()
+    })
+
+    it("labels the header filter as banco", () => {
+      render(<BancoLenders lenders={LENDERS} />)
+      openFilter()
+      const list = screen.getByRole("dialog", { name: "Filtro de Banco" })
+      expect(within(list).getByRole("button", { name: "FINARES S.A." })).toBeInTheDocument()
+    })
+
+    it("says no bank matches when every one is filtered out", () => {
+      render(<BancoLenders lenders={LENDERS} />)
+      openFilter()
+      act(() => {
+        fireEvent.click(within(screen.getByRole("dialog", { name: "Filtro de Banco" })).getByRole("button", { name: "Seleccionar todos" }))
+      })
+      expect(screen.getByText("Ningún banco coincide con el filtro")).toBeInTheDocument()
     })
   })
 })

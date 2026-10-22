@@ -3,13 +3,20 @@ import { ColumnFilter } from "@/components/ColumnFilter"
 import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { formatLenderPeriod, formatSituation } from "@/lib/lenderMonths"
 import { formatPesos } from "@/lib/money"
-import type { FinancieraLender } from "@/types"
+import type { Lender } from "@/types"
 
-function lenderValues(lender: FinancieraLender): string[] {
+function lenderValues(lender: Lender): string[] {
   return [lender.entityName]
 }
 
-export function FinancieraLenders({ lenders }: { lenders: FinancieraLender[] }) {
+interface LendersProps {
+  lenders: Lender[]
+  title: string
+  columnLabel: string
+  noMatchText: string
+}
+
+export function Lenders({ lenders, title, columnLabel, noMatchText }: LendersProps) {
   const [hidden, setHidden] = useState<string[]>([])
   if (lenders.length === 0) return null
 
@@ -18,13 +25,13 @@ export function FinancieraLenders({ lenders }: { lenders: FinancieraLender[] }) 
 
   return (
     <div className="space-y-2 mb-4">
-      <p className="text-sm font-medium">Financieras a las que le pidió</p>
+      <p className="text-sm font-medium">{title}</p>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
             <th colSpan={3} className="text-left py-1.5 text-muted-foreground font-medium">
               <ColumnFilter
-                label="Financiera"
+                label={columnLabel}
                 options={optionsFrom(lenders, lenderValues, { emptyLabel: "Sin nombre" })}
                 hidden={hidden}
                 onChange={setHidden}
@@ -56,7 +63,7 @@ export function FinancieraLenders({ lenders }: { lenders: FinancieraLender[] }) 
           <tbody>
             <tr>
               <td colSpan={3} className="py-3 text-center text-muted-foreground">
-                Ninguna financiera coincide con el filtro
+                {noMatchText}
               </td>
             </tr>
           </tbody>

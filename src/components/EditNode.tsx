@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FinancieraLenders } from "@/components/FinancieraLenders"
+import { Lenders } from "@/components/Lenders"
 import { GraphView } from "@/components/GraphView"
 import { useStore } from "@/store/useStore"
 import { useNode, useNodeRelationships, useUpdateNode, queryKeys } from "@/hooks/useGraphQueries"
@@ -325,7 +325,12 @@ export function EditNode() {
                 )}
               </div>
 
-              <FinancieraLenders lenders={financieraLenders} />
+              <Lenders
+                lenders={financieraLenders}
+                title="Financieras a las que le pidió"
+                columnLabel="Financiera"
+                noMatchText="Ninguna financiera coincide con el filtro"
+              />
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Teléfono</label>
