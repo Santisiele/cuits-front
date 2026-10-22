@@ -129,6 +129,8 @@ export interface NodeData {
   /** Months with "Deudores por financiera" operations, most recent first. */
   financieraMonths?: string[]
   financieraLenders?: Lender[]
+  bankMonths?: string[]
+  bankLenders?: Lender[]
   /**
    * Date the company was published in the boletín oficial, as `dd/mm/yyyy`.
    *

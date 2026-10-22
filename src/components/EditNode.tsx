@@ -139,6 +139,9 @@ export function EditNode() {
   const financieraMonths = node?.financieraMonths ?? []
   const lastFinancieraMonth = financieraMonths[0]
   const financieraLenders = node?.financieraLenders ?? []
+  const bankMonths = node?.bankMonths ?? []
+  const lastBancoMonth = bankMonths[0]
+  const bankLenders = node?.bankLenders ?? []
   const hasTrustLevel = Number(fields.levelOfTrust) !== NO_LEVEL_VALUE
   const [sourcesDialogOpen, setSourcesDialogOpen] = useState(false)
 
@@ -289,6 +292,15 @@ export function EditNode() {
                   </>
                 )}
 
+                {lastBancoMonth && (
+                  <>
+                    <span className="text-muted-foreground">
+                      Fecha de última operación con banco
+                    </span>
+                    <span>{formatActivityMonth(lastBancoMonth)}</span>
+                  </>
+                )}
+
                 {node.publicationDate && (
                   <>
                     <span className="text-muted-foreground">Fecha de concurso</span>
@@ -323,6 +335,21 @@ export function EditNode() {
                     </span>
                   </>
                 )}
+
+                {bankMonths.length > 1 && (
+                  <>
+                    <span className="text-muted-foreground">
+                      Meses con operaciones con banco
+                    </span>
+                    <span className="flex gap-1.5 flex-wrap">
+                      {bankMonths.map((month) => (
+                        <Badge key={month} variant="outline">
+                          {formatActivityMonth(month)}
+                        </Badge>
+                      ))}
+                    </span>
+                  </>
+                )}
               </div>
 
               <Lenders
@@ -330,6 +357,13 @@ export function EditNode() {
                 title="Financieras a las que le pidió"
                 columnLabel="Financiera"
                 noMatchText="Ninguna financiera coincide con el filtro"
+              />
+
+              <Lenders
+                lenders={bankLenders}
+                title="Bancos a los que le pidió"
+                columnLabel="Banco"
+                noMatchText="Ningún banco coincide con el filtro"
               />
 
               <div className="space-y-2">

@@ -97,6 +97,76 @@ describe("EditNode — lenders", () => {
   })
 })
 
+const FINANCIERA_LENDERS = [
+  { entityName: "FINARES S.A.", months: [{ period: "2026-06", situation: "2", totalLoan: 305522000 }] },
+]
+
+const BANCO_LENDERS = [
+  {
+    entityName: "BANCO DE LA NACION ARGENTINA",
+    months: [
+      { period: "2026-07", situation: "1", totalLoan: 2000000 },
+      { period: "2026-06", situation: "1", totalLoan: 1000000 },
+    ],
+  },
+]
+
+describe("EditNode — financiera and bank debts", () => {
+  beforeEach(() => {
+    act(() => {
+      useStore.getState().setEditTaxId(null)
+    })
+  })
+
+  it("shows both blocks when it owes both", () => {
+    node = debtor({
+      financieraMonths: ["2026-06"],
+      financieraLenders: FINANCIERA_LENDERS,
+      bankMonths: ["2026-07", "2026-06"],
+      bankLenders: BANCO_LENDERS,
+    })
+    openNode("30501677643")
+    expect(screen.getByText("Fecha de última operación con financiera")).toBeInTheDocument()
+    expect(screen.getByText("Financieras a las que le pidió")).toBeInTheDocument()
+    expect(screen.getByText("Fecha de última operación con banco")).toBeInTheDocument()
+    expect(screen.getByText("Meses con operaciones con banco")).toBeInTheDocument()
+    expect(screen.getByText("Bancos a los que le pidió")).toBeInTheDocument()
+    expect(screen.getByText("BANCO DE LA NACION ARGENTINA")).toBeInTheDocument()
+    expect(screen.getByText("$ 2.000.000")).toBeInTheDocument()
+    expect(screen.getByText("$ 1.000.000")).toBeInTheDocument()
+    expect(screen.queryByText("$ 3.000.000")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Banco/ })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Financiera/ })).toBeInTheDocument()
+  })
+
+  it("shows only the financiera block when there is no bank data", () => {
+    node = debtor({ financieraLenders: FINANCIERA_LENDERS, bankMonths: [], bankLenders: [] })
+    openNode("30501677643")
+    expect(screen.getByText("Fecha de última operación con financiera")).toBeInTheDocument()
+    expect(screen.getByText("Financieras a las que le pidió")).toBeInTheDocument()
+    expect(screen.queryByText("Fecha de última operación con banco")).not.toBeInTheDocument()
+    expect(screen.queryByText("Bancos a los que le pidió")).not.toBeInTheDocument()
+  })
+
+  it("shows only the bank block when there is no financiera data", () => {
+    node = debtor({ financieraMonths: [], financieraLenders: [], bankMonths: ["2026-07"], bankLenders: BANCO_LENDERS })
+    openNode("30501677643")
+    expect(screen.queryByText("Fecha de última operación con financiera")).not.toBeInTheDocument()
+    expect(screen.queryByText("Financieras a las que le pidió")).not.toBeInTheDocument()
+    expect(screen.getByText("Fecha de última operación con banco")).toBeInTheDocument()
+    expect(screen.queryByText("Meses con operaciones con banco")).not.toBeInTheDocument()
+    expect(screen.getByText("Bancos a los que le pidió")).toBeInTheDocument()
+  })
+
+  it("copes with a node from before the API sent bank debts", () => {
+    node = debtor({ financieraLenders: FINANCIERA_LENDERS })
+    openNode("30501677643")
+    expect(screen.getByText("Financieras a las que le pidió")).toBeInTheDocument()
+    expect(screen.queryByText("Fecha de última operación con banco")).not.toBeInTheDocument()
+    expect(screen.queryByText("Bancos a los que le pidió")).not.toBeInTheDocument()
+  })
+})
+
 describe("EditNode — admin actions", () => {
   beforeEach(() => {
     act(() => {
