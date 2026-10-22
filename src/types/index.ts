@@ -91,10 +91,15 @@ export interface GraphEdge {
 /**
  * Full detail of a single node as returned by `GET /graph/node/:taxId`.
  */
+export interface FinancieraLenderMonth {
+  period: string
+  situation: string
+  totalLoan: number
+}
+
 export interface FinancieraLender {
   entityName: string
-  operationCount: number
-  totalLoan: number
+  months: FinancieraLenderMonth[]
 }
 
 export interface NodeData {

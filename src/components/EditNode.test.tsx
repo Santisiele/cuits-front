@@ -71,8 +71,11 @@ describe("EditNode — lenders", () => {
   it("shows the lenders of a debtor", () => {
     node = debtor({
       financieraLenders: [
-        { entityName: "Cooperativa de Crédito y Vivienda Unicred Ltda.", operationCount: 1, totalLoan: 1680672000 },
-        { entityName: "FINARES S.A.", operationCount: 1, totalLoan: 305522000 },
+        {
+          entityName: "Cooperativa de Crédito y Vivienda Unicred Ltda.",
+          months: [{ period: "2026-07", situation: "1", totalLoan: 1680672000 }],
+        },
+        { entityName: "FINARES S.A.", months: [{ period: "2026-06", situation: "2", totalLoan: 305522000 }] },
       ],
     })
     openNode("30501677643")

@@ -6,12 +6,28 @@ import { FinancieraLenders } from "@/components/FinancieraLenders"
 import type { FinancieraLender } from "@/types"
 
 const LENDERS: FinancieraLender[] = [
-  { entityName: "Cooperativa de Crédito y Vivienda Unicred Ltda.", operationCount: 1, totalLoan: 1680672000 },
-  { entityName: "FINARES S.A.", operationCount: 2, totalLoan: 305522000 },
+  {
+    entityName: "BANCO DE COMERCIO S.A.",
+    months: [
+      { period: "2026-07", situation: "1", totalLoan: 1680672000 },
+      { period: "2026-06", situation: "2", totalLoan: 1500000000 },
+    ],
+  },
+  {
+    entityName: "FINARES S.A.",
+    months: [
+      { period: "2026-05", situation: "3", totalLoan: 305522000 },
+      { period: "", situation: "1", totalLoan: 1000 },
+    ],
+  },
 ]
 
-function rows(): HTMLElement[] {
-  return screen.getAllByRole("row").slice(1)
+function lenderBlocks(): HTMLElement[] {
+  return screen.getAllByRole("rowgroup").slice(1)
+}
+
+function monthRows(block: HTMLElement): HTMLElement[] {
+  return within(block).getAllByRole("row").slice(1)
 }
 
 describe("FinancieraLenders", () => {
@@ -20,38 +36,46 @@ describe("FinancieraLenders", () => {
     expect(screen.getByText("Financieras a las que le pidió")).toBeInTheDocument()
   })
 
-  it("names the three columns", () => {
+  it("drops the old count and total columns", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(screen.getByRole("columnheader", { name: /Financiera/ })).toBeInTheDocument()
-    expect(screen.getByRole("columnheader", { name: "Veces" })).toBeInTheDocument()
-    expect(screen.getByRole("columnheader", { name: "Préstamo total" })).toBeInTheDocument()
+    expect(screen.queryByText("Veces")).not.toBeInTheDocument()
+    expect(screen.queryByText("Préstamo total")).not.toBeInTheDocument()
   })
 
-  it("shows one row per lender", () => {
+  it("shows one block per lender, in the order the API sent", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(rows()).toHaveLength(2)
+    const blocks = lenderBlocks()
+    expect(blocks).toHaveLength(2)
+    expect(within(blocks[0]!).getByRole("rowheader", { name: "BANCO DE COMERCIO S.A." })).toBeInTheDocument()
+    expect(within(blocks[1]!).getByRole("rowheader", { name: "FINARES S.A." })).toBeInTheDocument()
   })
 
-  it("keeps the order the API sent, largest total first", () => {
+  it("shows each month on its own line, newest first", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(within(rows()[0]!).getByText(/Unicred/)).toBeInTheDocument()
-    expect(within(rows()[1]!).getByText("FINARES S.A.")).toBeInTheDocument()
+    const [july, june] = monthRows(lenderBlocks()[0]!)
+    expect(within(july!).getByText("Julio 2026")).toBeInTheDocument()
+    expect(within(july!).getByText("Situación 1")).toBeInTheDocument()
+    expect(within(july!).getByText("$ 1.680.672.000")).toBeInTheDocument()
+    expect(within(june!).getByText("Junio 2026")).toBeInTheDocument()
+    expect(within(june!).getByText("Situación 2")).toBeInTheDocument()
+    expect(within(june!).getByText("$ 1.500.000.000")).toBeInTheDocument()
   })
 
-  it("shows how many times each lender was asked", () => {
+  it("never adds the months up", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(within(rows()[1]!).getByText("2")).toBeInTheDocument()
+    expect(screen.queryByText("$ 3.180.672.000")).not.toBeInTheDocument()
   })
 
-  it("shows each total as pesos", () => {
+  it("labels a month that came without a date", () => {
     render(<FinancieraLenders lenders={LENDERS} />)
-    expect(within(rows()[0]!).getByText("$ 1.680.672.000")).toBeInTheDocument()
-    expect(within(rows()[1]!).getByText("$ 305.522.000")).toBeInTheDocument()
+    const undated = monthRows(lenderBlocks()[1]!)[1]!
+    expect(within(undated).getByText("Sin fecha")).toBeInTheDocument()
+    expect(within(undated).getByText("$ 1.000")).toBeInTheDocument()
   })
 
   it("labels a lender that came without a name", () => {
-    render(<FinancieraLenders lenders={[{ entityName: "", operationCount: 1, totalLoan: 100 }]} />)
-    expect(screen.getByText("Sin nombre")).toBeInTheDocument()
+    render(<FinancieraLenders lenders={[{ entityName: "", months: [{ period: "2026-07", situation: "1", totalLoan: 100 }] }]} />)
+    expect(screen.getByRole("rowheader", { name: "Sin nombre" })).toBeInTheDocument()
   })
 
   it("draws nothing for someone who owes no lender", () => {
@@ -75,15 +99,16 @@ describe("FinancieraLenders", () => {
       openFilter()
       const list = screen.getByRole("dialog", { name: "Filtro de Financiera" })
       expect(within(list).getByRole("button", { name: "FINARES S.A." })).toBeInTheDocument()
-      expect(within(list).getByRole("button", { name: /Unicred/ })).toBeInTheDocument()
+      expect(within(list).getByRole("button", { name: "BANCO DE COMERCIO S.A." })).toBeInTheDocument()
     })
 
     it("hides a lender when it is unticked", () => {
       render(<FinancieraLenders lenders={LENDERS} />)
       openFilter()
       click(within(screen.getByRole("dialog", { name: "Filtro de Financiera" })).getByRole("button", { name: "FINARES S.A." }))
-      expect(rows()).toHaveLength(1)
-      expect(within(rows()[0]!).getByText(/Unicred/)).toBeInTheDocument()
+      const blocks = lenderBlocks()
+      expect(blocks).toHaveLength(1)
+      expect(within(blocks[0]!).getByRole("rowheader", { name: "BANCO DE COMERCIO S.A." })).toBeInTheDocument()
     })
 
     it("says so when every lender is filtered out", () => {
