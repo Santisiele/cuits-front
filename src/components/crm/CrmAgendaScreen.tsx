@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -25,7 +25,19 @@ export function CrmAgendaScreen() {
   const navigate = useNavigate()
 
   const [adding, setAdding] = useState(false)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const stickyTop = { top: headerHeight }
   const userList = users.data ?? []
+
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => setHeaderHeight(header.offsetHeight))
+    observer.observe(header)
+    setHeaderHeight(header.offsetHeight)
+    return () => observer.disconnect()
+  }, [])
   const tasks = agenda.data ?? []
   const rows = tasks.filter(
     (task) =>
@@ -36,8 +48,8 @@ export function CrmAgendaScreen() {
   const overdueCount = tasks.filter((task) => task.overdue).length
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-visible pt-0">
+      <CardHeader ref={headerRef} data-testid="crm-agenda-header" className="sticky top-0 z-20 bg-card pt-4 pb-3 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <CardTitle>Agenda</CardTitle>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -64,13 +76,13 @@ export function CrmAgendaScreen() {
         ) : agenda.error ? (
           <p className="text-destructive text-sm">{getErrorMessage(agenda.error, "Error al cargar la agenda")}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto md:overflow-visible">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="text-left py-1.5 pr-3 font-medium">Vence</th>
-                  <th className="text-left py-1.5 px-3 font-medium">Tarea</th>
-                  <th className="text-left py-1.5 px-3 font-medium">
+                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 pr-3 font-medium">Vence</th>
+                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 px-3 font-medium">Tarea</th>
+                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 px-3 font-medium">
                     <ColumnFilter
                       label="Empresa"
                       options={optionsFrom(tasks, (task) => [task.businessName])}
@@ -78,7 +90,7 @@ export function CrmAgendaScreen() {
                       onChange={setHiddenCompanies}
                     />
                   </th>
-                  <th className="text-left py-1.5 pl-3 font-medium">
+                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 pl-3 font-medium">
                     <ColumnFilter
                       label="Responsable"
                       options={optionsFrom(tasks, (task) => [task.assignee])}
@@ -101,7 +113,7 @@ export function CrmAgendaScreen() {
                       key={task.id}
                       data-testid={`agenda-${task.id}`}
                       data-color={userColor(task.assignee, userList)}
-                      onClick={() => void navigate(`/crm/${task.companyTaxId}`)}
+                      onClick={() => void navigate(`/crm/${task.companyTaxId}`, { state: { from: "agenda" } })}
                       className={cn("border-b border-border last:border-0 cursor-pointer transition-colors", palette.row)}
                     >
                       <td className={cn("py-1.5 pr-3 whitespace-nowrap", task.overdue && "text-destructive font-medium")}>

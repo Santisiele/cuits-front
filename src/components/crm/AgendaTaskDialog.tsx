@@ -5,8 +5,8 @@ import { useCrmCompanies, useCrmMutations } from "@/hooks/useCrm"
 import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
 import { COMPANY_REQUIRED, hasErrors, taskDraftErrors, type TaskDraft } from "@/lib/crm"
-import { formatTaxId } from "@/lib/cuit"
-import { DialogButtons, Field, NativeSelect } from "./CrmFields"
+import { CompanyPicker } from "./CompanyPicker"
+import { DialogButtons, Field } from "./CrmFields"
 import { TaskFields } from "./TaskFields"
 
 export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
@@ -17,7 +17,6 @@ export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState<TaskDraft>({ description: "", dueDate: "", assignee: me, contactIds: [] })
   const [error, setError] = useState("")
   const errors = taskDraftErrors(draft)
-  const options = [...(companies.data ?? [])].sort((a, b) => a.businessName.localeCompare(b.businessName, "es"))
   const canSubmit = companyTaxId !== "" && !hasErrors(errors)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -46,15 +45,8 @@ export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
           <DialogTitle>Nueva tarea</DialogTitle>
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-          <Field id="crm-agenda-company" label="Empresa" hint={companyTaxId ? undefined : COMPANY_REQUIRED}>
-            <NativeSelect id="crm-agenda-company" value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} autoFocus>
-              <option value="">{companies.isLoading ? "Cargando..." : "Elegí una empresa"}</option>
-              {options.map((company) => (
-                <option key={company.taxId} value={company.taxId}>
-                  {company.businessName || formatTaxId(company.taxId)}
-                </option>
-              ))}
-            </NativeSelect>
+          <Field id="crm-agenda-company" label="Empresa" hint={companyTaxId ? undefined : companies.isLoading ? "Cargando empresas..." : COMPANY_REQUIRED}>
+            <CompanyPicker id="crm-agenda-company" companies={companies.data ?? []} value={companyTaxId} onChange={setCompanyTaxId} />
           </Field>
           <TaskFields idPrefix="crm-agenda-task" draft={draft} errors={errors} contacts={[]} onChange={setDraft} />
           {error && <p className="text-destructive text-sm">{error}</p>}

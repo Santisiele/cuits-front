@@ -98,19 +98,22 @@ describe("CrmAgendaScreen", () => {
     expect(screen.getByTestId("agenda-t2").getAttribute("data-color")).toMatch(/^[a-z]+$/)
   })
 
-  it("adds a task for a company picked right there", async () => {
+  it("adds a task for a company searched right there", async () => {
     companies.mockResolvedValue([
       { taxId: "30798765432", businessName: "Zeta SA" },
-      { taxId: "30712345678", businessName: "ACME SA" },
+      { taxId: "30712345678", businessName: "Acmé SA" },
+      { taxId: "30711111111", businessName: "Acme Norte SA" },
     ])
     createTask.mockResolvedValue({})
     await show()
     await userEvent.click(screen.getByRole("button", { name: "Nueva tarea" }))
     const submit = screen.getByRole("button", { name: "Agregar" })
     expect(submit).toBeDisabled()
-    await screen.findByRole("option", { name: "ACME SA" })
-    expect(screen.getAllByRole("option", { name: /SA$/ }).map((option) => option.textContent)).toEqual(["ACME SA", "Zeta SA"])
-    await userEvent.selectOptions(screen.getByLabelText("Empresa"), "ACME SA")
+    await userEvent.type(screen.getByLabelText("Empresa"), "acme")
+    const found = within(await screen.findByRole("listbox", { name: "Empresas encontradas" }))
+    expect(found.getAllByRole("option").map((option) => option.textContent)).toEqual(["Acme Norte SA30-71111111-1", "Acmé SA30-71234567-8"])
+    await userEvent.click(found.getByRole("option", { name: /Acmé SA/ }))
+    expect(screen.getByRole("button", { name: "Cambiar empresa" })).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText("Tarea"), "Llamar a Ana")
     await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
     await userEvent.click(submit)
@@ -126,6 +129,12 @@ describe("CrmAgendaScreen", () => {
   it("opens the company of a task", async () => {
     await show()
     await userEvent.click(screen.getByText("Tarea t2"))
-    expect(navigate).toHaveBeenCalledWith("/crm/30712345678")
+    expect(navigate).toHaveBeenCalledWith("/crm/30712345678", { state: { from: "agenda" } })
+  })
+
+  it("keeps its header on top while scrolling", async () => {
+    await show()
+    expect(screen.getByTestId("crm-agenda-header")).toHaveClass("sticky", "top-0")
+    expect(screen.getByRole("columnheader", { name: "Vence" })).toHaveClass("sticky")
   })
 })
