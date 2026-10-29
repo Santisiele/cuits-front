@@ -6,7 +6,10 @@ import { render } from "@/tests/render"
 
 const read = vi.fn()
 
-vi.mock("@/services/api", () => ({ ActivityService: { read: (filters: unknown) => read(filters) } }))
+vi.mock("@/services/api", () => ({
+  ActivityService: { read: (filters: unknown) => read(filters) },
+  UsersService: { list: async () => [{ username: "sol" }, { username: "luchi" }] },
+}))
 
 const { ActivityScreen } = await import("@/components/activity/ActivityScreen")
 
@@ -53,7 +56,9 @@ describe("ActivityScreen", () => {
   it("filters by user and kind", async () => {
     show()
     await screen.findAllByTestId("activity-entry")
-    await userEvent.type(screen.getByLabelText("Usuario"), "sol")
+    await screen.findByRole("option", { name: "sol" })
+    expect(screen.getAllByRole("option", { name: /^(luchi|sol)$/ }).map((option) => option.textContent)).toEqual(["luchi", "sol"])
+    await userEvent.selectOptions(screen.getByLabelText("Usuario"), "sol")
     await userEvent.selectOptions(screen.getByLabelText("Tipo"), "CRM")
     expect(read).toHaveBeenLastCalledWith({ username: "sol", event: "crm_operation", before: undefined })
   })

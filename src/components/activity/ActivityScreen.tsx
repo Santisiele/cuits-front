@@ -3,9 +3,9 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/crm/CrmFields"
 import { ActivityService } from "@/services/api"
+import { useUsersQuery } from "@/hooks/useUsers"
 import { ACTIVITY_EVENT_LABELS, describeActivity } from "@/lib/activity"
 import { formatIsoDateTime } from "@/lib/dates"
 import { getErrorMessage } from "@/lib/errors"
@@ -15,7 +15,8 @@ import type { ActivityPage } from "@/types"
 export function ActivityScreen() {
   const [username, setUsername] = useState("")
   const [event, setEvent] = useState("")
-  const filters = { username: username.trim(), event }
+  const filters = { username, event }
+  const usernames = (useUsersQuery().data ?? []).map((user) => user.username).sort((a, b) => a.localeCompare(b))
 
   const activity = useInfiniteQuery<ActivityPage>({
     queryKey: ["activity", filters],
@@ -32,7 +33,12 @@ export function ActivityScreen() {
       <CardHeader>
         <CardTitle>Registro de actividad</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <Input aria-label="Usuario" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Usuario" className="sm:w-48" />
+          <NativeSelect aria-label="Usuario" value={username} onChange={(e) => setUsername(e.target.value)} className="sm:w-48">
+            <option value="">Todos los usuarios</option>
+            {usernames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </NativeSelect>
           <NativeSelect aria-label="Tipo" value={event} onChange={(e) => setEvent(e.target.value)} className="sm:w-64">
             <option value="">Todo</option>
             {Object.entries(ACTIVITY_EVENT_LABELS).map(([value, label]) => (
