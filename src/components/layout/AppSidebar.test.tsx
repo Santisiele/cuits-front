@@ -10,10 +10,10 @@ import type { Role } from "@/lib/roles"
 
 const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Créditos IA"]
 
-async function openMenu(role: Role): Promise<void> {
+async function openMenu(role: Role, path = "/"): Promise<void> {
   act(() => useAuthStore.getState().setAuth("t1", "santi", role))
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AppSidebar />
     </MemoryRouter>
   )
@@ -42,6 +42,12 @@ describe("AppSidebar", () => {
     await openMenu("member")
     expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("href", "/crm/agenda")
     expect(screen.getByRole("link", { name: "Empresas" })).toHaveAttribute("href", "/crm")
+  })
+
+  it("marks only the agenda while on it", async () => {
+    await openMenu("member", "/crm/agenda")
+    expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("aria-current", "page")
+    expect(screen.getByRole("link", { name: "Empresas" })).not.toHaveAttribute("aria-current")
   })
 
   it("shows an admin every admin item", async () => {

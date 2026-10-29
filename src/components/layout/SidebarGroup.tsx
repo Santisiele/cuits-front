@@ -12,6 +12,7 @@ export interface NavItem {
   hidden?: boolean
   adminOnly?: boolean
   creatorOnly?: boolean
+  exact?: boolean
 }
 
 export interface NavGroup {
@@ -53,6 +54,7 @@ export function SidebarGroup({ group, isAdmin, isCreator, onNavigate }: SidebarG
         <NavLink
           key={item.path}
           to={item.path}
+          end={item.exact}
           onClick={onNavigate}
           className={({ isActive }) =>
             `rounded-md px-3 py-2 text-sm transition-colors ${

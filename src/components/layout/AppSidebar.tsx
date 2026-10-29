@@ -42,7 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Briefcase,
     items: [
       { path: "/crm/agenda", label: "Agenda" },
-      { path: "/crm", label: "Empresas" },
+      { path: "/crm", label: "Empresas", exact: true },
       { path: "/nosis-pending", label: "Pendientes de Nosis", creatorOnly: true },
     ],
   },
