@@ -22,10 +22,10 @@ export function NativeSelect({ className, ...props }: React.SelectHTMLAttributes
   )
 }
 
-export function CheckRow({ checked, onChange, children }: { checked: boolean; onChange: (checked: boolean) => void; children: ReactNode }) {
+export function CheckRow({ checked, onChange, disabled, children }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; children: ReactNode }) {
   return (
     <label className="flex items-start gap-2 text-sm cursor-pointer">
-      <input type="checkbox" className="mt-0.5" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" className="mt-0.5" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       <span>{children}</span>
     </label>
   )

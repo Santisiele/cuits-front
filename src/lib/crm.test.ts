@@ -10,6 +10,8 @@ import {
   RESPONSIBLE_NAME_ERROR,
   responsibleNameError,
   splitLastAction,
+  companyMatches,
+  taskChanges,
   TEXT_TOO_LONG,
   birthdayError,
   buildTimeline,
@@ -285,5 +287,47 @@ describe("splitLastAction", () => {
   it("leaves who empty when nothing says it", () => {
     expect(splitLastAction(action)).toEqual({ withWhom: "", what: "Lo llamó" })
     expect(splitLastAction(null)).toEqual({ withWhom: "", what: "" })
+  })
+})
+
+describe("companyMatches", () => {
+  const company = { taxId: "30712345678", businessName: "Grupo Acmé SA" }
+
+  it("matches by name ignoring accents and by at least three digits of the CUIT", () => {
+    expect(companyMatches(company, "acme")).toBe(true)
+    expect(companyMatches(company, "123")).toBe(true)
+    expect(companyMatches(company, "")).toBe(true)
+  })
+
+  it("does not match every CUIT holding a single digit of the name", () => {
+    expect(companyMatches(company, "Grupo 3")).toBe(false)
+  })
+})
+
+describe("taskChanges", () => {
+  const task = {
+    id: "t1",
+    companyTaxId: "30712345678",
+    description: "Llamar",
+    dueDate: "2026-11-02",
+    status: "open" as const,
+    cancelReason: null,
+    assignee: "Flavia",
+    createdBy: "santi",
+    contactIds: ["c1", "c2"],
+    createdAt: "",
+    closedAt: null,
+    archivedAt: null,
+  }
+
+  it("sends only what the edit changed", () => {
+    expect(taskChanges(task, { description: " Llamar ", dueDate: "2026-11-09", assignee: "Flavia", contactIds: ["c2", "c1"] })).toEqual({
+      dueDate: "2026-11-09",
+    })
+    expect(taskChanges(task, { description: "Ir", dueDate: "2026-11-02", assignee: "pedro", contactIds: ["c1"] })).toEqual({
+      description: "Ir",
+      assignee: "pedro",
+      contactIds: ["c1"],
+    })
   })
 })

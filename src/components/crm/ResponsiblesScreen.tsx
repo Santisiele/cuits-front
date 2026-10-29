@@ -91,6 +91,7 @@ function ResponsibleRow({ responsible, usernames }: { responsible: CrmResponsibl
           <CheckRow
             key={username}
             checked={responsible.users.some((user) => user.toLowerCase() === username.toLowerCase())}
+            disabled={update.isPending}
             onChange={(checked) => toggleUser(username, checked)}
           >
             {username}

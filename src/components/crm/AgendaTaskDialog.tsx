@@ -44,7 +44,7 @@ export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           <Field id="crm-agenda-company" label="Empresa" hint={companyTaxId ? undefined : companies.isLoading ? "Cargando empresas..." : COMPANY_REQUIRED}>
-            <CompanyPicker id="crm-agenda-company" companies={companies.data ?? []} value={companyTaxId} onChange={setCompanyTaxId} />
+            <CompanyPicker id="crm-agenda-company" companies={(companies.data ?? []).filter((company) => company.closedAt === null)} value={companyTaxId} onChange={setCompanyTaxId} />
           </Field>
           <TaskFields idPrefix="crm-agenda-task" draft={draft} errors={errors} contacts={[]} onChange={setDraft} />
           {error && <p className="text-destructive text-sm">{error}</p>}

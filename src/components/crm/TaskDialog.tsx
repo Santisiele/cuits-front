@@ -3,7 +3,7 @@ import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmMutations } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
-import { hasErrors, taskDraftErrors, type TaskDraft } from "@/lib/crm"
+import { hasErrors, taskChanges, taskDraftErrors, type TaskDraft } from "@/lib/crm"
 import type { CrmContact, CrmTask } from "@/types"
 import { DialogButtons } from "./CrmFields"
 import { TaskFields } from "./TaskFields"
@@ -41,7 +41,7 @@ export function TaskDialog({
       contactIds: draft.contactIds,
     }
     try {
-      if (task) await updateTask.mutateAsync({ id: task.id, input })
+      if (task) await updateTask.mutateAsync({ id: task.id, input: taskChanges(task, draft) })
       else await createTask.mutateAsync({ ...input, companyTaxId })
       toast.success(task ? "Se guardó la tarea" : "Se agregó la tarea")
       onClose()

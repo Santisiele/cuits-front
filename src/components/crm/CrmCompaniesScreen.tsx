@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCrmCompanies } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
-import { formatDay, originLabel } from "@/lib/crm"
+import { companyMatches, formatDay, originLabel } from "@/lib/crm"
 import { formatTaxId } from "@/lib/cuit"
 import { AddCompanyDialog } from "./AddCompanyDialog"
 
@@ -18,13 +18,12 @@ export function CrmCompaniesScreen() {
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<"open" | "closed" | "all">("open")
 
-  const needle = search.trim().toLowerCase()
   const all = companies.data ?? []
   const closedCount = all.filter((company) => company.closedAt !== null).length
   const rows = all.filter(
     (company) =>
       (status === "all" || (status === "closed") === (company.closedAt !== null)) &&
-      (needle === "" || company.businessName.toLowerCase().includes(needle) || company.taxId.includes(needle.replace(/\D/g, "") || needle))
+      companyMatches(company, search)
   )
 
   return (
@@ -61,7 +60,7 @@ export function CrmCompaniesScreen() {
         ) : companies.error ? (
           <p className="text-destructive text-sm">{getErrorMessage(companies.error, "Error al cargar las empresas")}</p>
         ) : rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{needle ? "Ninguna empresa coincide." : "Todavía no hay empresas en el CRM."}</p>
+          <p className="text-muted-foreground text-sm">{search.trim() ? "Ninguna empresa coincide." : "Todavía no hay empresas en el CRM."}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

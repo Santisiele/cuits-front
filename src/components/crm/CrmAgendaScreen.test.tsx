@@ -122,9 +122,10 @@ describe("CrmAgendaScreen", () => {
 
   it("adds a task for a company searched right there", async () => {
     companies.mockResolvedValue([
-      { taxId: "30798765432", businessName: "Zeta SA" },
-      { taxId: "30712345678", businessName: "Acmé SA" },
-      { taxId: "30711111111", businessName: "Acme Norte SA" },
+      { taxId: "30798765432", businessName: "Zeta SA", closedAt: null },
+      { taxId: "30712345678", businessName: "Acmé SA", closedAt: null },
+      { taxId: "30711111111", businessName: "Acme Norte SA", closedAt: null },
+      { taxId: "30722222222", businessName: "Acme Cerrada SA", closedAt: "2026-10-01T00:00:00.000Z" },
     ])
     createTask.mockResolvedValue({})
     await show()

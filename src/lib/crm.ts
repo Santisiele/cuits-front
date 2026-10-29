@@ -246,14 +246,31 @@ export function buildTimeline(actions: readonly CrmAction[], tasks: readonly Crm
 
 export const COMPANY_REQUIRED = "Elegí la empresa"
 
-export function matchCompanies<T extends { taxId: string; businessName: string }>(companies: readonly T[], search: string, limit = 8): T[] {
+export function companyMatches(company: { taxId: string; businessName: string }, search: string): boolean {
   const needle = nameKey(search)
-  if (needle === "") return []
+  if (needle === "") return true
   const digits = search.replace(/\D/g, "")
+  return nameKey(company.businessName).includes(needle) || (digits.length >= 3 && company.taxId.includes(digits))
+}
+
+export function matchCompanies<T extends { taxId: string; businessName: string }>(companies: readonly T[], search: string, limit = 8): T[] {
+  if (nameKey(search) === "") return []
   return companies
-    .filter((company) => nameKey(company.businessName).includes(needle) || (digits.length >= 3 && company.taxId.includes(digits)))
+    .filter((company) => companyMatches(company, search))
     .sort((a, b) => a.businessName.localeCompare(b.businessName, "es"))
     .slice(0, limit)
+}
+
+export function taskChanges(task: CrmTask, draft: TaskDraft): Partial<{ description: string; dueDate: string; assignee: string; contactIds: string[] }> {
+  const description = draft.description.trim()
+  const sameContacts =
+    draft.contactIds.length === task.contactIds.length && draft.contactIds.every((id) => task.contactIds.includes(id))
+  return {
+    ...(description !== task.description && { description }),
+    ...(draft.dueDate !== task.dueDate && { dueDate: draft.dueDate }),
+    ...(draft.assignee !== task.assignee && { assignee: draft.assignee }),
+    ...(!sameContacts && { contactIds: draft.contactIds }),
+  }
 }
 
 function nameKey(value: string): string {
