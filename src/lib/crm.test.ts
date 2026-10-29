@@ -27,6 +27,7 @@ import {
   dateError,
   describeChangeValue,
   formatDay,
+  isOverdue,
   hasErrors,
   optionalNameError,
   optionalText,
@@ -121,6 +122,12 @@ describe("display helpers", () => {
   it("takes today in Buenos Aires, not UTC", () => {
     expect(todayInBuenosAires(new Date("2026-10-30T02:59:00.000Z"))).toBe("2026-10-29")
     expect(todayInBuenosAires(new Date("2026-10-30T03:00:00.000Z"))).toBe("2026-10-30")
+  })
+
+  it("counts a task due today as overdue", () => {
+    expect(isOverdue("2026-10-29", "2026-10-29")).toBe(true)
+    expect(isOverdue("2026-10-28", "2026-10-29")).toBe(true)
+    expect(isOverdue("2026-10-30", "2026-10-29")).toBe(false)
   })
 
   it("shows days as dd/mm/yyyy", () => {

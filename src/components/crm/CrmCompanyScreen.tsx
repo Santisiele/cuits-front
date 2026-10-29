@@ -17,6 +17,7 @@ import {
   canChangeTask,
   cancelReasonLabel,
   formatDay,
+  isOverdue,
   optionalNameError,
   optionalText,
   originDraftOf,
@@ -202,7 +203,7 @@ function OpenTasks({
           <div className="divide-y divide-border">
             {tasks.map((task) => {
               const allowed = canChangeTask(me, isAdmin, task, mine)
-              const overdue = task.dueDate < today
+              const overdue = isOverdue(task.dueDate, today)
               return (
                 <div key={task.id} data-testid={`task-${task.id}`} className="py-2 flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div className="text-sm space-y-0.5 min-w-0">

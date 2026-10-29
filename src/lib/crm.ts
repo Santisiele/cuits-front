@@ -164,6 +164,10 @@ export function todayInBuenosAires(now: Date = new Date()): string {
   }).format(now)
 }
 
+export function isOverdue(dueDate: string, today: string): boolean {
+  return dueDate <= today
+}
+
 export function formatDay(iso: string | null): string {
   if (!iso) return "—"
   const match = ISO_DATE.exec(iso)
