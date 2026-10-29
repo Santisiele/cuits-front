@@ -9,6 +9,7 @@ import type {
   CrmCompanyInput,
   CrmContactInput,
   CrmTaskInput,
+  NosisPendingQueue,
 } from "@/types"
 
 export const crmKeys = {
@@ -18,6 +19,7 @@ export const crmKeys = {
   agenda: (assignee: string) => ["crm", "agenda", assignee] as const,
   users: () => ["crm", "users"] as const,
   changes: (entityType: string, entityId: string) => ["crm", "changes", entityType, entityId] as const,
+  nosisPending: () => ["crm", "nosis-pending"] as const,
 }
 
 export function useCrmCompanies() {
@@ -52,6 +54,10 @@ export function useCrmChanges(entityType: string, entityId: string, enabled: boo
     enabled,
     staleTime: 0,
   })
+}
+
+export function useNosisPending() {
+  return useQuery<NosisPendingQueue>({ queryKey: crmKeys.nosisPending(), queryFn: CrmApiService.nosisPending, staleTime: 0 })
 }
 
 export function useCrmMutations() {

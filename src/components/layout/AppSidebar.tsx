@@ -43,6 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { path: "/crm/agenda", label: "Agenda" },
       { path: "/crm", label: "Empresas" },
+      { path: "/nosis-pending", label: "Pendientes de Nosis", creatorOnly: true },
     ],
   },
   {

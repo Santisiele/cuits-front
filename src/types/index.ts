@@ -439,6 +439,19 @@ export interface CrmChange {
   after: Record<string, unknown>
 }
 
+export interface NosisPendingItem {
+  taxId: string
+  businessName: string
+  sources: string[]
+  addedBy: string | null
+  addedAt: string | null
+}
+
+export interface NosisPendingQueue {
+  command: string
+  items: NosisPendingItem[]
+}
+
 export interface CrmCompanyInput {
   taxId?: string
   businessName?: string | null

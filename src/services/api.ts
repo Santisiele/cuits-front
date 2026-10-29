@@ -32,7 +32,8 @@ import type {
   CrmContactInput,
   CrmRemovalResult,
   CrmTask,
-  CrmTaskInput
+  CrmTaskInput,
+  NosisPendingQueue
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiFailure } from "@/lib/errors"
@@ -531,6 +532,8 @@ export const CrmApiService = {
     ),
 
   users: () => apiFetch<{ users: string[] }>(`${API_BASE_URL}/crm/users`).then((res) => res.users),
+
+  nosisPending: () => apiFetch<NosisPendingQueue>(`${API_BASE_URL}/crm/nosis-pending`),
 
   changes: (entityType: string, entityId: string) =>
     apiFetch<{ changes: CrmChange[] }>(
