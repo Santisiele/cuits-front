@@ -26,7 +26,7 @@ export const crmKeys = {
   nosisPending: () => ["crm", "nosis-pending"] as const,
   sources: () => ["crm", "sources"] as const,
   responsibles: () => ["crm", "responsibles"] as const,
-  removal: (taxId: string) => ["crm", "removal", taxId] as const,
+  removal: (taxId: string) => ["crm-removal", taxId] as const,
 }
 
 export function useCrmRemovalPreview(taxId: string) {
