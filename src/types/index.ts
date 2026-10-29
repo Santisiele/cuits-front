@@ -318,6 +318,12 @@ export interface AppUser {
   role: "creator" | "admin" | "member"
   createdAt: string
   disabled: boolean
+  color?: string | null
+}
+
+export interface CrmUser {
+  username: string
+  color: string | null
 }
 
 export interface WebResearchSource {

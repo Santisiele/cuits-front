@@ -24,7 +24,9 @@ import {
   requiredTextError,
   taskDraftErrors,
   todayInBuenosAires,
+  userColor,
 } from "@/lib/crm"
+import { TRUST_LEVEL_COLOR_KEYS } from "@/lib/trustLevels"
 import type { CrmAction, CrmTask } from "@/types"
 
 const TASK: CrmTask = {
@@ -136,6 +138,24 @@ describe("display helpers", () => {
     expect(describeChangeValue("company_removed")).toBe("La empresa salió del CRM")
     expect(describeChangeValue("2026-11-02")).toBe("02/11/2026")
     expect(describeChangeValue(4)).toBe("4")
+  })
+})
+
+describe("userColor", () => {
+  const users = [
+    { username: "Flavia", color: "teal" },
+    { username: "raul", color: null },
+    { username: "mati", color: "#ff0000" },
+  ]
+
+  it("uses the color an admin picked, whatever the case of the name", () => {
+    expect(userColor("flavia", users)).toBe("teal")
+  })
+
+  it("derives a stable palette color for anyone without a valid one", () => {
+    expect(userColor("raul", users)).toBe(userColor("RAUL", []))
+    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("raul", users))
+    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("mati", users))
   })
 })
 

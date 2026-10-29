@@ -6,7 +6,11 @@ import { ColumnFilter } from "@/components/ColumnFilter"
 import { useCrmAgenda, useCrmUsers } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
 import { optionsFrom, passesFilter } from "@/lib/columnFilters"
-import { formatDay } from "@/lib/crm"
+import { formatDay, userColor } from "@/lib/crm"
+import { paletteFor } from "@/lib/trustLevels"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { AgendaTaskDialog } from "./AgendaTaskDialog"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import { CheckRow, NativeSelect } from "./CrmFields"
@@ -20,6 +24,8 @@ export function CrmAgendaScreen() {
   const users = useCrmUsers()
   const navigate = useNavigate()
 
+  const [adding, setAdding] = useState(false)
+  const userList = users.data ?? []
   const tasks = agenda.data ?? []
   const rows = tasks.filter(
     (task) =>
@@ -35,11 +41,15 @@ export function CrmAgendaScreen() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <CardTitle>Agenda</CardTitle>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Button size="sm" onClick={() => setAdding(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nueva tarea
+            </Button>
             <NativeSelect aria-label="Responsable" value={assignee} onChange={(e) => setAssignee(e.target.value)} className="sm:w-48">
               <option value="me">Mis tareas</option>
               <option value="all">Todos</option>
-              {(users.data ?? []).map((user) => (
-                <option key={user} value={user}>{user}</option>
+              {userList.map((user) => (
+                <option key={user.username} value={user.username}>{user.username}</option>
               ))}
             </NativeSelect>
             <CheckRow checked={overdueOnly} onChange={setOverdueOnly}>
@@ -84,12 +94,15 @@ export function CrmAgendaScreen() {
                     <td colSpan={4} className="py-3 text-muted-foreground">No hay tareas abiertas.</td>
                   </tr>
                 ) : (
-                  rows.map((task) => (
+                  rows.map((task) => {
+                    const palette = paletteFor(userColor(task.assignee, userList))
+                    return (
                     <tr
                       key={task.id}
                       data-testid={`agenda-${task.id}`}
+                      data-color={userColor(task.assignee, userList)}
                       onClick={() => void navigate(`/crm/${task.companyTaxId}`)}
-                      className="border-b border-border last:border-0 cursor-pointer hover:bg-accent/50 transition-colors"
+                      className={cn("border-b border-border last:border-0 cursor-pointer transition-colors", palette.row)}
                     >
                       <td className={cn("py-1.5 pr-3 whitespace-nowrap", task.overdue && "text-destructive font-medium")}>
                         {formatDay(task.dueDate)}
@@ -100,15 +113,22 @@ export function CrmAgendaScreen() {
                         <div>{task.businessName || "—"}</div>
                         <div className="text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</div>
                       </td>
-                      <td className="py-1.5 pl-3">{task.assignee}</td>
+                      <td className="py-1.5 pl-3">
+                        <span className={cn("inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-medium", palette.badge)}>
+                          <span className={cn("h-2 w-2 shrink-0", palette.swatch)} />
+                          {task.assignee}
+                        </span>
+                      </td>
                     </tr>
-                  ))
+                    )
+                  })
                 )}
               </tbody>
             </table>
           </div>
         )}
       </CardContent>
+      {adding && <AgendaTaskDialog onClose={() => setAdding(false)} />}
     </Card>
   )
 }

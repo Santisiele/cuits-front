@@ -24,7 +24,7 @@ export function useUserMutations() {
   })
 
   const update = useMutation({
-    mutationFn: ({ username, changes }: { username: string; changes: { role?: string; disabled?: boolean } }) =>
+    mutationFn: ({ username, changes }: { username: string; changes: { role?: string; disabled?: boolean; color?: string | null } }) =>
       UsersService.update(username, changes),
     onSuccess: invalidate,
   })

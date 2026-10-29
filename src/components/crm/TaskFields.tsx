@@ -19,7 +19,7 @@ export function TaskFields({
   onChange: (draft: TaskDraft) => void
 }) {
   const users = useCrmUsers()
-  const options = users.data ?? []
+  const options = (users.data ?? []).map((user) => user.username)
   const assigneeOptions = options.some((user) => user.toLowerCase() === draft.assignee.toLowerCase())
     ? options
     : [draft.assignee, ...options]

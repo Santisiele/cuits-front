@@ -60,7 +60,7 @@ function show(): void {
 describe("RecordActionDialog", () => {
   beforeEach(() => {
     recordAction.mockReset().mockResolvedValue({ action: {}, closedTasks: [], nextTask: null })
-    users.mockReset().mockResolvedValue(["flavia", "santi"])
+    users.mockReset().mockResolvedValue([{ username: "flavia", color: null }, { username: "santi", color: null }])
     onClose.mockReset()
   })
 

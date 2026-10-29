@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CreateUserDialog } from "@/components/users/CreateUserDialog"
 import { ResetPasswordDialog } from "@/components/users/ResetPasswordDialog"
+import { UserColorPicker } from "@/components/users/UserColorPicker"
 import { useUserMutations, useUsersQuery } from "@/hooks/useUsers"
 import { useAuthStore } from "@/store/useAuthStore"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -22,7 +23,7 @@ export function UsersTable() {
   const [resetting, setResetting] = useState<string | null>(null)
   const [actionError, setActionError] = useState("")
 
-  async function change(user: AppUser, changes: { role?: string; disabled?: boolean }): Promise<void> {
+  async function change(user: AppUser, changes: { role?: string; disabled?: boolean; color?: string | null }): Promise<void> {
     setActionError("")
     try {
       await update.mutateAsync({ username: user.username, changes })
@@ -67,6 +68,12 @@ export function UsersTable() {
                       {user.disabled && <Badge variant="destructive">Deshabilitado</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">Creado el {formatIsoDate(user.createdAt)}</p>
+                    <UserColorPicker
+                      username={user.username}
+                      color={user.color ?? null}
+                      disabled={update.isPending}
+                      onChange={(color) => void change(user, { color })}
+                    />
                   </div>
 
                   <div className="flex gap-2 flex-wrap">

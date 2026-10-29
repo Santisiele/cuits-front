@@ -7,13 +7,19 @@ import type { CrmAgendaItem } from "@/types"
 
 const agenda = vi.fn()
 const users = vi.fn()
+const companies = vi.fn()
+const createTask = vi.fn()
 
 vi.mock("@/services/api", () => ({
   CrmApiService: {
     agenda: (assignee: string) => agenda(assignee),
     users: () => users(),
+    companies: () => companies(),
+    createTask: (...args: unknown[]) => createTask(...args),
   },
 }))
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn() } }))
 
 const navigate = vi.fn()
 vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }))
@@ -52,7 +58,7 @@ async function show(): Promise<void> {
 describe("CrmAgendaScreen", () => {
   beforeEach(() => {
     agenda.mockReset().mockResolvedValue([item("t1", "2026-10-28", true), item("t2", "2026-11-02", false, "OTRA SA", "pedro")])
-    users.mockReset().mockResolvedValue(["flavia", "pedro"])
+    users.mockReset().mockResolvedValue([{ username: "flavia", color: "teal" }, { username: "pedro", color: null }])
     navigate.mockReset()
   })
 
@@ -83,6 +89,38 @@ describe("CrmAgendaScreen", () => {
     expect(agenda).toHaveBeenLastCalledWith("pedro")
     await userEvent.selectOptions(screen.getByLabelText("Responsable"), "Todos")
     expect(agenda).toHaveBeenLastCalledWith("all")
+  })
+
+  it("paints each task with its assignee's color, chosen or derived", async () => {
+    await show()
+    await screen.findByRole("option", { name: "pedro" })
+    expect(screen.getByTestId("agenda-t1")).toHaveAttribute("data-color", "teal")
+    expect(screen.getByTestId("agenda-t2").getAttribute("data-color")).toMatch(/^[a-z]+$/)
+  })
+
+  it("adds a task for a company picked right there", async () => {
+    companies.mockResolvedValue([
+      { taxId: "30798765432", businessName: "Zeta SA" },
+      { taxId: "30712345678", businessName: "ACME SA" },
+    ])
+    createTask.mockResolvedValue({})
+    await show()
+    await userEvent.click(screen.getByRole("button", { name: "Nueva tarea" }))
+    const submit = screen.getByRole("button", { name: "Agregar" })
+    expect(submit).toBeDisabled()
+    await screen.findByRole("option", { name: "ACME SA" })
+    expect(screen.getAllByRole("option", { name: /SA$/ }).map((option) => option.textContent)).toEqual(["ACME SA", "Zeta SA"])
+    await userEvent.selectOptions(screen.getByLabelText("Empresa"), "ACME SA")
+    await userEvent.type(screen.getByLabelText("Tarea"), "Llamar a Ana")
+    await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
+    await userEvent.click(submit)
+    expect(createTask).toHaveBeenCalledWith({
+      companyTaxId: "30712345678",
+      description: "Llamar a Ana",
+      dueDate: "2026-11-02",
+      assignee: null,
+      contactIds: [],
+    })
   })
 
   it("opens the company of a task", async () => {

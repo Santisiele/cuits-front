@@ -1,4 +1,5 @@
-import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus } from "@/types"
+import { TRUST_LEVEL_COLOR_KEYS } from "@/lib/trustLevels"
+import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmUser, TrustLevelColor } from "@/types"
 
 export const MAX_NAME_LENGTH = 200
 export const MAX_TEXT_LENGTH = 2000
@@ -170,6 +171,17 @@ export function taskDraftErrors(draft: TaskDraft): TaskDraftErrors {
 
 export function hasErrors(errors: object): boolean {
   return Object.values(errors).some((value) => value !== null)
+}
+
+export const COMPANY_REQUIRED = "Elegí la empresa"
+
+export function userColor(username: string, users: readonly CrmUser[]): TrustLevelColor {
+  const chosen = users.find((user) => sameUser(user.username, username))?.color
+  if (chosen && (TRUST_LEVEL_COLOR_KEYS as readonly string[]).includes(chosen)) return chosen as TrustLevelColor
+  const key = username.trim().toLowerCase()
+  let hash = 0
+  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return TRUST_LEVEL_COLOR_KEYS[hash % TRUST_LEVEL_COLOR_KEYS.length]!
 }
 
 function sameUser(a: string | null, b: string): boolean {

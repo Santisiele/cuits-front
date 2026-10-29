@@ -9,6 +9,7 @@ import type {
   CrmCompanyInput,
   CrmContactInput,
   CrmTaskInput,
+  CrmUser,
   NosisPendingQueue,
 } from "@/types"
 
@@ -44,7 +45,7 @@ export function useCrmAgenda(assignee: string) {
 }
 
 export function useCrmUsers() {
-  return useQuery<string[]>({ queryKey: crmKeys.users(), queryFn: CrmApiService.users })
+  return useQuery<CrmUser[]>({ queryKey: crmKeys.users(), queryFn: CrmApiService.users })
 }
 
 export function useCrmChanges(entityType: string, entityId: string, enabled: boolean) {

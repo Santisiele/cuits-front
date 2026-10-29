@@ -33,6 +33,7 @@ import type {
   CrmRemovalResult,
   CrmTask,
   CrmTaskInput,
+  CrmUser,
   NosisPendingQueue
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
@@ -433,7 +434,7 @@ export const UsersService = {
       body: JSON.stringify({ username, password, role }),
     }),
 
-  update: (username: string, changes: { role?: string; disabled?: boolean }) =>
+  update: (username: string, changes: { role?: string; disabled?: boolean; color?: string | null }) =>
     apiFetch<AppUser>(`${API_BASE_URL}/users/${encodeURIComponent(username)}`, {
       method: "PATCH",
       body: JSON.stringify(changes),
@@ -531,7 +532,7 @@ export const CrmApiService = {
       (res) => res.tasks
     ),
 
-  users: () => apiFetch<{ users: string[] }>(`${API_BASE_URL}/crm/users`).then((res) => res.users),
+  users: () => apiFetch<{ users: CrmUser[] }>(`${API_BASE_URL}/crm/users`).then((res) => res.users),
 
   nosisPending: () => apiFetch<NosisPendingQueue>(`${API_BASE_URL}/crm/nosis-pending`),
 
