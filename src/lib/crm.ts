@@ -1,3 +1,4 @@
+import { passesFilter } from "@/lib/columnFilters"
 import type { CrmAction, CrmLastAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmResponsible } from "@/types"
 
 export const MAX_NAME_LENGTH = 200
@@ -346,4 +347,20 @@ export function splitLastAction(action: CrmLastAction | null): { withWhom: strin
   if (action.contacts.length > 0) return { withWhom: action.contacts.join(", "), what: action.description }
   const imported = /^Con ([^:]+):\s*([\s\S]*)$/.exec(action.description)
   return imported ? { withWhom: imported[1]!.trim(), what: imported[2]! } : { withWhom: "", what: action.description }
+}
+
+export type AgendaWhen = "all" | "overdue" | "upcoming"
+
+export function filterAgenda<T extends { overdue: boolean; assignee: string; businessName: string }>(
+  tasks: readonly T[],
+  when: AgendaWhen,
+  hiddenAssignees: readonly string[],
+  hiddenCompanies: readonly string[]
+): T[] {
+  return tasks.filter(
+    (task) =>
+      (when === "all" || (when === "overdue") === task.overdue) &&
+      passesFilter([task.assignee], new Set(hiddenAssignees)) &&
+      passesFilter([task.businessName], new Set(hiddenCompanies))
+  )
 }

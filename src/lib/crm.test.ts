@@ -11,6 +11,7 @@ import {
   responsibleNameError,
   splitLastAction,
   companyMatches,
+  filterAgenda,
   recordedForSomeoneElse,
   sameResponsible,
   toggleId,
@@ -353,5 +354,23 @@ describe("responsible names and lists", () => {
     expect(recordedForSomeoneElse(action, responsibles)).toBe(false)
     expect(recordedForSomeoneElse({ ...action, recordedBy: "sol" }, responsibles)).toBe(true)
     expect(recordedForSomeoneElse({ ...action, recordedBy: null } as never, responsibles)).toBe(false)
+  })
+})
+
+describe("filterAgenda", () => {
+  const tasks = [
+    { id: "a", overdue: true, assignee: "Luchi", businessName: "ACME" },
+    { id: "b", overdue: false, assignee: "Raul", businessName: "OTRA" },
+  ]
+
+  it("keeps all, only the overdue or only the upcoming ones", () => {
+    expect(filterAgenda(tasks, "all", [], []).map((task) => task.id)).toEqual(["a", "b"])
+    expect(filterAgenda(tasks, "overdue", [], []).map((task) => task.id)).toEqual(["a"])
+    expect(filterAgenda(tasks, "upcoming", [], []).map((task) => task.id)).toEqual(["b"])
+  })
+
+  it("hides the responsibles and companies filtered out", () => {
+    expect(filterAgenda(tasks, "all", ["Luchi"], []).map((task) => task.id)).toEqual(["b"])
+    expect(filterAgenda(tasks, "all", [], ["OTRA"]).map((task) => task.id)).toEqual(["a"])
   })
 })
