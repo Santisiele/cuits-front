@@ -64,7 +64,7 @@ describe("UsersTable", () => {
   it("lets an admin pick anyone's color from the palette, the creator's too", async () => {
     await show("jefa", "admin")
     const picker = within(screen.getByRole("radiogroup", { name: "Color de santi" }))
-    expect(picker.getAllByRole("radio")).toHaveLength(9)
+    expect(picker.getAllByRole("radio")).toHaveLength(18)
     await userEvent.click(picker.getByRole("radio", { name: "Turquesa" }))
     expect(update).toHaveBeenCalledWith("santi", { color: "teal" })
   })

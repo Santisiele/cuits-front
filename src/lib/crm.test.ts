@@ -28,7 +28,7 @@ import {
   todayInBuenosAires,
   userColor,
 } from "@/lib/crm"
-import { TRUST_LEVEL_COLOR_KEYS } from "@/lib/trustLevels"
+import { USER_COLOR_KEYS } from "@/lib/userColors"
 import type { CrmAction, CrmTask } from "@/types"
 
 const TASK: CrmTask = {
@@ -163,7 +163,7 @@ describe("userColor", () => {
   })
 
   it("still answers for someone missing from the list", () => {
-    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("nadie", users))
+    expect(USER_COLOR_KEYS).toContain(userColor("nadie", users))
   })
 })
 

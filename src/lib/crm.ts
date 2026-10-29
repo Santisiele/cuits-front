@@ -1,5 +1,5 @@
-import { TRUST_LEVEL_COLOR_KEYS } from "@/lib/trustLevels"
-import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmUser, TrustLevelColor } from "@/types"
+import { USER_COLOR_KEYS, isUserColor, type UserColor } from "@/lib/userColors"
+import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmUser } from "@/types"
 
 export const MAX_NAME_LENGTH = 200
 export const MAX_TEXT_LENGTH = 2000
@@ -208,21 +208,17 @@ export function matchCompanies<T extends { taxId: string; businessName: string }
 }
 
 function nameKey(value: string): string {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase()
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase()
 }
 
-function isPaletteColor(color: string | null | undefined): color is TrustLevelColor {
-  return !!color && (TRUST_LEVEL_COLOR_KEYS as readonly string[]).includes(color)
-}
-
-export function userColor(username: string, users: readonly CrmUser[]): TrustLevelColor {
+export function userColor(username: string, users: readonly CrmUser[]): UserColor {
   const chosen = users.find((user) => sameUser(user.username, username))?.color
-  if (isPaletteColor(chosen)) return chosen
-  const taken = new Set(users.map((user) => user.color).filter(isPaletteColor))
-  const free = TRUST_LEVEL_COLOR_KEYS.filter((color) => !taken.has(color))
-  const palette = free.length > 0 ? free : TRUST_LEVEL_COLOR_KEYS
+  if (isUserColor(chosen)) return chosen
+  const taken = new Set(users.map((user) => user.color).filter(isUserColor))
+  const free = USER_COLOR_KEYS.filter((color) => !taken.has(color))
+  const palette = free.length > 0 ? free : USER_COLOR_KEYS
   const withoutColor = users
-    .filter((user) => !isPaletteColor(user.color))
+    .filter((user) => !isUserColor(user.color))
     .map((user) => user.username.trim().toLowerCase())
     .sort()
   const position = withoutColor.indexOf(username.trim().toLowerCase())
