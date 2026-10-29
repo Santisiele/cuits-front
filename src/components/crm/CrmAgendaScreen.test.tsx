@@ -67,9 +67,9 @@ describe("CrmAgendaScreen", () => {
     navigate.mockReset()
   })
 
-  it("asks for my tasks first and keeps the order the API gives", async () => {
+  it("asks for everybody's tasks first and keeps the order the API gives", async () => {
     await show()
-    expect(agenda).toHaveBeenCalledWith("me")
+    expect(agenda).toHaveBeenCalledWith("all")
     const rows = screen.getAllByTestId(/^agenda-/)
     expect(rows.map((row) => row.getAttribute("data-testid"))).toEqual(["agenda-t1", "agenda-t2"])
   })
@@ -103,13 +103,13 @@ describe("CrmAgendaScreen", () => {
     expect(screen.getAllByTestId(/^agenda-t/)).toHaveLength(2)
   })
 
-  it("switches to someone else's tasks or everybody's", async () => {
+  it("switches to someone else's tasks or mine", async () => {
     await show()
     await screen.findByRole("option", { name: "pedro" })
     await userEvent.selectOptions(screen.getByLabelText("Responsable"), "pedro")
     expect(agenda).toHaveBeenLastCalledWith("pedro")
-    await userEvent.selectOptions(screen.getByLabelText("Responsable"), "Todos")
-    expect(agenda).toHaveBeenLastCalledWith("all")
+    await userEvent.selectOptions(screen.getByLabelText("Responsable"), "Mis tareas")
+    expect(agenda).toHaveBeenLastCalledWith("me")
   })
 
   it("paints each task with its responsible's color and offers only active responsibles", async () => {

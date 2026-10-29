@@ -19,7 +19,7 @@ const HEAD = "sticky z-10 bg-card text-left py-1.5 px-2 font-medium whitespace-n
 const CELL = "py-1.5 px-2"
 
 export function CrmAgendaScreen() {
-  const [assignee, setAssignee] = useState("me")
+  const [assignee, setAssignee] = useState("all")
   const [when, setWhen] = useState<"all" | "overdue" | "upcoming">("all")
   const [hiddenAssignees, setHiddenAssignees] = useState<string[]>([])
   const [hiddenCompanies, setHiddenCompanies] = useState<string[]>([])
