@@ -7,7 +7,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, Search, Database, Settings } from "lucide-react"
+import { Briefcase, Menu, Search, Database, Settings } from "lucide-react"
 import { SidebarGroup } from "./SidebarGroup"
 import type { NavGroup } from "./SidebarGroup"
 import { useIsAdmin, useIsCreator } from "@/hooks/useSessionRole"
@@ -35,6 +35,14 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/companies", label: "Empresas a buscar" },
       { path: "/crossing-over", label: "Coincidencias" },
       { path: "/birthdays", label: "Cumpleaños" },
+    ],
+  },
+  {
+    label: "CRM",
+    icon: Briefcase,
+    items: [
+      { path: "/crm/agenda", label: "Agenda" },
+      { path: "/crm", label: "Empresas" },
     ],
   },
   {

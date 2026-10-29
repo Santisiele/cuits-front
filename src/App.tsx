@@ -24,6 +24,9 @@ import { UsersTable } from "@/components/UsersTable"
 import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
 import { ArchivedResearchScreen } from "@/components/research/ArchivedResearchScreen"
 import { BirthdayProgressScreen } from "@/components/birthdays/BirthdayProgressScreen"
+import { CrmAgendaScreen } from "@/components/crm/CrmAgendaScreen"
+import { CrmCompaniesScreen } from "@/components/crm/CrmCompaniesScreen"
+import { CrmCompanyScreen } from "@/components/crm/CrmCompanyScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { AdminRoute } from "@/components/layout/AdminRoute"
@@ -292,6 +295,9 @@ export default function App() {
             <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
             <Route path="/birthday-progress" element={<CreatorRoute><BirthdayProgressScreen /></CreatorRoute>} />
             <Route path="/archived-research" element={<CreatorRoute><ArchivedResearchScreen /></CreatorRoute>} />
+            <Route path="/crm"            element={<CrmCompaniesScreen />} />
+            <Route path="/crm/agenda"     element={<CrmAgendaScreen />} />
+            <Route path="/crm/:taxId"     element={<CrmCompanyScreen />} />
           </Routes>
         </div>
 

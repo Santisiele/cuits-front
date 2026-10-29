@@ -38,6 +38,12 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Editar persona" })).toBeInTheDocument()
   })
 
+  it("shows a member the CRM agenda and companies", async () => {
+    await openMenu("member")
+    expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("href", "/crm/agenda")
+    expect(screen.getByRole("link", { name: "Empresas" })).toHaveAttribute("href", "/crm")
+  })
+
   it("shows an admin every admin item", async () => {
     await openMenu("admin")
     for (const label of ADMIN_ITEMS) {
