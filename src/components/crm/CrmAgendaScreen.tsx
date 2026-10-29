@@ -14,8 +14,10 @@ import { AgendaTaskDialog } from "./AgendaTaskDialog"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import { NativeSelect } from "./CrmFields"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
+import type { CrmAgendaItem, CrmResponsible } from "@/types"
 
-const HEAD = "sticky z-10 bg-card text-left py-1.5 px-2 font-medium whitespace-nowrap"
+const HEAD = "sticky z-10 bg-card text-left align-bottom py-1.5 px-2 font-medium"
 const CELL = "py-1.5 px-2"
 
 export function CrmAgendaScreen() {
@@ -26,6 +28,8 @@ export function CrmAgendaScreen() {
   const agenda = useCrmAgenda(assignee)
   const responsibles = useCrmResponsibles()
   const navigate = useNavigate()
+  const phone = useMediaQuery("(max-width: 1023px)")
+  const open = (task: CrmAgendaItem) => void navigate(`/crm/${task.companyTaxId}`, { state: { from: "agenda" } })
 
   const [adding, setAdding] = useState(false)
   const headerRef = useRef<HTMLDivElement>(null)
@@ -89,8 +93,10 @@ export function CrmAgendaScreen() {
           <p className="text-muted-foreground text-sm">Cargando...</p>
         ) : agenda.error ? (
           <p className="text-destructive text-sm">{getErrorMessage(agenda.error, "Error al cargar la agenda")}</p>
+        ) : phone ? (
+          <AgendaCards tasks={rows} responsibles={responsibleList} onOpen={open} />
         ) : (
-          <div className="overflow-x-auto md:overflow-visible">
+          <div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
@@ -133,22 +139,21 @@ export function CrmAgendaScreen() {
                       key={task.id}
                       data-testid={`agenda-${task.id}`}
                       data-color={color}
-                      onClick={() => void navigate(`/crm/${task.companyTaxId}`, { state: { from: "agenda" } })}
+                      onClick={() => open(task)}
                       className={cn("border-b border-border last:border-0 cursor-pointer transition-colors align-top", palette.row)}
                     >
-                      <td className={cn(CELL, "pl-0 min-w-40")}>
+                      <td className={cn(CELL, "pl-0")}>
                         <div className="font-medium">{task.businessName || "—"}</div>
                         <div className="text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</div>
                       </td>
-                      <td className={cn(CELL, "min-w-28")}>{last.withWhom || "—"}</td>
+                      <td className={CELL}>{last.withWhom || "—"}</td>
                       <td className={cn(CELL, "whitespace-nowrap")}>{formatDay(task.lastAction?.date ?? null)}</td>
-                      <td className={cn(CELL, "min-w-48 break-words")}>{last.what || "—"}</td>
+                      <td className={cn(CELL, "break-words")}>{last.what || "—"}</td>
                       <td className={CELL}>{task.lastAction?.doneBy || "—"}</td>
-                      <td className={cn(CELL, "whitespace-nowrap font-medium", palette.badge)}>
-                        {formatDay(task.dueDate)}
-                        {task.overdue && <Badge variant="destructive" className="ml-2">Vencida</Badge>}
+                      <td className={cn(CELL, "font-medium", palette.badge)}>
+                        <DueDate task={task} />
                       </td>
-                      <td className={cn(CELL, "min-w-48 break-words")}>{task.description}</td>
+                      <td className={cn(CELL, "break-words")}>{task.description}</td>
                       <td className={cn(CELL, "pr-0")}>
                         <span className={cn("inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-medium", palette.badge)}>
                           <span className={cn("h-2 w-2 shrink-0", palette.swatch)} />
@@ -166,5 +171,50 @@ export function CrmAgendaScreen() {
       </CardContent>
       {adding && <AgendaTaskDialog onClose={() => setAdding(false)} />}
     </Card>
+  )
+}
+
+function DueDate({ task }: { task: CrmAgendaItem }) {
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="whitespace-nowrap">{formatDay(task.dueDate)}</span>
+      {task.overdue && <Badge variant="destructive">Vencida</Badge>}
+    </span>
+  )
+}
+
+function AgendaCards({ tasks, responsibles, onOpen }: { tasks: CrmAgendaItem[]; responsibles: CrmResponsible[]; onOpen: (task: CrmAgendaItem) => void }) {
+  if (tasks.length === 0) return <p className="py-3 text-sm text-muted-foreground">No hay tareas abiertas.</p>
+  return (
+    <ul className="flex flex-col gap-2">
+      {tasks.map((task) => {
+        const color = responsibleColor(task.assignee, responsibles)
+        const palette = responsiblePalette(color)
+        const last = splitLastAction(task.lastAction)
+        return (
+          <li key={task.id} data-testid={`agenda-${task.id}`} data-color={color}>
+            <button type="button" onClick={() => onOpen(task)} className={cn("w-full text-left border border-border p-3 text-sm flex flex-col gap-2", palette.row)}>
+              <span>
+                <span className="block font-medium">{task.businessName || "—"}</span>
+                <span className="block text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</span>
+              </span>
+              <span className={cn("flex flex-col gap-1 px-2 py-1.5", palette.badge)}>
+                <span className="flex flex-wrap items-center justify-between gap-2 font-medium">
+                  <DueDate task={task} />
+                  <span>{task.assignee}</span>
+                </span>
+                <span className="break-words">{task.description}</span>
+              </span>
+              {task.lastAction && (
+                <span className="text-xs text-muted-foreground break-words">
+                  {formatDay(task.lastAction.date)} · {task.lastAction.doneBy}
+                  {last.withWhom && ` con ${last.withWhom}`}: {last.what}
+                </span>
+              )}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
   )
 }

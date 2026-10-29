@@ -64,12 +64,12 @@ function ResponsibleRow({ responsible, usernames }: { responsible: CrmResponsibl
           {responsible.name}
         </span>
         {responsible.disabled && <Badge variant="destructive">Deshabilitado</Badge>}
-        <div className="flex gap-2 sm:ml-auto">
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
           <Input
             aria-label={`Nombre de ${responsible.name}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="h-8 w-40"
+            className="h-8 min-w-0 flex-1 basis-full sm:basis-auto sm:w-40 sm:flex-none"
           />
           <Button
             size="sm"
