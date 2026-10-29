@@ -6,6 +6,9 @@ import {
   DATE_ERROR,
   NAME_TOO_LONG,
   TASK_DESCRIPTION_REQUIRED,
+  RESPONSIBLE_REQUIRED,
+  RESPONSIBLE_NAME_ERROR,
+  responsibleNameError,
   TEXT_TOO_LONG,
   birthdayError,
   buildTimeline,
@@ -31,9 +34,9 @@ import {
   requiredTextError,
   taskDraftErrors,
   todayInBuenosAires,
-  userColor,
+  ownResponsible,
+  responsibleColor,
 } from "@/lib/crm"
-import { USER_COLOR_KEYS } from "@/lib/userColors"
 import type { CrmAction, CrmTask } from "@/types"
 
 const TASK: CrmTask = {
@@ -57,6 +60,7 @@ const ACTION: CrmAction = {
   date: "2026-10-29",
   description: "Lo llamé",
   doneBy: "flavia",
+  recordedBy: "sol",
   contactIds: [],
   createdTaskId: null,
   completedTaskIds: [],
@@ -99,10 +103,12 @@ describe("the same checks the API makes", () => {
   })
 
   it("checks a task draft", () => {
-    const errors = taskDraftErrors({ description: "", dueDate: "x", assignee: "santi", contactIds: [] })
-    expect(errors).toEqual({ description: TASK_DESCRIPTION_REQUIRED, dueDate: DATE_ERROR })
+    const errors = taskDraftErrors({ description: "", dueDate: "x", assignee: " ", contactIds: [] })
+    expect(errors).toEqual({ description: TASK_DESCRIPTION_REQUIRED, dueDate: DATE_ERROR, assignee: RESPONSIBLE_REQUIRED })
     expect(hasErrors(errors)).toBe(true)
-    expect(hasErrors(taskDraftErrors({ description: "Llamar", dueDate: "2026-11-02", assignee: "", contactIds: [] }))).toBe(false)
+    expect(hasErrors(taskDraftErrors({ description: "Llamar", dueDate: "2026-11-02", assignee: "Raul", contactIds: [] }))).toBe(false)
+    expect(responsibleNameError("R")).toBe(RESPONSIBLE_NAME_ERROR)
+    expect(responsibleNameError(" Diego  F ")).toBeNull()
   })
 })
 
@@ -148,27 +154,24 @@ describe("display helpers", () => {
   })
 })
 
-describe("userColor", () => {
-  const users = [
-    { username: "Flavia", color: "teal" },
-    { username: "raul", color: null },
-    { username: "mati", color: "#ff0000" },
-    { username: "ana", color: null },
+describe("responsibles", () => {
+  const responsibles = [
+    { name: "Luchi", color: "yellow", users: ["luchi"], disabled: false },
+    { name: "Triunvirato", color: "orange", users: ["luchi", "diego", "flavia"], disabled: false },
+    { name: "Raul", color: "sky-500", users: [], disabled: false },
+    { name: "Viejo", color: "red", users: ["sol"], disabled: true },
   ]
 
-  it("uses the color an admin picked, whatever the case of the name", () => {
-    expect(userColor("flavia", users)).toBe("teal")
+  it("finds the user's own responsible, not a group or a disabled one", () => {
+    expect(ownResponsible(responsibles, "LUCHI")).toBe("Luchi")
+    expect(ownResponsible(responsibles, "diego")).toBeNull()
+    expect(ownResponsible(responsibles, "sol")).toBeNull()
+    expect(ownResponsible(responsibles, null)).toBeNull()
   })
 
-  it("gives everyone else a different color, skipping the ones already picked", () => {
-    const derived = ["ana", "mati", "raul"].map((name) => userColor(name, users))
-    expect(new Set(derived).size).toBe(3)
-    expect(derived).not.toContain("teal")
-    expect(userColor("RAUL", users)).toBe(userColor("raul", users))
-  })
-
-  it("still answers for someone missing from the list", () => {
-    expect(USER_COLOR_KEYS).toContain(userColor("nadie", users))
+  it("gives each responsible its color, gray when unknown", () => {
+    expect(responsibleColor("triunvirato", responsibles)).toBe("orange")
+    expect(responsibleColor("Nadie", responsibles)).toBe("slate")
   })
 })
 
@@ -224,12 +227,14 @@ describe("who may change what, mirroring the API", () => {
   })
 
   it("lets a member change tasks they created or hold, and their own actions", () => {
-    expect(canChangeTask("flavia", false, TASK)).toBe(true)
+    expect(canChangeTask("flavia", false, TASK, ["flavia"])).toBe(true)
+    expect(canChangeTask("luchi", false, { ...TASK, assignee: "Triunvirato" }, ["Luchi", "Triunvirato"])).toBe(true)
     expect(canChangeTask("Santi", false, TASK)).toBe(true)
-    expect(canChangeTask("pedro", false, TASK)).toBe(false)
+    expect(canChangeTask("pedro", false, TASK, ["Pedro"])).toBe(false)
     expect(canChangeTask(null, false, TASK)).toBe(false)
-    expect(canChangeAction("FLAVIA", false, ACTION)).toBe(true)
-    expect(canChangeAction("pedro", false, ACTION)).toBe(false)
+    expect(canChangeAction("sol", false, { ...ACTION, recordedBy: "SOL" })).toBe(true)
+    expect(canChangeAction("flavia", false, ACTION, ["Flavia"])).toBe(true)
+    expect(canChangeAction("pedro", false, ACTION, ["Pedro"])).toBe(false)
   })
 })
 

@@ -2,7 +2,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmCompanies, useCrmMutations } from "@/hooks/useCrm"
-import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
 import { COMPANY_REQUIRED, hasErrors, taskDraftErrors, type TaskDraft } from "@/lib/crm"
 import { CompanyPicker } from "./CompanyPicker"
@@ -12,9 +11,8 @@ import { TaskFields } from "./TaskFields"
 export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
   const companies = useCrmCompanies()
   const { createTask } = useCrmMutations()
-  const me = useAuthStore((state) => state.username) ?? ""
   const [companyTaxId, setCompanyTaxId] = useState("")
-  const [draft, setDraft] = useState<TaskDraft>({ description: "", dueDate: "", assignee: me, contactIds: [] })
+  const [draft, setDraft] = useState<TaskDraft>({ description: "", dueDate: "", assignee: "", contactIds: [] })
   const [error, setError] = useState("")
   const errors = taskDraftErrors(draft)
   const canSubmit = companyTaxId !== "" && !hasErrors(errors)

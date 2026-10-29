@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ColumnFilter } from "@/components/ColumnFilter"
-import { useCrmAgenda, useCrmUsers } from "@/hooks/useCrm"
+import { useCrmAgenda, useCrmResponsibles } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
 import { optionsFrom, passesFilter } from "@/lib/columnFilters"
-import { formatDay, userColor } from "@/lib/crm"
-import { userPaletteFor } from "@/lib/userColors"
+import { formatDay, responsibleColor } from "@/lib/crm"
+import { responsiblePalette } from "@/lib/responsibleColors"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { AgendaTaskDialog } from "./AgendaTaskDialog"
@@ -21,14 +21,14 @@ export function CrmAgendaScreen() {
   const [hiddenAssignees, setHiddenAssignees] = useState<string[]>([])
   const [hiddenCompanies, setHiddenCompanies] = useState<string[]>([])
   const agenda = useCrmAgenda(assignee)
-  const users = useCrmUsers()
+  const responsibles = useCrmResponsibles()
   const navigate = useNavigate()
 
   const [adding, setAdding] = useState(false)
   const headerRef = useRef<HTMLDivElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
   const stickyTop = { top: headerHeight }
-  const userList = users.data ?? []
+  const responsibleList = responsibles.data ?? []
 
   useEffect(() => {
     const header = headerRef.current
@@ -60,8 +60,8 @@ export function CrmAgendaScreen() {
             <NativeSelect aria-label="Responsable" value={assignee} onChange={(e) => setAssignee(e.target.value)} className="sm:w-48">
               <option value="me">Mis tareas</option>
               <option value="all">Todos</option>
-              {userList.map((user) => (
-                <option key={user.username} value={user.username}>{user.username}</option>
+              {responsibleList.filter((responsible) => !responsible.disabled).map((responsible) => (
+                <option key={responsible.name} value={responsible.name}>{responsible.name}</option>
               ))}
             </NativeSelect>
             <div className="flex" role="group" aria-label="Vencimiento">
@@ -118,12 +118,13 @@ export function CrmAgendaScreen() {
                   </tr>
                 ) : (
                   rows.map((task) => {
-                    const palette = userPaletteFor(userColor(task.assignee, userList))
+                    const color = responsibleColor(task.assignee, responsibleList)
+                    const palette = responsiblePalette(color)
                     return (
                     <tr
                       key={task.id}
                       data-testid={`agenda-${task.id}`}
-                      data-color={userColor(task.assignee, userList)}
+                      data-color={color}
                       onClick={() => void navigate(`/crm/${task.companyTaxId}`, { state: { from: "agenda" } })}
                       className={cn("border-b border-border last:border-0 cursor-pointer transition-colors", palette.row)}
                     >

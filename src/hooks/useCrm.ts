@@ -8,6 +8,7 @@ import type {
   CrmCompanyDetail,
   CrmCompanyInput,
   CrmSource,
+  CrmResponsible,
   CrmContactInput,
   CrmTaskInput,
   CrmUser,
@@ -23,6 +24,7 @@ export const crmKeys = {
   changes: (entityType: string, entityId: string) => ["crm", "changes", entityType, entityId] as const,
   nosisPending: () => ["crm", "nosis-pending"] as const,
   sources: () => ["crm", "sources"] as const,
+  responsibles: () => ["crm", "responsibles"] as const,
 }
 
 export function useCrmCompanies() {
@@ -57,6 +59,25 @@ export function useCrmChanges(entityType: string, entityId: string, enabled: boo
     enabled,
     staleTime: 0,
   })
+}
+
+export function useCrmResponsibles() {
+  return useQuery<CrmResponsible[]>({ queryKey: crmKeys.responsibles(), queryFn: CrmApiService.responsibles })
+}
+
+export function useResponsibleMutations() {
+  const queryClient = useQueryClient()
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: crmKeys.all() })
+  return {
+    create: useMutation({
+      mutationFn: (input: { name: string; color: string; users: string[] }) => CrmApiService.createResponsible(input),
+      onSuccess: refresh,
+    }),
+    update: useMutation({
+      mutationFn: ({ name, input }: { name: string; input: Partial<CrmResponsible> }) => CrmApiService.updateResponsible(name, input),
+      onSuccess: refresh,
+    }),
+  }
 }
 
 export function useCrmSources() {

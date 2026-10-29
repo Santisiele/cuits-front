@@ -321,6 +321,13 @@ export interface AppUser {
   color?: string | null
 }
 
+export interface CrmResponsible {
+  name: string
+  color: string
+  users: string[]
+  disabled: boolean
+}
+
 export interface CrmUser {
   username: string
   color: string | null
@@ -405,6 +412,7 @@ export interface CrmAction {
   date: string
   description: string
   doneBy: string
+  recordedBy: string
   contactIds: string[]
   createdTaskId: string | null
   completedTaskIds: string[]
@@ -503,6 +511,7 @@ export interface CrmTaskInput {
 
 export interface CrmActionInput {
   companyTaxId: string
+  doneBy: string | null
   date: string
   description: string
   contactIds: string[]

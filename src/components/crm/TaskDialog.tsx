@@ -2,7 +2,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmMutations } from "@/hooks/useCrm"
-import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
 import { hasErrors, taskDraftErrors, type TaskDraft } from "@/lib/crm"
 import type { CrmContact, CrmTask } from "@/types"
@@ -21,11 +20,10 @@ export function TaskDialog({
   onClose: () => void
 }) {
   const { createTask, updateTask } = useCrmMutations()
-  const me = useAuthStore((state) => state.username) ?? ""
   const [draft, setDraft] = useState<TaskDraft>({
     description: task?.description ?? "",
     dueDate: task?.dueDate ?? "",
-    assignee: task?.assignee ?? me,
+    assignee: task?.assignee ?? "",
     contactIds: task?.contactIds ?? [],
   })
   const [error, setError] = useState("")

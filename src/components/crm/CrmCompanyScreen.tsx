@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useCrmCompany, useCrmMutations } from "@/hooks/useCrm"
+import { useCrmCompany, useCrmMutations, useCrmResponsibles } from "@/hooks/useCrm"
 import { useIsAdmin } from "@/hooks/useSessionRole"
 import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
@@ -22,6 +22,7 @@ import {
   originDraftOf,
   originInput,
   originLabel,
+  responsiblesOf,
   type OriginDraft,
   todayInBuenosAires,
 } from "@/lib/crm"
@@ -176,6 +177,7 @@ function OpenTasks({
 }) {
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
+  const mine = responsiblesOf(useCrmResponsibles().data ?? [], me)
   const [editing, setEditing] = useState<CrmTask | "new" | null>(null)
   const [cancelling, setCancelling] = useState<CrmTask | null>(null)
   const today = todayInBuenosAires()
@@ -199,7 +201,7 @@ function OpenTasks({
         ) : (
           <div className="divide-y divide-border">
             {tasks.map((task) => {
-              const allowed = canChangeTask(me, isAdmin, task)
+              const allowed = canChangeTask(me, isAdmin, task, mine)
               const overdue = task.dueDate < today
               return (
                 <div key={task.id} data-testid={`task-${task.id}`} className="py-2 flex flex-col sm:flex-row sm:items-start justify-between gap-2">
@@ -239,6 +241,7 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
   const { archiveAction } = useCrmMutations()
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
+  const mine = responsiblesOf(useCrmResponsibles().data ?? [], me)
   const entries = buildTimeline(actions, tasks)
 
   async function archive(action: CrmAction): Promise<void> {
@@ -267,6 +270,8 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
                     <div className="min-w-0 space-y-0.5">
                       <p className="text-muted-foreground">
                         {formatDay(entry.action.date)} · {entry.action.doneBy}
+                        {entry.action.recordedBy && entry.action.recordedBy.toLowerCase() !== entry.action.doneBy.toLowerCase() &&
+                          ` (cargó ${entry.action.recordedBy})`}
                         {entry.action.contactIds.length > 0 && ` · con ${entry.action.contactIds.map((id) => names[id] ?? "?").join(", ")}`}
                       </p>
                       <p className="whitespace-pre-wrap break-words">{entry.action.description}</p>
@@ -280,7 +285,7 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
                         </p>
                       )}
                     </div>
-                    {canChangeAction(me, isAdmin, entry.action) && (
+                    {canChangeAction(me, isAdmin, entry.action, mine) && (
                       <Button size="sm" variant="ghost" aria-label="Archivar acción" onClick={() => void archive(entry.action)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>

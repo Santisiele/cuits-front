@@ -33,6 +33,7 @@ import type {
   CrmContact,
   CrmContactInput,
   CrmRemovalResult,
+  CrmResponsible,
   CrmTask,
   CrmTaskInput,
   CrmUser,
@@ -543,6 +544,15 @@ export const CrmApiService = {
     ),
 
   users: () => apiFetch<{ users: CrmUser[] }>(`${API_BASE_URL}/crm/users`).then((res) => res.users),
+
+  responsibles: () =>
+    apiFetch<{ responsibles: CrmResponsible[] }>(`${API_BASE_URL}/crm/responsibles`).then((res) => res.responsibles),
+
+  createResponsible: (input: { name: string; color: string; users: string[] }) =>
+    apiFetch<CrmResponsible>(`${API_BASE_URL}/crm/responsibles`, json("POST", input)),
+
+  updateResponsible: (name: string, input: Partial<CrmResponsible>) =>
+    apiFetch<CrmResponsible>(`${API_BASE_URL}/crm/responsibles/${encodeURIComponent(name)}`, json("PATCH", input)),
 
   nosisPending: () => apiFetch<NosisPendingQueue>(`${API_BASE_URL}/crm/nosis-pending`),
 

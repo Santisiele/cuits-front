@@ -106,6 +106,11 @@ export const API_ERROR_CODES: Record<string, string> = {
   company_closed: "La empresa está cerrada",
   not_closed: "La empresa no está cerrada",
   source_not_found: "Esa fuente no existe",
+  responsible_not_found: "Ese responsable no existe o está deshabilitado",
+  responsible_required: "Elegí quién es el responsable",
+  invalid_name: "El nombre tiene que tener entre 2 y 40 caracteres",
+  invalid_users: "Los usuarios vinculados no son válidos",
+  name_taken: "Ya hay un responsable con ese nombre",
 }
 
 export const GENERIC_API_ERROR = "No se pudo completar la operación. Intentá de nuevo"

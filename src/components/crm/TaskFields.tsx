@@ -1,9 +1,9 @@
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useCrmUsers } from "@/hooks/useCrm"
 import type { TaskDraft, TaskDraftErrors } from "@/lib/crm"
 import type { CrmContact } from "@/types"
-import { CheckRow, Field, NativeSelect } from "./CrmFields"
+import { CheckRow, Field } from "./CrmFields"
+import { ResponsibleSelect } from "./ResponsibleSelect"
 
 export function TaskFields({
   idPrefix,
@@ -18,12 +18,6 @@ export function TaskFields({
   contacts: CrmContact[]
   onChange: (draft: TaskDraft) => void
 }) {
-  const users = useCrmUsers()
-  const options = (users.data ?? []).map((user) => user.username)
-  const assigneeOptions = options.some((user) => user.toLowerCase() === draft.assignee.toLowerCase())
-    ? options
-    : [draft.assignee, ...options]
-
   function toggleContact(id: string, checked: boolean): void {
     onChange({ ...draft, contactIds: checked ? [...draft.contactIds, id] : draft.contactIds.filter((other) => other !== id) })
   }
@@ -42,12 +36,8 @@ export function TaskFields({
         <Field id={`${idPrefix}-due`} label="Vence" error={draft.dueDate ? errors.dueDate : null}>
           <Input id={`${idPrefix}-due`} type="date" value={draft.dueDate} onChange={(e) => onChange({ ...draft, dueDate: e.target.value })} />
         </Field>
-        <Field id={`${idPrefix}-assignee`} label="Responsable">
-          <NativeSelect id={`${idPrefix}-assignee`} value={draft.assignee} onChange={(e) => onChange({ ...draft, assignee: e.target.value })}>
-            {assigneeOptions.map((user) => (
-              <option key={user} value={user}>{user}</option>
-            ))}
-          </NativeSelect>
+        <Field id={`${idPrefix}-assignee`} label="Quién lo hará">
+          <ResponsibleSelect id={`${idPrefix}-assignee`} value={draft.assignee} onChange={(assignee) => onChange({ ...draft, assignee })} />
         </Field>
       </div>
       {contacts.length > 0 && (

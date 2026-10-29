@@ -8,12 +8,12 @@ import { apiError } from "@/tests/apiError"
 import type { CrmContact, CrmTask } from "@/types"
 
 const recordAction = vi.fn()
-const users = vi.fn()
+const responsibles = vi.fn()
 
 vi.mock("@/services/api", () => ({
   CrmApiService: {
     recordAction: (...args: unknown[]) => recordAction(...args),
-    users: () => users(),
+    responsibles: () => responsibles(),
   },
 }))
 
@@ -60,7 +60,10 @@ function show(): void {
 describe("RecordActionDialog", () => {
   beforeEach(() => {
     recordAction.mockReset().mockResolvedValue({ action: {}, closedTasks: [], nextTask: null })
-    users.mockReset().mockResolvedValue([{ username: "flavia", color: null }, { username: "santi", color: null }])
+    responsibles.mockReset().mockResolvedValue([
+      { name: "Flavia", color: "green", users: ["flavia"], disabled: false },
+      { name: "Raul", color: "sky-500", users: [], disabled: false },
+    ])
     onClose.mockReset()
   })
 
@@ -73,7 +76,24 @@ describe("RecordActionDialog", () => {
     expect(submit).toBeDisabled()
     await userEvent.type(screen.getByLabelText("Tarea"), "Mandar propuesta")
     await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
+    await screen.findAllByRole("option", { name: "Raul" })
+    expect(screen.getByLabelText("Quién lo hizo")).toHaveValue("Flavia")
+    expect(screen.getByLabelText("Quién lo hará")).toHaveValue("Flavia")
     expect(submit).toBeEnabled()
+  })
+
+  it("lets Sol pick who did it and who will do the next one", async () => {
+    show()
+    await screen.findAllByRole("option", { name: "Raul" })
+    await userEvent.selectOptions(screen.getByLabelText("Quién lo hizo"), "Raul")
+    await userEvent.selectOptions(screen.getByLabelText("Quién lo hará"), "Raul")
+    await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamó Raul")
+    await userEvent.type(screen.getByLabelText("Tarea"), "Seguir")
+    await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
+    await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
+    expect(recordAction).toHaveBeenCalledWith(
+      expect.objectContaining({ doneBy: "Raul", nextTask: expect.objectContaining({ assignee: "Raul" }) })
+    )
   })
 
   it("never lets the chain end: the next task cannot be skipped", async () => {
@@ -90,7 +110,7 @@ describe("RecordActionDialog", () => {
 
   it("sends the contacts, the tasks it fulfils and the next task assigned to me by default", async () => {
     show()
-    await screen.findByRole("option", { name: "santi" })
+    await screen.findAllByRole("option", { name: "Raul" })
     await userEvent.type(screen.getByLabelText("Qué se hizo"), "  Lo llamé  ")
     await userEvent.click(screen.getAllByLabelText("Ana Pérez")[0]!)
     await userEvent.type(screen.getByLabelText("Tarea"), "Mandar propuesta")
@@ -98,17 +118,19 @@ describe("RecordActionDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
     expect(recordAction).toHaveBeenCalledWith({
       companyTaxId: COMPANY,
+      doneBy: "Flavia",
       date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       description: "Lo llamé",
       contactIds: ["c1"],
       completesTaskIds: ["t1"],
-      nextTask: { description: "Mandar propuesta", dueDate: "2026-11-02", assignee: "flavia", contactIds: [] },
+      nextTask: { description: "Mandar propuesta", dueDate: "2026-11-02", assignee: "Flavia", contactIds: [] },
     })
   })
 
   it("shows what the API answered when it refuses", async () => {
     recordAction.mockRejectedValue(apiError("La tarea ya no está abierta"))
     show()
+    await screen.findAllByRole("option", { name: "Raul" })
     await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamé")
     await userEvent.type(screen.getByLabelText("Tarea"), "Seguir")
     await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")

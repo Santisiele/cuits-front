@@ -6,14 +6,14 @@ import { render } from "@/tests/render"
 import type { CrmAgendaItem } from "@/types"
 
 const agenda = vi.fn()
-const users = vi.fn()
+const responsibles = vi.fn()
 const companies = vi.fn()
 const createTask = vi.fn()
 
 vi.mock("@/services/api", () => ({
   CrmApiService: {
     agenda: (assignee: string) => agenda(assignee),
-    users: () => users(),
+    responsibles: () => responsibles(),
     companies: () => companies(),
     createTask: (...args: unknown[]) => createTask(...args),
   },
@@ -58,7 +58,11 @@ async function show(): Promise<void> {
 describe("CrmAgendaScreen", () => {
   beforeEach(() => {
     agenda.mockReset().mockResolvedValue([item("t1", "2026-10-28", true), item("t2", "2026-11-02", false, "OTRA SA", "pedro")])
-    users.mockReset().mockResolvedValue([{ username: "flavia", color: "teal" }, { username: "pedro", color: null }])
+    responsibles.mockReset().mockResolvedValue([
+      { name: "flavia", color: "green", users: ["flavia"], disabled: false },
+      { name: "pedro", color: "sky-500", users: [], disabled: false },
+      { name: "Viejo", color: "red", users: [], disabled: true },
+    ])
     navigate.mockReset()
   })
 
@@ -96,11 +100,12 @@ describe("CrmAgendaScreen", () => {
     expect(agenda).toHaveBeenLastCalledWith("all")
   })
 
-  it("paints each task with its assignee's color, chosen or derived", async () => {
+  it("paints each task with its responsible's color and offers only active responsibles", async () => {
     await show()
     await screen.findByRole("option", { name: "pedro" })
-    expect(screen.getByTestId("agenda-t1")).toHaveAttribute("data-color", "teal")
-    expect(screen.getByTestId("agenda-t2").getAttribute("data-color")).toMatch(/^[a-z]+$/)
+    expect(screen.getByTestId("agenda-t1")).toHaveAttribute("data-color", "green")
+    expect(screen.getByTestId("agenda-t2")).toHaveAttribute("data-color", "sky-500")
+    expect(screen.queryByRole("option", { name: "Viejo" })).not.toBeInTheDocument()
   })
 
   it("adds a task for a company searched right there", async () => {
@@ -121,12 +126,14 @@ describe("CrmAgendaScreen", () => {
     expect(screen.getByRole("button", { name: "Cambiar empresa" })).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText("Tarea"), "Llamar a Ana")
     await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
+    expect(submit).toBeDisabled()
+    await userEvent.selectOptions(screen.getByLabelText("Quién lo hará"), "pedro")
     await userEvent.click(submit)
     expect(createTask).toHaveBeenCalledWith({
       companyTaxId: "30712345678",
       description: "Llamar a Ana",
       dueDate: "2026-11-02",
-      assignee: null,
+      assignee: "pedro",
       contactIds: [],
     })
   })

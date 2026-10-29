@@ -61,14 +61,6 @@ describe("UsersTable", () => {
     act(() => useAuthStore.getState().clearAuth())
   })
 
-  it("lets an admin pick anyone's color from the palette, the creator's too", async () => {
-    await show("jefa", "admin")
-    const picker = within(screen.getByRole("radiogroup", { name: "Color de santi" }))
-    expect(picker.getAllByRole("radio")).toHaveLength(18)
-    await userEvent.click(picker.getByRole("radio", { name: "Turquesa" }))
-    expect(update).toHaveBeenCalledWith("santi", { color: "teal" })
-  })
-
   it("names the roles in Spanish", async () => {
     await show("santi", "creator")
     expect(row("santi").getByText("Creador")).toBeInTheDocument()

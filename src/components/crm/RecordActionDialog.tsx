@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmMutations } from "@/hooks/useCrm"
-import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
 import {
   DESCRIPTION_REQUIRED,
+  RESPONSIBLE_REQUIRED,
   dateError,
   formatDay,
   hasErrors,
@@ -19,6 +19,7 @@ import {
 import type { CrmContact, CrmTask } from "@/types"
 import { CheckRow, DialogButtons, Field } from "./CrmFields"
 import { TaskFields } from "./TaskFields"
+import { ResponsibleSelect } from "./ResponsibleSelect"
 
 export function RecordActionDialog({
   companyTaxId,
@@ -32,15 +33,16 @@ export function RecordActionDialog({
   onClose: () => void
 }) {
   const { recordAction } = useCrmMutations()
-  const me = useAuthStore((state) => state.username) ?? ""
+  const [doneBy, setDoneBy] = useState("")
   const [date, setDate] = useState(() => todayInBuenosAires())
   const [description, setDescription] = useState("")
   const [contactIds, setContactIds] = useState<string[]>([])
   const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => openTasks.map((task) => task.id))
-  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: me, contactIds: [] })
+  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: "", contactIds: [] })
   const [error, setError] = useState("")
 
   const errors = {
+    doneBy: doneBy ? null : RESPONSIBLE_REQUIRED,
     date: dateError(date),
     description: requiredTextError(description, DESCRIPTION_REQUIRED),
   }
@@ -58,6 +60,7 @@ export function RecordActionDialog({
     try {
       await recordAction.mutateAsync({
         companyTaxId,
+        doneBy,
         date,
         description: description.trim(),
         contactIds,
@@ -83,6 +86,9 @@ export function RecordActionDialog({
           <DialogTitle>Registrar acción</DialogTitle>
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <Field id="crm-action-done-by" label="Quién lo hizo">
+            <ResponsibleSelect id="crm-action-done-by" value={doneBy} onChange={setDoneBy} />
+          </Field>
           <Field id="crm-action-date" label="Fecha" error={errors.date}>
             <Input id="crm-action-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>

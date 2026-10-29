@@ -1,5 +1,4 @@
-import { USER_COLOR_KEYS, isUserColor, type UserColor } from "@/lib/userColors"
-import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmUser } from "@/types"
+import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmResponsible } from "@/types"
 
 export const MAX_NAME_LENGTH = 200
 export const MAX_TEXT_LENGTH = 2000
@@ -196,12 +195,22 @@ export interface TaskDraft {
 export interface TaskDraftErrors {
   description: string | null
   dueDate: string | null
+  assignee: string | null
+}
+
+export const RESPONSIBLE_REQUIRED = "Elegí quién"
+export const RESPONSIBLE_NAME_ERROR = "El nombre tiene que tener entre 2 y 40 caracteres"
+
+export function responsibleNameError(value: string): string | null {
+  const length = value.trim().replace(/\s+/g, " ").length
+  return length >= 2 && length <= 40 ? null : RESPONSIBLE_NAME_ERROR
 }
 
 export function taskDraftErrors(draft: TaskDraft): TaskDraftErrors {
   return {
     description: requiredTextError(draft.description, TASK_DESCRIPTION_REQUIRED),
     dueDate: dateError(draft.dueDate),
+    assignee: draft.assignee.trim() === "" ? RESPONSIBLE_REQUIRED : null,
   }
 }
 
@@ -247,33 +256,40 @@ function nameKey(value: string): string {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase()
 }
 
-export function userColor(username: string, users: readonly CrmUser[]): UserColor {
-  const chosen = users.find((user) => sameUser(user.username, username))?.color
-  if (isUserColor(chosen)) return chosen
-  const taken = new Set(users.map((user) => user.color).filter(isUserColor))
-  const free = USER_COLOR_KEYS.filter((color) => !taken.has(color))
-  const palette = free.length > 0 ? free : USER_COLOR_KEYS
-  const withoutColor = users
-    .filter((user) => !isUserColor(user.color))
-    .map((user) => user.username.trim().toLowerCase())
-    .sort()
-  const position = withoutColor.indexOf(username.trim().toLowerCase())
-  if (position >= 0) return palette[position % palette.length]!
-  let hash = 0
-  for (const char of username.trim().toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return palette[hash % palette.length]!
+export function ownResponsible(responsibles: readonly CrmResponsible[], username: string | null): string | null {
+  if (!username) return null
+  const own = responsibles.find(
+    (responsible) => !responsible.disabled && responsible.users.length === 1 && sameUser(responsible.users[0]!, username)
+  )
+  return own?.name ?? null
+}
+
+export function responsibleColor(name: string, responsibles: readonly CrmResponsible[]): string {
+  const key = name.trim().toLowerCase()
+  return responsibles.find((responsible) => responsible.name.trim().toLowerCase() === key)?.color ?? "slate"
 }
 
 function sameUser(a: string | null, b: string): boolean {
   return !!a && a.trim().toLowerCase() === b.trim().toLowerCase()
 }
 
-export function canChangeTask(username: string | null, isAdmin: boolean, task: CrmTask): boolean {
-  return isAdmin || sameUser(username, task.createdBy) || sameUser(username, task.assignee)
+export function responsiblesOf(responsibles: readonly CrmResponsible[], username: string | null): string[] {
+  if (!username) return []
+  return responsibles
+    .filter((responsible) => !responsible.disabled && responsible.users.some((user) => sameUser(user, username)))
+    .map((responsible) => responsible.name)
 }
 
-export function canChangeAction(username: string | null, isAdmin: boolean, action: CrmAction): boolean {
-  return isAdmin || sameUser(username, action.doneBy)
+function holds(mine: readonly string[], name: string): boolean {
+  return mine.some((own) => own.trim().toLowerCase() === name.trim().toLowerCase())
+}
+
+export function canChangeTask(username: string | null, isAdmin: boolean, task: CrmTask, mine: readonly string[] = []): boolean {
+  return isAdmin || sameUser(username, task.createdBy) || holds(mine, task.assignee)
+}
+
+export function canChangeAction(username: string | null, isAdmin: boolean, action: CrmAction, mine: readonly string[] = []): boolean {
+  return isAdmin || sameUser(username, action.recordedBy) || holds(mine, action.doneBy)
 }
 
 export function describeChangeValue(value: unknown, names: Readonly<Record<string, string>> = {}): string {
