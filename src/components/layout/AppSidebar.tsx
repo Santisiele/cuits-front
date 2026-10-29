@@ -59,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/ai-credits", label: "Créditos IA", adminOnly: true },
       { path: "/birthday-progress", label: "Carga de cumpleaños", creatorOnly: true },
       { path: "/archived-research", label: "Búsquedas archivadas", creatorOnly: true },
+      { path: "/activity", label: "Registro de actividad", creatorOnly: true },
     ],
   },
 ]

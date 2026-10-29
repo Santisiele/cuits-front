@@ -321,6 +321,19 @@ export interface AppUser {
   color?: string | null
 }
 
+export interface ActivityEntry {
+  time: string
+  level: "info" | "warn" | "error"
+  event: string
+  username: string | null
+  details: Record<string, unknown>
+}
+
+export interface ActivityPage {
+  entries: ActivityEntry[]
+  hasMore: boolean
+}
+
 export interface CrmResponsible {
   name: string
   color: string

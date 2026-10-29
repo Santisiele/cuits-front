@@ -21,6 +21,7 @@ import type {
   ArchivedWebResearch,
   ResearchBudget,
   BirthdayProgress,
+  ActivityPage,
   CrmAction,
   CrmActionInput,
   CrmAgendaItem,
@@ -560,6 +561,14 @@ export const CrmApiService = {
     apiFetch<{ changes: CrmChange[] }>(
       `${API_BASE_URL}/crm/changes?entityType=${encodeURIComponent(entityType)}&entityId=${encodeURIComponent(entityId)}`
     ).then((res) => res.changes),
+}
+
+export const ActivityService = {
+  read: (filters: { before?: string; username?: string; event?: string }) => {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value)
+    return apiFetch<ActivityPage>(`${API_BASE_URL}/activity?${params.toString()}`)
+  },
 }
 
 export const BirthdayProgressService = {

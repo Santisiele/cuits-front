@@ -28,6 +28,7 @@ import { CrmAgendaScreen } from "@/components/crm/CrmAgendaScreen"
 import { CrmCompaniesScreen } from "@/components/crm/CrmCompaniesScreen"
 import { CrmCompanyScreen } from "@/components/crm/CrmCompanyScreen"
 import { NosisPendingScreen } from "@/components/crm/NosisPendingScreen"
+import { ActivityScreen } from "@/components/activity/ActivityScreen"
 import { ResponsiblesScreen } from "@/components/crm/ResponsiblesScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
@@ -301,6 +302,7 @@ export default function App() {
             <Route path="/crm/agenda"     element={<CrmAgendaScreen />} />
             <Route path="/crm/:taxId"     element={<CrmCompanyScreen />} />
             <Route path="/responsibles"   element={<AdminRoute><ResponsiblesScreen /></AdminRoute>} />
+            <Route path="/activity"       element={<CreatorRoute><ActivityScreen /></CreatorRoute>} />
             <Route path="/nosis-pending"  element={<CreatorRoute><NosisPendingScreen /></CreatorRoute>} />
           </Routes>
         </div>

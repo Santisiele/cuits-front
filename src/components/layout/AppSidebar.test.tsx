@@ -105,6 +105,16 @@ describe("AppSidebar creator items", () => {
     expect(screen.getByRole("link", { name: "Pendientes de Nosis" })).toHaveAttribute("href", "/nosis-pending")
   })
 
+  it("shows the activity log to the creator only", async () => {
+    await openMenu("creator")
+    expect(screen.getByRole("link", { name: "Registro de actividad" })).toHaveAttribute("href", "/activity")
+  })
+
+  it("hides the activity log from an admin", async () => {
+    await openMenu("admin")
+    expect(screen.queryByRole("link", { name: "Registro de actividad" })).not.toBeInTheDocument()
+  })
+
   it("hides the Nosis queue from an admin", async () => {
     await openMenu("admin")
     expect(screen.queryByRole("link", { name: "Pendientes de Nosis" })).not.toBeInTheDocument()
