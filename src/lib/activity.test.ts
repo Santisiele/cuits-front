@@ -10,6 +10,7 @@ describe("describeActivity", () => {
   it("tells sessions apart", () => {
     expect(describeActivity(entry("login"))).toBe("sol inició sesión")
     expect(describeActivity(entry("logout"))).toBe("sol cerró sesión")
+    expect(describeActivity(entry("docs_viewed", {}, "admin"))).toBe("admin abrió la documentación de la API")
     expect(describeActivity(entry("login_failed", {}, "nadie"))).toBe("Intento fallido de ingreso con el usuario nadie")
     expect(describeActivity(entry("unauthorized", { url: "/crm/agenda" }, null))).toBe("Pedido sin sesión válida a /crm/agenda")
     expect(describeActivity(entry("forbidden", { url: "/users" }))).toBe("sol intentó entrar a /users sin permiso")

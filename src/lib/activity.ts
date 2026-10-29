@@ -152,6 +152,8 @@ export function describeActivity(entry: ActivityEntry): string {
       return `Intento fallido de ingreso con el usuario ${user}`
     case "logout":
       return `${user} cerró sesión`
+    case "docs_viewed":
+      return `${user} abrió la documentación de la API`
     case "unauthorized":
       return `Pedido sin sesión válida a ${text(d["url"])}`
     case "forbidden":
