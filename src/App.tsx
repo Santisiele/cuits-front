@@ -42,6 +42,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
 import { useSessionRole } from "@/hooks/useSessionRole"
+import { appTitle } from "@/lib/appTitle"
 import { useState, useEffect, useRef } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
@@ -243,7 +244,7 @@ export default function App() {
           <div className="flex items-center gap-2 min-w-0">
             <AppSidebar />
             <div className="min-w-0">
-              <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
+              <h1 className="text-base sm:text-3xl font-bold leading-tight">{appTitle()}</h1>
               <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">Buscar y explorar relaciones entre CUITs</p>
             </div>
           </div>
