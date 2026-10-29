@@ -25,8 +25,10 @@ import type {
   CrmActionInput,
   CrmAgendaItem,
   CrmChange,
+  CrmCloseResult,
   CrmCompany,
   CrmCompanyDetail,
+  CrmSource,
   CrmCompanyInput,
   CrmContact,
   CrmContactInput,
@@ -497,6 +499,14 @@ export const CrmApiService = {
 
   updateCompany: (taxId: string, input: CrmCompanyInput) =>
     apiFetch<CrmCompany>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}`, json("PATCH", input)),
+
+  closeCompany: (taxId: string, reason: string) =>
+    apiFetch<CrmCloseResult>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}/close`, json("POST", { reason })),
+
+  reopenCompany: (taxId: string) =>
+    apiFetch<CrmCompany>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}/reopen`, json("POST")),
+
+  sources: () => apiFetch<{ sources: CrmSource[] }>(`${API_BASE_URL}/crm/sources`).then((res) => res.sources),
 
   removeCompany: (taxId: string, dryRun: boolean) =>
     apiFetch<CrmRemovalResult>(

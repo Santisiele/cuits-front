@@ -101,6 +101,11 @@ export const API_ERROR_CODES: Record<string, string> = {
   task_not_found: "La tarea no existe",
   invalid_entity: "No se encontró el historial",
   invalid_color: "Ese color no está disponible",
+  next_task_required: "Cada acción tiene que dejar la próxima tarea",
+  close_reason_required: "Indicá por qué la empresa no va más",
+  company_closed: "La empresa está cerrada",
+  not_closed: "La empresa no está cerrada",
+  source_not_found: "Esa fuente no existe",
 }
 
 export const GENERIC_API_ERROR = "No se pudo completar la operación. Intentá de nuevo"

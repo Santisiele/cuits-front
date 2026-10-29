@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmMutations } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
-import { cuitDigits, cuitError, optionalNameError, optionalText } from "@/lib/crm"
+import { cuitDigits, cuitError, optionalNameError, optionalText, originDraftOf, originInput, type OriginDraft } from "@/lib/crm"
+import { OriginField } from "./OriginField"
 import { DialogButtons, Field } from "./CrmFields"
 
 export function AddCompanyDialog({ onClose }: { onClose: () => void }) {
@@ -15,11 +16,11 @@ export function AddCompanyDialog({ onClose }: { onClose: () => void }) {
   const [businessName, setBusinessName] = useState("")
   const [crmBrand, setCrmBrand] = useState("")
   const [crmProduct, setCrmProduct] = useState("")
-  const [crmOrigin, setCrmOrigin] = useState("")
+  const [origin, setOrigin] = useState<OriginDraft>(() => originDraftOf(null))
   const [error, setError] = useState("")
 
   const taxIdProblem = taxId ? cuitError(taxId) : null
-  const textProblems = [businessName, crmBrand, crmProduct, crmOrigin].map(optionalNameError)
+  const textProblems = [businessName, crmBrand, crmProduct, origin.mode === "text" ? origin.text : ""].map(optionalNameError)
   const canSubmit = !!taxId && !taxIdProblem && textProblems.every((problem) => problem === null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -32,7 +33,7 @@ export function AddCompanyDialog({ onClose }: { onClose: () => void }) {
         businessName: optionalText(businessName),
         crmBrand: optionalText(crmBrand),
         crmProduct: optionalText(crmProduct),
-        crmOrigin: optionalText(crmOrigin),
+        ...originInput(origin),
       })
       toast.success(result.restored ? "Se restauró la empresa con su historial" : "Se agregó la empresa al CRM")
       onClose()
@@ -61,9 +62,7 @@ export function AddCompanyDialog({ onClose }: { onClose: () => void }) {
           <Field id="crm-add-product" label="Producto o servicio" error={textProblems[2]}>
             <Input id="crm-add-product" value={crmProduct} onChange={(e) => setCrmProduct(e.target.value)} />
           </Field>
-          <Field id="crm-add-origin" label="Origen" error={textProblems[3]}>
-            <Input id="crm-add-origin" value={crmOrigin} onChange={(e) => setCrmOrigin(e.target.value)} />
-          </Field>
+          <OriginField id="crm-add-origin" draft={origin} onChange={setOrigin} />
           {error && <p className="text-destructive text-sm">{error}</p>}
           <DialogButtons onCancel={onClose} busy={addCompany.isPending} submitLabel="Agregar" busyLabel="Agregando..." disabled={!canSubmit} />
         </form>

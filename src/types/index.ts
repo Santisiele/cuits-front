@@ -364,12 +364,27 @@ export interface CrmCompany {
   crmBrand: string | null
   crmProduct: string | null
   crmOrigin: string | null
+  originSource: string | null
   nosisPending: boolean
   addedAt: string | null
   addedBy: string | null
   lastActionDate: string | null
   nextDueDate: string | null
   openTaskCount: number
+  closedAt: string | null
+  closedReason: string | null
+  closedBy: string | null
+}
+
+export interface CrmSource {
+  name: string
+  category: string
+}
+
+export interface CrmCloseResult {
+  company: CrmCompany
+  cancelledTaskCount: number
+  inservible: boolean
 }
 
 export interface CrmContact {
@@ -464,6 +479,7 @@ export interface CrmCompanyInput {
   crmBrand?: string | null
   crmProduct?: string | null
   crmOrigin?: string | null
+  originSource?: string | null
 }
 
 export interface CrmContactInput {

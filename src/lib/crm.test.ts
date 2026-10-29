@@ -13,6 +13,11 @@ import {
   canChangeAction,
   canChangeTask,
   cancelReasonError,
+  closeReasonError,
+  CLOSE_REASON_REQUIRED,
+  originDraftOf,
+  originInput,
+  originLabel,
   cancelReasonLabel,
   cuitDigits,
   cuitError,
@@ -225,5 +230,30 @@ describe("who may change what, mirroring the API", () => {
     expect(canChangeTask(null, false, TASK)).toBe(false)
     expect(canChangeAction("FLAVIA", false, ACTION)).toBe(true)
     expect(canChangeAction("pedro", false, ACTION)).toBe(false)
+  })
+})
+
+describe("origin as free text or one of our sources", () => {
+  it("starts from what the company has", () => {
+    expect(originDraftOf({ crmOrigin: "Amigo", originSource: null })).toEqual({ mode: "text", text: "Amigo", source: "" })
+    expect(originDraftOf({ crmOrigin: null, originSource: "Poseidon" })).toEqual({ mode: "source", text: "", source: "Poseidon" })
+    expect(originDraftOf(null)).toEqual({ mode: "text", text: "", source: "" })
+  })
+
+  it("sends either the text or the source, never both", () => {
+    expect(originInput({ mode: "source", text: "Amigo", source: "Poseidon" })).toEqual({ crmOrigin: null, originSource: "Poseidon" })
+    expect(originInput({ mode: "text", text: " Amigo ", source: "Poseidon" })).toEqual({ crmOrigin: "Amigo", originSource: null })
+    expect(originInput({ mode: "source", text: "Amigo", source: "" })).toEqual({ crmOrigin: "Amigo", originSource: null })
+  })
+
+  it("shows a source apart from free text", () => {
+    expect(originLabel({ crmOrigin: null, originSource: "Poseidon" })).toBe("Fuente: Poseidon")
+    expect(originLabel({ crmOrigin: "Amigo", originSource: null })).toBe("Amigo")
+    expect(originLabel({ crmOrigin: null, originSource: null })).toBe("—")
+  })
+
+  it("needs a reason to close a company", () => {
+    expect(closeReasonError(" ")).toBe(CLOSE_REASON_REQUIRED)
+    expect(closeReasonError("Cerró")).toBeNull()
   })
 })

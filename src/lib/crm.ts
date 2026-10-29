@@ -14,6 +14,12 @@ export const TASK_DESCRIPTION_REQUIRED = "Escribí la tarea"
 export const BUSINESS_NAME_REQUIRED = "Falta la razón social"
 export const FULL_NAME_REQUIRED = "Falta el nombre"
 export const CANCEL_REASON_REQUIRED = "Indicá por qué se cancela la tarea"
+export const CLOSE_REASON_REQUIRED = "Indicá por qué la empresa no va más"
+
+export const SOURCE_CATEGORY_LABELS: Record<string, string> = {
+  known: "Conocidos",
+  toKnow: "Por conocer",
+}
 
 export const TASK_STATUS_LABELS: Record<CrmTaskStatus, string> = {
   open: "Abierta",
@@ -30,6 +36,8 @@ export const CHANGE_OPERATION_LABELS: Record<string, string> = {
   cancel: "Canceló",
   crm_add: "Agregó al CRM",
   crm_remove: "Sacó del CRM",
+  close: "Cerró la empresa",
+  reopen: "Reabrió la empresa",
 }
 
 export const CHANGE_FIELD_LABELS: Record<string, string> = {
@@ -55,6 +63,9 @@ export const CHANGE_FIELD_LABELS: Record<string, string> = {
   cancelReason: "Motivo",
   archivedAt: "Archivado",
   outcome: "Resultado",
+  originSource: "Fuente de origen",
+  closedAt: "Cerrada",
+  closedReason: "Motivo de cierre",
   byAction: "Por la acción",
   asContact: "Como contacto",
 }
@@ -113,6 +124,31 @@ export function optionalNameError(value: string): string | null {
 
 export function cancelReasonError(value: string): string | null {
   return requiredTextError(value, CANCEL_REASON_REQUIRED)
+}
+
+export function closeReasonError(value: string): string | null {
+  return requiredTextError(value, CLOSE_REASON_REQUIRED)
+}
+
+export interface OriginDraft {
+  mode: "text" | "source"
+  text: string
+  source: string
+}
+
+export function originDraftOf(company: { crmOrigin: string | null; originSource: string | null } | null): OriginDraft {
+  if (company?.originSource) return { mode: "source", text: "", source: company.originSource }
+  return { mode: "text", text: company?.crmOrigin ?? "", source: "" }
+}
+
+export function originInput(draft: OriginDraft): { crmOrigin: string | null; originSource: string | null } {
+  return draft.mode === "source" && draft.source
+    ? { crmOrigin: null, originSource: draft.source }
+    : { crmOrigin: optionalText(draft.text), originSource: null }
+}
+
+export function originLabel(company: { crmOrigin: string | null; originSource: string | null }): string {
+  return company.originSource ? `Fuente: ${company.originSource}` : company.crmOrigin ?? "—"
 }
 
 export function optionalText(value: string): string | null {

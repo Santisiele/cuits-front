@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link, useLocation, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowLeft, Check, Pencil, Plus, Trash2, X } from "lucide-react"
+import { ArrowLeft, Pencil, Plus, Trash2, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,12 +19,19 @@ import {
   formatDay,
   optionalNameError,
   optionalText,
+  originDraftOf,
+  originInput,
+  originLabel,
+  type OriginDraft,
   todayInBuenosAires,
 } from "@/lib/crm"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import type { CrmAction, CrmCompany, CrmContact, CrmTask } from "@/types"
 import { CancelTaskDialog } from "./CancelTaskDialog"
+import { CloseCompanyDialog } from "./CloseCompanyDialog"
+import { OriginField } from "./OriginField"
+import { formatIsoDate } from "@/lib/dates"
 import { ChangeHistory } from "./ChangeHistory"
 import { ContactDialog } from "./ContactDialog"
 import { Field } from "./CrmFields"
@@ -37,9 +44,9 @@ function CompanyData({ company }: { company: CrmCompany }) {
   const [editing, setEditing] = useState(false)
   const [crmBrand, setCrmBrand] = useState(company.crmBrand ?? "")
   const [crmProduct, setCrmProduct] = useState(company.crmProduct ?? "")
-  const [crmOrigin, setCrmOrigin] = useState(company.crmOrigin ?? "")
+  const [origin, setOrigin] = useState<OriginDraft>(() => originDraftOf(company))
   const [error, setError] = useState("")
-  const problems = [crmBrand, crmProduct, crmOrigin].map(optionalNameError)
+  const problems = [crmBrand, crmProduct, origin.mode === "text" ? origin.text : ""].map(optionalNameError)
 
   async function save(): Promise<void> {
     if (problems.some(Boolean)) return
@@ -47,7 +54,7 @@ function CompanyData({ company }: { company: CrmCompany }) {
     try {
       await updateCompany.mutateAsync({
         taxId: company.taxId,
-        input: { crmBrand: optionalText(crmBrand), crmProduct: optionalText(crmProduct), crmOrigin: optionalText(crmOrigin) },
+        input: { crmBrand: optionalText(crmBrand), crmProduct: optionalText(crmProduct), ...originInput(origin) },
       })
       setEditing(false)
     } catch (err) {
@@ -64,7 +71,7 @@ function CompanyData({ company }: { company: CrmCompany }) {
           <dt className="text-muted-foreground">Producto</dt>
           <dd>{company.crmProduct ?? "—"}</dd>
           <dt className="text-muted-foreground">Origen</dt>
-          <dd>{company.crmOrigin ?? "—"}</dd>
+          <dd>{originLabel(company)}</dd>
         </dl>
         <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
           <Pencil className="w-4 h-4 mr-1" />
@@ -76,17 +83,15 @@ function CompanyData({ company }: { company: CrmCompany }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field id="crm-edit-brand" label="Marca" error={problems[0]}>
           <Input id="crm-edit-brand" value={crmBrand} onChange={(e) => setCrmBrand(e.target.value)} />
         </Field>
         <Field id="crm-edit-product" label="Producto" error={problems[1]}>
           <Input id="crm-edit-product" value={crmProduct} onChange={(e) => setCrmProduct(e.target.value)} />
         </Field>
-        <Field id="crm-edit-origin" label="Origen" error={problems[2]}>
-          <Input id="crm-edit-origin" value={crmOrigin} onChange={(e) => setCrmOrigin(e.target.value)} />
-        </Field>
       </div>
+      <OriginField id="crm-edit-origin" draft={origin} onChange={setOrigin} />
       {error && <p className="text-destructive text-sm">{error}</p>}
       <div className="flex gap-2">
         <Button size="sm" onClick={() => void save()} disabled={problems.some(Boolean) || updateCompany.isPending}>
@@ -161,37 +166,31 @@ function OpenTasks({
   tasks,
   contacts,
   names,
+  closed,
 }: {
   taxId: string
   tasks: CrmTask[]
   contacts: CrmContact[]
   names: Record<string, string>
+  closed: boolean
 }) {
-  const { updateTask } = useCrmMutations()
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
   const [editing, setEditing] = useState<CrmTask | "new" | null>(null)
   const [cancelling, setCancelling] = useState<CrmTask | null>(null)
   const today = todayInBuenosAires()
 
-  async function markDone(task: CrmTask): Promise<void> {
-    try {
-      await updateTask.mutateAsync({ id: task.id, input: { status: "done" } })
-      toast.success("Tarea hecha")
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
-
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base">Tareas abiertas</CardTitle>
-          <Button size="sm" variant="outline" onClick={() => setEditing("new")}>
-            <Plus className="w-4 h-4 mr-1" />
-            Tarea
-          </Button>
+          {!closed && (
+            <Button size="sm" variant="outline" onClick={() => setEditing("new")}>
+              <Plus className="w-4 h-4 mr-1" />
+              Tarea
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -215,10 +214,6 @@ function OpenTasks({
                   </div>
                   {allowed && (
                     <div className="flex gap-2 shrink-0 flex-wrap">
-                      <Button size="sm" variant="outline" onClick={() => void markDone(task)} disabled={updateTask.isPending}>
-                        <Check className="w-4 h-4 mr-1" />
-                        Marcar hecha
-                      </Button>
                       <Button size="sm" variant="outline" onClick={() => setCancelling(task)}>
                         <X className="w-4 h-4 mr-1" />
                         Cancelar
@@ -329,6 +324,17 @@ export function CrmCompanyScreen() {
   const detail = useCrmCompany(taxId)
   const [recording, setRecording] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const { reopenCompany } = useCrmMutations()
+
+  async function reopen(): Promise<void> {
+    try {
+      await reopenCompany.mutateAsync(taxId)
+      toast.success("Se reabrió la empresa")
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
 
   if (detail.isLoading) return <p className="text-muted-foreground text-sm">Cargando...</p>
   if (detail.error || !detail.data) {
@@ -356,22 +362,38 @@ export function CrmCompanyScreen() {
             <div className="min-w-0">
               <CardTitle>{company.businessName || formatTaxId(company.taxId)}</CardTitle>
               <p className="text-sm text-muted-foreground font-mono">{formatTaxId(company.taxId)}</p>
-              {company.nosisPending && <Badge variant="secondary" className="mt-1">Pendiente de Nosis</Badge>}
+              <div className="flex gap-2 flex-wrap mt-1">
+                {company.closedAt && <Badge variant="destructive">Cerrada</Badge>}
+                {company.nosisPending && <Badge variant="secondary">Pendiente de Nosis</Badge>}
+              </div>
+              {company.closedAt && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No va más desde el {formatIsoDate(company.closedAt)}
+                  {company.closedBy && ` (${company.closedBy})`}: {company.closedReason}
+                </p>
+              )}
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => setRecording(true)}>Registrar acción</Button>
-              <Button variant="outline" onClick={() => setRemoving(true)}>Sacar del CRM</Button>
+              {company.closedAt ? (
+                <Button onClick={() => void reopen()} disabled={reopenCompany.isPending}>Reabrir</Button>
+              ) : (
+                <>
+                  <Button onClick={() => setRecording(true)}>Registrar acción</Button>
+                  <Button variant="outline" onClick={() => setClosing(true)}>No va más</Button>
+                </>
+              )}
+              <Button variant="ghost" onClick={() => setRemoving(true)}>Sacar del CRM</Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <CompanyData key={`${company.crmBrand}|${company.crmProduct}|${company.crmOrigin}`} company={company} />
+          <CompanyData key={`${company.crmBrand}|${company.crmProduct}|${company.crmOrigin}|${company.originSource}`} company={company} />
           <ChangeHistory entityType="CrmCompany" entityId={company.taxId} names={names} />
         </CardContent>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <OpenTasks taxId={company.taxId} tasks={openTasks} contacts={contacts} names={names} />
+        <OpenTasks taxId={company.taxId} tasks={openTasks} contacts={contacts} names={names} closed={company.closedAt !== null} />
         <ContactsSection taxId={company.taxId} contacts={contacts} />
       </div>
 
@@ -380,6 +402,7 @@ export function CrmCompanyScreen() {
       {recording && (
         <RecordActionDialog companyTaxId={company.taxId} contacts={contacts} openTasks={openTasks} onClose={() => setRecording(false)} />
       )}
+      {closing && <CloseCompanyDialog taxId={company.taxId} businessName={company.businessName} onClose={() => setClosing(false)} />}
       {removing && <RemoveCompanyDialog taxId={company.taxId} businessName={company.businessName} onClose={() => setRemoving(false)} />}
     </div>
   )

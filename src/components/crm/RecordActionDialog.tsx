@@ -36,8 +36,7 @@ export function RecordActionDialog({
   const [date, setDate] = useState(() => todayInBuenosAires())
   const [description, setDescription] = useState("")
   const [contactIds, setContactIds] = useState<string[]>([])
-  const [completesTaskIds, setCompletesTaskIds] = useState<string[]>([])
-  const [withNextTask, setWithNextTask] = useState(true)
+  const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => openTasks.map((task) => task.id))
   const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: me, contactIds: [] })
   const [error, setError] = useState("")
 
@@ -46,7 +45,7 @@ export function RecordActionDialog({
     description: requiredTextError(description, DESCRIPTION_REQUIRED),
   }
   const nextTaskErrors = taskDraftErrors(nextTask)
-  const canSubmit = !hasErrors(errors) && (!withNextTask || !hasErrors(nextTaskErrors))
+  const canSubmit = !hasErrors(errors) && !hasErrors(nextTaskErrors)
 
   function toggle(list: string[], id: string, checked: boolean): string[] {
     return checked ? [...list, id] : list.filter((other) => other !== id)
@@ -63,14 +62,12 @@ export function RecordActionDialog({
         description: description.trim(),
         contactIds,
         completesTaskIds,
-        nextTask: withNextTask
-          ? {
-              description: nextTask.description.trim(),
-              dueDate: nextTask.dueDate,
-              assignee: nextTask.assignee || null,
-              contactIds: nextTask.contactIds,
-            }
-          : null,
+        nextTask: {
+          description: nextTask.description.trim(),
+          dueDate: nextTask.dueDate,
+          assignee: nextTask.assignee || null,
+          contactIds: nextTask.contactIds,
+        },
       })
       toast.success("Se registró la acción")
       onClose()
@@ -124,12 +121,8 @@ export function RecordActionDialog({
           )}
 
           <div className="space-y-3 border-t border-border pt-4">
-            <CheckRow checked={withNextTask} onChange={setWithNextTask}>
-              <span className="font-medium">Agendar próxima tarea</span>
-            </CheckRow>
-            {withNextTask && (
-              <TaskFields idPrefix="crm-next-task" draft={nextTask} errors={nextTaskErrors} contacts={contacts} onChange={setNextTask} />
-            )}
+            <p className="text-sm font-medium">Próxima tarea</p>
+            <TaskFields idPrefix="crm-next-task" draft={nextTask} errors={nextTaskErrors} contacts={contacts} onChange={setNextTask} />
           </div>
 
           {error && <p className="text-destructive text-sm">{error}</p>}

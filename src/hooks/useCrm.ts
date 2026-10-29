@@ -7,6 +7,7 @@ import type {
   CrmCompany,
   CrmCompanyDetail,
   CrmCompanyInput,
+  CrmSource,
   CrmContactInput,
   CrmTaskInput,
   CrmUser,
@@ -21,6 +22,7 @@ export const crmKeys = {
   users: () => ["crm", "users"] as const,
   changes: (entityType: string, entityId: string) => ["crm", "changes", entityType, entityId] as const,
   nosisPending: () => ["crm", "nosis-pending"] as const,
+  sources: () => ["crm", "sources"] as const,
 }
 
 export function useCrmCompanies() {
@@ -57,6 +59,10 @@ export function useCrmChanges(entityType: string, entityId: string, enabled: boo
   })
 }
 
+export function useCrmSources() {
+  return useQuery<CrmSource[]>({ queryKey: crmKeys.sources(), queryFn: CrmApiService.sources })
+}
+
 export function useNosisPending() {
   return useQuery<NosisPendingQueue>({ queryKey: crmKeys.nosisPending(), queryFn: CrmApiService.nosisPending, staleTime: 0 })
 }
@@ -71,6 +77,11 @@ export function useCrmMutations() {
       mutationFn: ({ taxId, input }: { taxId: string; input: CrmCompanyInput }) => CrmApiService.updateCompany(taxId, input),
       onSuccess: refresh,
     }),
+    closeCompany: useMutation({
+      mutationFn: ({ taxId, reason }: { taxId: string; reason: string }) => CrmApiService.closeCompany(taxId, reason),
+      onSuccess: refresh,
+    }),
+    reopenCompany: useMutation({ mutationFn: (taxId: string) => CrmApiService.reopenCompany(taxId), onSuccess: refresh }),
     removeCompany: useMutation({
       mutationFn: ({ taxId, dryRun }: { taxId: string; dryRun: boolean }) => CrmApiService.removeCompany(taxId, dryRun),
       onSuccess: (_result, { dryRun }) => {

@@ -76,16 +76,16 @@ describe("RecordActionDialog", () => {
     expect(submit).toBeEnabled()
   })
 
-  it("can be registered without a next task", async () => {
+  it("never lets the chain end: the next task cannot be skipped", async () => {
     show()
+    expect(screen.queryByLabelText("Agendar próxima tarea")).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamé")
-    await userEvent.click(screen.getByLabelText("Agendar próxima tarea"))
-    expect(screen.queryByLabelText("Tarea")).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
-    expect(recordAction).toHaveBeenCalledWith(
-      expect.objectContaining({ companyTaxId: COMPANY, description: "Lo llamé", contactIds: [], completesTaskIds: [], nextTask: null })
-    )
-    expect(onClose).toHaveBeenCalled()
+    expect(screen.getByRole("button", { name: "Registrar" })).toBeDisabled()
+  })
+
+  it("starts with the open tasks ticked as fulfilled", () => {
+    show()
+    expect(screen.getByLabelText(/Llamar a Ana/)).toBeChecked()
   })
 
   it("sends the contacts, the tasks it fulfils and the next task assigned to me by default", async () => {
@@ -93,7 +93,6 @@ describe("RecordActionDialog", () => {
     await screen.findByRole("option", { name: "santi" })
     await userEvent.type(screen.getByLabelText("Qué se hizo"), "  Lo llamé  ")
     await userEvent.click(screen.getAllByLabelText("Ana Pérez")[0]!)
-    await userEvent.click(screen.getByLabelText(/Llamar a Ana/))
     await userEvent.type(screen.getByLabelText("Tarea"), "Mandar propuesta")
     await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
     await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
@@ -111,7 +110,8 @@ describe("RecordActionDialog", () => {
     recordAction.mockRejectedValue(apiError("La tarea ya no está abierta"))
     show()
     await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamé")
-    await userEvent.click(screen.getByLabelText("Agendar próxima tarea"))
+    await userEvent.type(screen.getByLabelText("Tarea"), "Seguir")
+    await userEvent.type(screen.getByLabelText("Vence"), "2026-11-02")
     await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
     expect(await screen.findByText("La tarea ya no está abierta")).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
