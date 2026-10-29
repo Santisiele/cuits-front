@@ -6,7 +6,7 @@ import { ColumnFilter } from "@/components/ColumnFilter"
 import { useCrmAgenda, useCrmResponsibles } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
 import { optionsFrom, passesFilter } from "@/lib/columnFilters"
-import { formatDay, responsibleColor } from "@/lib/crm"
+import { formatDay, responsibleColor, splitLastAction } from "@/lib/crm"
 import { responsiblePalette } from "@/lib/responsibleColors"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -14,6 +14,9 @@ import { AgendaTaskDialog } from "./AgendaTaskDialog"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import { NativeSelect } from "./CrmFields"
+
+const HEAD = "sticky z-10 bg-card text-left py-1.5 px-2 font-medium whitespace-nowrap"
+const CELL = "py-1.5 px-2"
 
 export function CrmAgendaScreen() {
   const [assignee, setAssignee] = useState("me")
@@ -91,9 +94,7 @@ export function CrmAgendaScreen() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 pr-3 font-medium">Vence</th>
-                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 px-3 font-medium">Tarea</th>
-                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 px-3 font-medium">
+                  <th style={stickyTop} className={cn(HEAD, "pl-0")}>
                     <ColumnFilter
                       label="Empresa"
                       options={optionsFrom(tasks, (task) => [task.businessName])}
@@ -101,9 +102,15 @@ export function CrmAgendaScreen() {
                       onChange={setHiddenCompanies}
                     />
                   </th>
-                  <th style={stickyTop} className="sticky z-10 bg-card text-left py-1.5 pl-3 font-medium">
+                  <th style={stickyTop} className={HEAD}>Con quién?</th>
+                  <th style={stickyTop} className={HEAD}>Fecha última acción</th>
+                  <th style={stickyTop} className={HEAD}>Qué se hizo?</th>
+                  <th style={stickyTop} className={HEAD}>Quién lo hizo?</th>
+                  <th style={stickyTop} className={HEAD}>Fecha próxima acción</th>
+                  <th style={stickyTop} className={HEAD}>Qué hacer?</th>
+                  <th style={stickyTop} className={cn(HEAD, "pr-0")}>
                     <ColumnFilter
-                      label="Responsable"
+                      label="Quién lo hará"
                       options={optionsFrom(tasks, (task) => [task.assignee])}
                       hidden={hiddenAssignees}
                       onChange={setHiddenAssignees}
@@ -114,30 +121,35 @@ export function CrmAgendaScreen() {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-3 text-muted-foreground">No hay tareas abiertas.</td>
+                    <td colSpan={8} className="py-3 text-muted-foreground">No hay tareas abiertas.</td>
                   </tr>
                 ) : (
                   rows.map((task) => {
                     const color = responsibleColor(task.assignee, responsibleList)
                     const palette = responsiblePalette(color)
+                    const last = splitLastAction(task.lastAction)
                     return (
                     <tr
                       key={task.id}
                       data-testid={`agenda-${task.id}`}
                       data-color={color}
                       onClick={() => void navigate(`/crm/${task.companyTaxId}`, { state: { from: "agenda" } })}
-                      className={cn("border-b border-border last:border-0 cursor-pointer transition-colors", palette.row)}
+                      className={cn("border-b border-border last:border-0 cursor-pointer transition-colors align-top", palette.row)}
                     >
-                      <td className={cn("py-1.5 pr-3 whitespace-nowrap", task.overdue && "text-destructive font-medium")}>
+                      <td className={cn(CELL, "pl-0 min-w-40")}>
+                        <div className="font-medium">{task.businessName || "—"}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</div>
+                      </td>
+                      <td className={cn(CELL, "min-w-28")}>{last.withWhom || "—"}</td>
+                      <td className={cn(CELL, "whitespace-nowrap")}>{formatDay(task.lastAction?.date ?? null)}</td>
+                      <td className={cn(CELL, "min-w-48 break-words")}>{last.what || "—"}</td>
+                      <td className={CELL}>{task.lastAction?.doneBy || "—"}</td>
+                      <td className={cn(CELL, "whitespace-nowrap font-medium", palette.badge)}>
                         {formatDay(task.dueDate)}
                         {task.overdue && <Badge variant="destructive" className="ml-2">Vencida</Badge>}
                       </td>
-                      <td className="py-1.5 px-3 break-words">{task.description}</td>
-                      <td className="py-1.5 px-3">
-                        <div>{task.businessName || "—"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</div>
-                      </td>
-                      <td className="py-1.5 pl-3">
+                      <td className={cn(CELL, "min-w-48 break-words")}>{task.description}</td>
+                      <td className={cn(CELL, "pr-0")}>
                         <span className={cn("inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-medium", palette.badge)}>
                           <span className={cn("h-2 w-2 shrink-0", palette.swatch)} />
                           {task.assignee}

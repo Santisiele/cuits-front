@@ -9,6 +9,7 @@ import {
   RESPONSIBLE_REQUIRED,
   RESPONSIBLE_NAME_ERROR,
   responsibleNameError,
+  splitLastAction,
   TEXT_TOO_LONG,
   birthdayError,
   buildTimeline,
@@ -267,5 +268,22 @@ describe("origin as free text or one of our sources", () => {
   it("needs a reason to close a company", () => {
     expect(closeReasonError(" ")).toBe(CLOSE_REASON_REQUIRED)
     expect(closeReasonError("Cerró")).toBeNull()
+  })
+})
+
+describe("splitLastAction", () => {
+  const action = { date: "2026-10-20", description: "Lo llamó", doneBy: "Luchi", contacts: [] as string[] }
+
+  it("names the contacts the action was with", () => {
+    expect(splitLastAction({ ...action, contacts: ["Ana", "Raul"] })).toEqual({ withWhom: "Ana, Raul", what: "Lo llamó" })
+  })
+
+  it("reads who it was with from an imported description", () => {
+    expect(splitLastAction({ ...action, description: "Con Juan Pérez: mandó mail" })).toEqual({ withWhom: "Juan Pérez", what: "mandó mail" })
+  })
+
+  it("leaves who empty when nothing says it", () => {
+    expect(splitLastAction(action)).toEqual({ withWhom: "", what: "Lo llamó" })
+    expect(splitLastAction(null)).toEqual({ withWhom: "", what: "" })
   })
 })

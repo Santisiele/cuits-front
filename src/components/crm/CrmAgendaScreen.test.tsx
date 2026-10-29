@@ -41,6 +41,7 @@ function item(id: string, dueDate: string, overdue: boolean, businessName = "ACM
     createdAt: "",
     closedAt: null,
     archivedAt: null,
+    lastAction: id === "t1" ? { date: "2026-10-20", description: "Con Ana: mandó propuesta", doneBy: "Luchi", contacts: [] } : null,
     overdue,
   }
 }
@@ -71,6 +72,17 @@ describe("CrmAgendaScreen", () => {
     expect(agenda).toHaveBeenCalledWith("me")
     const rows = screen.getAllByTestId(/^agenda-/)
     expect(rows.map((row) => row.getAttribute("data-testid"))).toEqual(["agenda-t1", "agenda-t2"])
+  })
+
+  it("shows the last thing done next to what comes next, like the sheet", async () => {
+    await show()
+    const row = within(screen.getByTestId("agenda-t1"))
+    expect(row.getByText("Ana")).toBeInTheDocument()
+    expect(row.getByText("20/10/2026")).toBeInTheDocument()
+    expect(row.getByText("mandó propuesta")).toBeInTheDocument()
+    expect(row.getByText("Luchi")).toBeInTheDocument()
+    expect(row.getByText("28/10/2026")).toBeInTheDocument()
+    expect(within(screen.getByTestId("agenda-t2")).getAllByText("—")).toHaveLength(4)
   })
 
   it("marks the overdue ones", async () => {
@@ -147,6 +159,6 @@ describe("CrmAgendaScreen", () => {
   it("keeps its header on top while scrolling", async () => {
     await show()
     expect(screen.getByTestId("crm-agenda-header")).toHaveClass("sticky", "top-0")
-    expect(screen.getByRole("columnheader", { name: "Vence" })).toHaveClass("sticky")
+    expect(screen.getByRole("columnheader", { name: "Fecha próxima acción" })).toHaveClass("sticky")
   })
 })

@@ -450,8 +450,16 @@ export interface CrmTask {
   archivedAt: string | null
 }
 
+export interface CrmLastAction {
+  date: string
+  description: string
+  doneBy: string
+  contacts: string[]
+}
+
 export interface CrmAgendaItem extends CrmTask {
   businessName: string
+  lastAction: CrmLastAction | null
   overdue: boolean
 }
 

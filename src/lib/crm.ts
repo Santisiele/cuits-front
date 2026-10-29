@@ -1,4 +1,4 @@
-import type { CrmAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmResponsible } from "@/types"
+import type { CrmAction, CrmLastAction, CrmRemovalResult, CrmTask, CrmTaskStatus, CrmResponsible } from "@/types"
 
 export const MAX_NAME_LENGTH = 200
 export const MAX_TEXT_LENGTH = 2000
@@ -305,4 +305,11 @@ export function describeChangeValue(value: unknown, names: Readonly<Record<strin
   if (typeof value === "string" && value in CANCEL_REASON_LABELS) return CANCEL_REASON_LABELS[value]!
   if (typeof value === "string" && ISO_DATE.test(value)) return formatDay(value)
   return String(value)
+}
+
+export function splitLastAction(action: CrmLastAction | null): { withWhom: string; what: string } {
+  if (!action) return { withWhom: "", what: "" }
+  if (action.contacts.length > 0) return { withWhom: action.contacts.join(", "), what: action.description }
+  const imported = /^Con ([^:]+):\s*([\s\S]*)$/.exec(action.description)
+  return imported ? { withWhom: imported[1]!.trim(), what: imported[2]! } : { withWhom: "", what: action.description }
 }
