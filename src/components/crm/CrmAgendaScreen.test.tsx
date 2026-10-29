@@ -75,11 +75,16 @@ describe("CrmAgendaScreen", () => {
     expect(within(screen.getByTestId("agenda-t2")).queryByText("Vencida")).not.toBeInTheDocument()
   })
 
-  it("can show only the overdue ones", async () => {
+  it("shows all, only the overdue or only the upcoming ones, with their counts", async () => {
     await show()
-    await userEvent.click(screen.getByLabelText(/Solo vencidas/))
+    await userEvent.click(screen.getByRole("button", { name: "Vencidas (1)" }))
     expect(screen.getByTestId("agenda-t1")).toBeInTheDocument()
     expect(screen.queryByTestId("agenda-t2")).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Próximas (1)" }))
+    expect(screen.queryByTestId("agenda-t1")).not.toBeInTheDocument()
+    expect(screen.getByTestId("agenda-t2")).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Todas" }))
+    expect(screen.getAllByTestId(/^agenda-t/)).toHaveLength(2)
   })
 
   it("switches to someone else's tasks or everybody's", async () => {

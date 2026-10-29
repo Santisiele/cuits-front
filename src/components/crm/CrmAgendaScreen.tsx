@@ -7,17 +7,17 @@ import { useCrmAgenda, useCrmUsers } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
 import { optionsFrom, passesFilter } from "@/lib/columnFilters"
 import { formatDay, userColor } from "@/lib/crm"
-import { paletteFor } from "@/lib/trustLevels"
+import { userPaletteFor } from "@/lib/userColors"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { AgendaTaskDialog } from "./AgendaTaskDialog"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
-import { CheckRow, NativeSelect } from "./CrmFields"
+import { NativeSelect } from "./CrmFields"
 
 export function CrmAgendaScreen() {
   const [assignee, setAssignee] = useState("me")
-  const [overdueOnly, setOverdueOnly] = useState(false)
+  const [when, setWhen] = useState<"all" | "overdue" | "upcoming">("all")
   const [hiddenAssignees, setHiddenAssignees] = useState<string[]>([])
   const [hiddenCompanies, setHiddenCompanies] = useState<string[]>([])
   const agenda = useCrmAgenda(assignee)
@@ -41,7 +41,7 @@ export function CrmAgendaScreen() {
   const tasks = agenda.data ?? []
   const rows = tasks.filter(
     (task) =>
-      (!overdueOnly || task.overdue) &&
+      (when === "all" || (when === "overdue") === task.overdue) &&
       passesFilter([task.assignee], new Set(hiddenAssignees)) &&
       passesFilter([task.businessName], new Set(hiddenCompanies))
   )
@@ -64,9 +64,20 @@ export function CrmAgendaScreen() {
                 <option key={user.username} value={user.username}>{user.username}</option>
               ))}
             </NativeSelect>
-            <CheckRow checked={overdueOnly} onChange={setOverdueOnly}>
-              Solo vencidas{overdueCount > 0 && ` (${overdueCount})`}
-            </CheckRow>
+            <div className="flex" role="group" aria-label="Vencimiento">
+              {(["all", "overdue", "upcoming"] as const).map((option) => (
+                <Button
+                  key={option}
+                  size="sm"
+                  variant={when === option ? "default" : "outline"}
+                  aria-pressed={when === option}
+                  onClick={() => setWhen(option)}
+                  className="-ml-px first:ml-0"
+                >
+                  {option === "all" ? "Todas" : option === "overdue" ? `Vencidas (${overdueCount})` : `Próximas (${tasks.length - overdueCount})`}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -107,7 +118,7 @@ export function CrmAgendaScreen() {
                   </tr>
                 ) : (
                   rows.map((task) => {
-                    const palette = paletteFor(userColor(task.assignee, userList))
+                    const palette = userPaletteFor(userColor(task.assignee, userList))
                     return (
                     <tr
                       key={task.id}
