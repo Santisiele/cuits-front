@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { describeActivity } from "@/lib/activity"
+import { activityCursor, describeActivity } from "@/lib/activity"
 import type { ActivityEntry } from "@/types"
 
 function entry(event: string, details: Record<string, unknown> = {}, username: string | null = "sol"): ActivityEntry {
@@ -88,5 +88,19 @@ describe("describeActivity", () => {
 
   it("never leaves an unknown event blank", () => {
     expect(describeActivity(entry("something_new"))).toBe("sol: something_new")
+  })
+})
+
+describe("activityCursor", () => {
+  it("continues from the last entry shown, counting the ones that share its time", () => {
+    const at = "2026-10-29T15:00:00.000Z"
+    const entries = [entry("login"), { ...entry("logout"), time: at }, { ...entry("login"), time: at }]
+    entries[0]!.time = "2026-10-29T16:00:00.000Z"
+    expect(activityCursor(entries)).toEqual({ before: at, seen: 2 })
+    expect(activityCursor([])).toBeUndefined()
+  })
+
+  it("names the new task outcomes", () => {
+    expect(describeActivity(entry("crm_operation", { operation: "complete", entityType: "Task", description: "x", assignee: "Raul", dueDate: "2026-11-02", companyTaxId: "30712345678" }))).toMatch(/^sol completó la tarea/)
   })
 })

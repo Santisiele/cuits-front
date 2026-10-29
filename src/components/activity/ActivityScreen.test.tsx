@@ -49,7 +49,7 @@ describe("ActivityScreen", () => {
     show()
     await userEvent.click(await screen.findByRole("button", { name: "Ver más" }))
     expect(await screen.findByText("sol cerró sesión")).toBeInTheDocument()
-    expect(read).toHaveBeenLastCalledWith({ username: "", event: "", before: "2026-10-29T11:00:00.000Z" })
+    expect(read).toHaveBeenLastCalledWith({ username: "", event: "", before: "2026-10-29T11:00:00.000Z", seen: 1 })
     expect(screen.queryByRole("button", { name: "Ver más" })).not.toBeInTheDocument()
   })
 
@@ -60,6 +60,6 @@ describe("ActivityScreen", () => {
     expect(screen.getAllByRole("option", { name: /^(luchi|sol)$/ }).map((option) => option.textContent)).toEqual(["luchi", "sol"])
     await userEvent.selectOptions(screen.getByLabelText("Usuario"), "sol")
     await userEvent.selectOptions(screen.getByLabelText("Tipo"), "CRM")
-    expect(read).toHaveBeenLastCalledWith({ username: "sol", event: "crm_operation", before: undefined })
+    expect(read).toHaveBeenLastCalledWith({ username: "sol", event: "crm_operation" })
   })
 })

@@ -570,9 +570,9 @@ export const CrmApiService = {
 }
 
 export const ActivityService = {
-  read: (filters: { before?: string; username?: string; event?: string }) => {
+  read: (filters: { before?: string; seen?: number; username?: string; event?: string }) => {
     const params = new URLSearchParams()
-    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value)
+    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, String(value))
     return apiFetch<ActivityPage>(`${API_BASE_URL}/activity?${params.toString()}`)
   },
 }

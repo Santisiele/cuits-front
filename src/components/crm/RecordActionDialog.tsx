@@ -15,6 +15,7 @@ import {
   requiredTextError,
   taskDraftErrors,
   todayInBuenosAires,
+  toggleId,
   type TaskDraft,
 } from "@/lib/crm"
 import type { CrmContact, CrmTask } from "@/types"
@@ -50,10 +51,6 @@ export function RecordActionDialog({
   const nextTaskErrors = taskDraftErrors(nextTask)
   const canSubmit = !hasErrors(errors) && !hasErrors(nextTaskErrors)
 
-  function toggle(list: string[], id: string, checked: boolean): string[] {
-    return checked ? [...list, id] : list.filter((other) => other !== id)
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     if (!canSubmit) return
@@ -87,7 +84,7 @@ export function RecordActionDialog({
           <DialogTitle>Registrar acción</DialogTitle>
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-          <Field id="crm-action-done-by" label="Quién lo hizo">
+          <Field id="crm-action-done-by" label="Quién lo hizo" error={errors.doneBy}>
             <ResponsibleSelect id="crm-action-done-by" value={doneBy} onChange={setDoneBy} />
           </Field>
           <Field id="crm-action-date" label="Fecha" error={errors.date}>
@@ -104,7 +101,7 @@ export function RecordActionDialog({
                 <CheckRow
                   key={contact.id}
                   checked={contactIds.includes(contact.id)}
-                  onChange={(checked) => setContactIds((ids) => toggle(ids, contact.id, checked))}
+                  onChange={(checked) => setContactIds((ids) => toggleId(ids, contact.id, checked))}
                 >
                   {contact.fullName}
                 </CheckRow>
@@ -119,7 +116,7 @@ export function RecordActionDialog({
                 <CheckRow
                   key={task.id}
                   checked={completesTaskIds.includes(task.id)}
-                  onChange={(checked) => setCompletesTaskIds((ids) => toggle(ids, task.id, checked))}
+                  onChange={(checked) => setCompletesTaskIds((ids) => toggleId(ids, task.id, checked))}
                 >
                   {task.description} <span className="text-muted-foreground">· vence {formatDay(task.dueDate)} · {task.assignee}</span>
                 </CheckRow>

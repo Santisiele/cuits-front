@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import type { TaskDraft, TaskDraftErrors } from "@/lib/crm"
+import { toggleId, type TaskDraft, type TaskDraftErrors } from "@/lib/crm"
 import type { CrmContact } from "@/types"
 import { CheckRow, Field } from "./CrmFields"
 import { ResponsibleSelect } from "./ResponsibleSelect"
@@ -19,7 +19,7 @@ export function TaskFields({
   onChange: (draft: TaskDraft) => void
 }) {
   function toggleContact(id: string, checked: boolean): void {
-    onChange({ ...draft, contactIds: checked ? [...draft.contactIds, id] : draft.contactIds.filter((other) => other !== id) })
+    onChange({ ...draft, contactIds: toggleId(draft.contactIds, id, checked) })
   }
 
   return (

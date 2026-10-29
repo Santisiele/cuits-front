@@ -31,7 +31,9 @@ const CRM_OPERATIONS: Record<string, string> = {
   crm_remove: "sacó del CRM",
   close: "cerró",
   reopen: "reabrió",
+  cancel: "canceló",
   cancelled: "canceló",
+  complete: "completó",
   done: "completó",
 }
 
@@ -69,7 +71,7 @@ function crmSentence(user: string, details: Details): string {
     operation === "crm_remove" && REMOVAL_OUTCOMES[text(details["outcome"])],
     operation === "close" && details["reason"] && `motivo: ${quoted(details["reason"])}`,
     operation === "close" && details["inservible"] === true && "pasó a Inservible",
-    operation === "cancelled" && details["cancelReason"] && `motivo: ${quoted(details["cancelReason"])}`,
+    (operation === "cancel" || operation === "cancelled") && details["cancelReason"] && `motivo: ${quoted(details["cancelReason"])}`,
   ].filter(Boolean)
   return `${user} ${verb} ${crmEntity(details)}${extras.length > 0 ? ` (${extras.join(", ")})` : ""}`
 }
@@ -181,6 +183,17 @@ export function describeActivity(entry: ActivityEntry): string {
     default:
       return sourceSentence(user, entry.event, d) ?? `${user}: ${entry.event}`
   }
+}
+
+export interface ActivityCursor {
+  before: string
+  seen: number
+}
+
+export function activityCursor(entries: readonly ActivityEntry[]): ActivityCursor | undefined {
+  const last = entries[entries.length - 1]
+  if (!last) return undefined
+  return { before: last.time, seen: entries.filter((entry) => entry.time === last.time).length }
 }
 
 export const ACTIVITY_EVENT_LABELS: Record<string, string> = {

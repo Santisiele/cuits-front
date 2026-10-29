@@ -11,6 +11,9 @@ import {
   responsibleNameError,
   splitLastAction,
   companyMatches,
+  recordedForSomeoneElse,
+  sameResponsible,
+  toggleId,
   taskChanges,
   TEXT_TOO_LONG,
   birthdayError,
@@ -329,5 +332,26 @@ describe("taskChanges", () => {
       assignee: "pedro",
       contactIds: ["c1"],
     })
+  })
+})
+
+describe("responsible names and lists", () => {
+  it("compares names the way the API does, ignoring case and extra spaces", () => {
+    expect(sameResponsible(" Diego  F ", "diego f")).toBe(true)
+    expect(sameResponsible("Diego", "Diego F")).toBe(false)
+  })
+
+  it("adds an id once and takes it out", () => {
+    expect(toggleId(["a"], "b", true)).toEqual(["a", "b"])
+    expect(toggleId(["a", "b"], "b", true)).toEqual(["a", "b"])
+    expect(toggleId(["a", "b"], "a", false)).toEqual(["b"])
+  })
+
+  it("says an action was recorded for someone else only when the recorder does not stand for its responsible", () => {
+    const responsibles = [{ name: "Luchi", color: "yellow", users: ["luchi.p"], disabled: false }]
+    const action = { recordedBy: "luchi.p", doneBy: "Luchi" } as Parameters<typeof recordedForSomeoneElse>[0]
+    expect(recordedForSomeoneElse(action, responsibles)).toBe(false)
+    expect(recordedForSomeoneElse({ ...action, recordedBy: "sol" }, responsibles)).toBe(true)
+    expect(recordedForSomeoneElse({ ...action, recordedBy: null } as never, responsibles)).toBe(false)
   })
 })

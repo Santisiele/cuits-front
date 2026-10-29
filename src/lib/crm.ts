@@ -285,9 +285,21 @@ export function ownResponsible(responsibles: readonly CrmResponsible[], username
   return own?.name ?? null
 }
 
+export function responsibleKey(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+export function sameResponsible(a: string, b: string): boolean {
+  return responsibleKey(a) === responsibleKey(b)
+}
+
+export function toggleId(list: readonly string[], id: string, checked: boolean): string[] {
+  if (checked) return list.includes(id) ? [...list] : [...list, id]
+  return list.filter((other) => other !== id)
+}
+
 export function responsibleColor(name: string, responsibles: readonly CrmResponsible[]): string {
-  const key = name.trim().toLowerCase()
-  return responsibles.find((responsible) => responsible.name.trim().toLowerCase() === key)?.color ?? "slate"
+  return responsibles.find((responsible) => sameResponsible(responsible.name, name))?.color ?? "slate"
 }
 
 function sameUser(a: string | null, b: string): boolean {
@@ -302,11 +314,16 @@ export function responsiblesOf(responsibles: readonly CrmResponsible[], username
 }
 
 function holds(mine: readonly string[], name: string): boolean {
-  return mine.some((own) => own.trim().toLowerCase() === name.trim().toLowerCase())
+  return mine.some((own) => sameResponsible(own, name))
 }
 
 export function canChangeTask(username: string | null, isAdmin: boolean, task: CrmTask, mine: readonly string[] = []): boolean {
   return isAdmin || sameUser(username, task.createdBy) || holds(mine, task.assignee)
+}
+
+export function recordedForSomeoneElse(action: CrmAction, responsibles: readonly CrmResponsible[]): boolean {
+  if (!action.recordedBy) return false
+  return !holds(responsiblesOf(responsibles, action.recordedBy), action.doneBy) && !sameResponsible(action.recordedBy, action.doneBy)
 }
 
 export function canChangeAction(username: string | null, isAdmin: boolean, action: CrmAction, mine: readonly string[] = []): boolean {

@@ -22,6 +22,8 @@ export function ChangeHistory({ entityType, entityId, names }: { entityType: str
             <p className="text-muted-foreground">Cargando...</p>
           ) : changes.error ? (
             <p className="text-destructive">{getErrorMessage(changes.error)}</p>
+          ) : (changes.data ?? []).length === 0 ? (
+            <p className="text-muted-foreground">Sin cambios.</p>
           ) : (
             (changes.data ?? []).map((change) => (
               <div key={change.id}>

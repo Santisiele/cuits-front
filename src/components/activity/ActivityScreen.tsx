@@ -1,16 +1,14 @@
 import { useState } from "react"
-import { useInfiniteQuery } from "@tanstack/react-query"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { NativeSelect } from "@/components/crm/CrmFields"
-import { ActivityService } from "@/services/api"
+import { useActivity } from "@/hooks/useActivity"
 import { useUsersQuery } from "@/hooks/useUsers"
 import { ACTIVITY_EVENT_LABELS, describeActivity } from "@/lib/activity"
 import { formatIsoDateTime } from "@/lib/dates"
 import { getErrorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
-import type { ActivityPage } from "@/types"
 
 export function ActivityScreen() {
   const [username, setUsername] = useState("")
@@ -18,13 +16,7 @@ export function ActivityScreen() {
   const filters = { username, event }
   const usernames = (useUsersQuery().data ?? []).map((user) => user.username).sort((a, b) => a.localeCompare(b))
 
-  const activity = useInfiniteQuery<ActivityPage>({
-    queryKey: ["activity", filters],
-    queryFn: ({ pageParam }) => ActivityService.read({ ...filters, before: pageParam as string | undefined }),
-    initialPageParam: undefined,
-    getNextPageParam: (last) => (last.hasMore ? last.entries[last.entries.length - 1]?.time : undefined),
-    staleTime: 0,
-  })
+  const activity = useActivity(filters)
 
   const entries = activity.data?.pages.flatMap((page) => page.entries) ?? []
 

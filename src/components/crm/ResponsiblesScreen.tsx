@@ -66,6 +66,7 @@ function ResponsibleRow({ responsible, usernames }: { responsible: CrmResponsibl
         {responsible.disabled && <Badge variant="destructive">Deshabilitado</Badge>}
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           <Input
+            aria-invalid={!!problem}
             aria-label={`Nombre de ${responsible.name}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -84,6 +85,7 @@ function ResponsibleRow({ responsible, usernames }: { responsible: CrmResponsibl
           </Button>
         </div>
       </div>
+      {problem && <p className="text-destructive text-xs sm:text-right">{problem}</p>}
       <ColorPicker name={responsible.name} color={responsible.color} disabled={update.isPending} onChange={(color) => void save({ color })} />
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <span className="text-muted-foreground">Lo usan:</span>
@@ -147,6 +149,7 @@ export function ResponsiblesScreen() {
           <p className="text-destructive text-sm">{getErrorMessage(responsibles.error)}</p>
         ) : (
           <div className="divide-y divide-border">
+            {(responsibles.data ?? []).length === 0 && <p className="py-3 text-sm text-muted-foreground">Todavía no hay responsables.</p>}
             {(responsibles.data ?? []).map((responsible) => (
               <ResponsibleRow key={`${responsible.name}|${responsible.color}`} responsible={responsible} usernames={usernames} />
             ))}

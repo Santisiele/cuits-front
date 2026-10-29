@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { useCrmResponsibles } from "@/hooks/useCrm"
 import { useAuthStore } from "@/store/useAuthStore"
-import { ownResponsible } from "@/lib/crm"
+import { ownResponsible, sameResponsible } from "@/lib/crm"
 import { NativeSelect } from "./CrmFields"
 
 export function ResponsibleSelect({ id, value, onChange }: { id: string; value: string; onChange: (name: string) => void }) {
@@ -10,7 +10,7 @@ export function ResponsibleSelect({ id, value, onChange }: { id: string; value: 
   const list = responsibles.data ?? []
   const own = ownResponsible(list, me)
   const active = list.filter((responsible) => !responsible.disabled)
-  const options = value && !active.some((responsible) => responsible.name.toLowerCase() === value.toLowerCase())
+  const options = value && !active.some((responsible) => sameResponsible(responsible.name, value))
     ? [value, ...active.map((responsible) => responsible.name)]
     : active.map((responsible) => responsible.name)
 

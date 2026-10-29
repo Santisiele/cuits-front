@@ -23,6 +23,7 @@ import {
   originDraftOf,
   originInput,
   originLabel,
+  recordedForSomeoneElse,
   responsiblesOf,
   type OriginDraft,
   todayInBuenosAires,
@@ -261,7 +262,8 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
   const { archiveAction, restoreAction } = useCrmMutations()
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
-  const mine = responsiblesOf(useCrmResponsibles().data ?? [], me)
+  const responsibleList = useCrmResponsibles().data ?? []
+  const mine = responsiblesOf(responsibleList, me)
   const entries = buildTimeline(actions, tasks)
 
   async function archive(action: CrmAction): Promise<void> {
@@ -292,8 +294,7 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
                     <div className="min-w-0 space-y-0.5">
                       <p className="text-muted-foreground">
                         {formatDay(entry.action.date)} · {entry.action.doneBy}
-                        {entry.action.recordedBy && entry.action.recordedBy.toLowerCase() !== entry.action.doneBy.toLowerCase() &&
-                          ` (cargó ${entry.action.recordedBy})`}
+                        {recordedForSomeoneElse(entry.action, responsibleList) && ` (cargó ${entry.action.recordedBy})`}
                         {entry.action.contactIds.length > 0 && ` · con ${entry.action.contactIds.map((id) => names[id] ?? "?").join(", ")}`}
                       </p>
                       <p className="whitespace-pre-wrap break-words">{entry.action.description}</p>

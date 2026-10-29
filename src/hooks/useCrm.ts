@@ -11,6 +11,7 @@ import type {
   CrmResponsible,
   CrmContactInput,
   CrmTaskInput,
+  CrmRemovalResult,
   CrmUser,
   NosisPendingQueue,
 } from "@/types"
@@ -25,6 +26,16 @@ export const crmKeys = {
   nosisPending: () => ["crm", "nosis-pending"] as const,
   sources: () => ["crm", "sources"] as const,
   responsibles: () => ["crm", "responsibles"] as const,
+  removal: (taxId: string) => ["crm", "removal", taxId] as const,
+}
+
+export function useCrmRemovalPreview(taxId: string) {
+  return useQuery<CrmRemovalResult>({
+    queryKey: crmKeys.removal(taxId),
+    queryFn: () => CrmApiService.removeCompany(taxId, true),
+    staleTime: 0,
+    gcTime: 0,
+  })
 }
 
 export function useCrmCompanies() {
