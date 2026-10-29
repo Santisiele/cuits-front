@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest"
 import { act } from "react"
-import { screen } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { render } from "@/tests/render"
@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { Role } from "@/lib/roles"
 
-const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Créditos IA"]
+const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Responsables", "Créditos IA"]
 
 async function openMenu(role: Role, path = "/"): Promise<void> {
   act(() => useAuthStore.getState().setAuth("t1", "santi", role))
@@ -48,6 +48,20 @@ describe("AppSidebar", () => {
     await openMenu("member", "/crm/agenda")
     expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("aria-current", "page")
     expect(screen.getByRole("link", { name: "Empresas" })).not.toHaveAttribute("aria-current")
+  })
+
+  it("groups the menu into CRM, Edición, Administración and Info", async () => {
+    await openMenu("creator")
+    const sections = ["CRM", "Edición", "Administración", "Info"].map((label) => screen.getByText(label))
+    const crm = sections[0]!.closest("div")!.parentElement!
+    expect(within(crm).getByRole("link", { name: "Responsables" })).toBeInTheDocument()
+  })
+
+  it("shows a member no admin or creator section", async () => {
+    await openMenu("member")
+    expect(screen.getByText("Edición")).toBeInTheDocument()
+    expect(screen.queryByText("Administración")).not.toBeInTheDocument()
+    expect(screen.queryByText("Info")).not.toBeInTheDocument()
   })
 
   it("shows an admin every admin item", async () => {
