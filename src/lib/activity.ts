@@ -76,6 +76,48 @@ function crmSentence(user: string, details: Details): string {
   return `${user} ${verb} ${crmEntity(details)}${extras.length > 0 ? ` (${extras.join(", ")})` : ""}`
 }
 
+const MANUAL_SCRIPTS: Record<string, string> = {
+  "load:poseidon": "cargar la fuente Poseidon",
+  "load:conocidosluchi": "cargar la fuente Conocidos Luchi",
+  "load:seniorhome": "cargar la fuente Senior Home",
+  "load:macabeadas": "cargar la fuente Macabeadas",
+  "load:credivico": "cargar la fuente Credivico",
+  "load:concursadas": "cargar la fuente Empresas concursadas",
+  "load:nordelta": "cargar la fuente Nordelta",
+  "load:crm": "cargar la fuente CRM",
+  "load:bolsa": "cargar la fuente Bolsa",
+  "load:deudoresFinanciera": "cargar los deudores de financieras",
+  "load:deudoresBancos": "cargar los deudores de bancos",
+  "update:birthdays": "actualizar cumpleaños",
+  "scrape:birthdays": "buscar cumpleaños",
+  "migrate:sources": "migrar las fuentes a nodos",
+  "create:user": "crear un usuario",
+  "migrate:users": "migrar los usuarios",
+  "migrate:splitOperations": "separar las operaciones por fuente",
+  "migrate:bankOperations": "migrar las operaciones bancarias",
+  "load:trustLevels": "cargar niveles de confianza",
+  "restore:backup": "restaurar un backup",
+  "crm:nosis": "buscar en Nosis los pendientes del CRM",
+  "crm:import": "importar empresas al CRM",
+  "crm:import-history": "importar el historial del CRM",
+  "migrate:crmSource": "sacar la fuente CRM Excel",
+  "migrate:responsibles": "migrar los responsables",
+}
+
+const MANUAL_STATUS: Record<string, string> = {
+  ok: "terminó bien",
+  failed: "falló",
+  running: "sin terminar",
+}
+
+function manualRunSentence(details: Details): string {
+  const script = text(details["script"])
+  const args = Array.isArray(details["args"]) ? (details["args"] as unknown[]).map(text).join(" ") : ""
+  const what = MANUAL_SCRIPTS[script] ?? script
+  const status = MANUAL_STATUS[text(details["status"])] ?? text(details["status"])
+  return `Se hizo a mano: ${what}${args ? ` (${args})` : ""}, ${status}`
+}
+
 const SOURCE_OPERATIONS: Record<string, string> = {
   source_rename: "renombrar la fuente",
   source_merge: "unificar la fuente",
@@ -102,6 +144,8 @@ export function describeActivity(entry: ActivityEntry): string {
   switch (entry.event) {
     case "startup":
       return "Se inició la API"
+    case "manual_run":
+      return entry.username ? `${manualRunSentence(d)}, por ${entry.username}` : manualRunSentence(d)
     case "login":
       return `${user} inició sesión`
     case "login_failed":
@@ -198,6 +242,7 @@ export function activityCursor(entries: readonly ActivityEntry[]): ActivityCurso
 
 export const ACTIVITY_EVENT_LABELS: Record<string, string> = {
   crm_operation: "CRM",
+  manual_run: "Hecho a mano",
   login: "Ingresos",
   login_failed: "Ingresos fallidos",
   logout: "Salidas",

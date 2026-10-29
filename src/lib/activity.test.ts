@@ -104,3 +104,17 @@ describe("activityCursor", () => {
     expect(describeActivity(entry("crm_operation", { operation: "complete", entityType: "Task", description: "x", assignee: "Raul", dueDate: "2026-11-02", companyTaxId: "30712345678" }))).toMatch(/^sol completó la tarea/)
   })
 })
+
+describe("manual runs", () => {
+  it("says a script was done by hand, in Spanish, with its arguments and outcome", () => {
+    expect(
+      describeActivity(entry("manual_run", { script: "crm:import", args: ["Listas.xlsx", "--by", "sol", "--apply"], status: "ok" }, "sol"))
+    ).toBe("Se hizo a mano: importar empresas al CRM (Listas.xlsx --by sol --apply), terminó bien, por sol")
+    expect(describeActivity(entry("manual_run", { script: "load:bolsa", args: [], status: "failed" }, null))).toBe(
+      "Se hizo a mano: cargar la fuente Bolsa, falló"
+    )
+    expect(describeActivity(entry("manual_run", { script: "nuevo:script", args: [], status: "running" }, null))).toBe(
+      "Se hizo a mano: nuevo:script, sin terminar"
+    )
+  })
+})
