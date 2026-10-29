@@ -173,15 +173,63 @@ export function hasErrors(errors: object): boolean {
   return Object.values(errors).some((value) => value !== null)
 }
 
+export type TimelineEntry =
+  | { kind: "action"; day: string; action: CrmAction; fulfilled: CrmTask[]; next: CrmTask | null }
+  | { kind: "task"; day: string; task: CrmTask }
+
+export function buildTimeline(actions: readonly CrmAction[], tasks: readonly CrmTask[]): TimelineEntry[] {
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const fulfilledByAction = new Set(actions.flatMap((action) => action.completedTaskIds))
+  const entries: TimelineEntry[] = [
+    ...actions.map((action) => ({
+      kind: "action" as const,
+      day: action.date,
+      action,
+      fulfilled: action.completedTaskIds.flatMap((id) => byId.get(id) ?? []),
+      next: action.createdTaskId ? byId.get(action.createdTaskId) ?? null : null,
+    })),
+    ...tasks
+      .filter((task) => task.status !== "open" && !fulfilledByAction.has(task.id))
+      .map((task) => ({ kind: "task" as const, day: (task.closedAt ?? task.createdAt).slice(0, 10), task })),
+  ]
+  return entries.sort((a, b) => b.day.localeCompare(a.day))
+}
+
 export const COMPANY_REQUIRED = "Elegí la empresa"
+
+export function matchCompanies<T extends { taxId: string; businessName: string }>(companies: readonly T[], search: string, limit = 8): T[] {
+  const needle = nameKey(search)
+  if (needle === "") return []
+  const digits = search.replace(/\D/g, "")
+  return companies
+    .filter((company) => nameKey(company.businessName).includes(needle) || (digits.length >= 3 && company.taxId.includes(digits)))
+    .sort((a, b) => a.businessName.localeCompare(b.businessName, "es"))
+    .slice(0, limit)
+}
+
+function nameKey(value: string): string {
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase()
+}
+
+function isPaletteColor(color: string | null | undefined): color is TrustLevelColor {
+  return !!color && (TRUST_LEVEL_COLOR_KEYS as readonly string[]).includes(color)
+}
 
 export function userColor(username: string, users: readonly CrmUser[]): TrustLevelColor {
   const chosen = users.find((user) => sameUser(user.username, username))?.color
-  if (chosen && (TRUST_LEVEL_COLOR_KEYS as readonly string[]).includes(chosen)) return chosen as TrustLevelColor
-  const key = username.trim().toLowerCase()
+  if (isPaletteColor(chosen)) return chosen
+  const taken = new Set(users.map((user) => user.color).filter(isPaletteColor))
+  const free = TRUST_LEVEL_COLOR_KEYS.filter((color) => !taken.has(color))
+  const palette = free.length > 0 ? free : TRUST_LEVEL_COLOR_KEYS
+  const withoutColor = users
+    .filter((user) => !isPaletteColor(user.color))
+    .map((user) => user.username.trim().toLowerCase())
+    .sort()
+  const position = withoutColor.indexOf(username.trim().toLowerCase())
+  if (position >= 0) return palette[position % palette.length]!
   let hash = 0
-  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return TRUST_LEVEL_COLOR_KEYS[hash % TRUST_LEVEL_COLOR_KEYS.length]!
+  for (const char of username.trim().toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return palette[hash % palette.length]!
 }
 
 function sameUser(a: string | null, b: string): boolean {

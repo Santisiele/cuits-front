@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useLocation, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { ArrowLeft, Check, Pencil, Plus, Trash2, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { getErrorMessage } from "@/lib/errors"
 import {
   TASK_STATUS_LABELS,
+  buildTimeline,
   canChangeAction,
   canChangeTask,
   cancelReasonLabel,
@@ -239,16 +240,11 @@ function OpenTasks({
   )
 }
 
-type TimelineEntry = { kind: "action"; day: string; action: CrmAction } | { kind: "task"; day: string; task: CrmTask }
-
-function Timeline({ actions, closedTasks, names }: { actions: CrmAction[]; closedTasks: CrmTask[]; names: Record<string, string> }) {
+function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmTask[]; names: Record<string, string> }) {
   const { archiveAction } = useCrmMutations()
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
-  const entries: TimelineEntry[] = [
-    ...actions.map((action) => ({ kind: "action" as const, day: action.date, action })),
-    ...closedTasks.map((task) => ({ kind: "task" as const, day: (task.closedAt ?? task.createdAt).slice(0, 10), task })),
-  ].sort((a, b) => b.day.localeCompare(a.day))
+  const entries = buildTimeline(actions, tasks)
 
   async function archive(action: CrmAction): Promise<void> {
     try {
@@ -273,12 +269,21 @@ function Timeline({ actions, closedTasks, names }: { actions: CrmAction[]; close
               entry.kind === "action" ? (
                 <li key={entry.action.id} className="text-sm border-l-2 border-primary pl-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                    <div className="min-w-0 space-y-0.5">
                       <p className="text-muted-foreground">
                         {formatDay(entry.action.date)} · {entry.action.doneBy}
                         {entry.action.contactIds.length > 0 && ` · con ${entry.action.contactIds.map((id) => names[id] ?? "?").join(", ")}`}
                       </p>
                       <p className="whitespace-pre-wrap break-words">{entry.action.description}</p>
+                      {entry.fulfilled.map((task) => (
+                        <p key={task.id} className="text-muted-foreground break-words">✓ Cumplió: {task.description}</p>
+                      ))}
+                      {entry.next && (
+                        <p className="text-muted-foreground break-words">
+                          → Próxima: {entry.next.description} · {entry.next.assignee} · vence {formatDay(entry.next.dueDate)}
+                          {entry.next.status !== "open" && ` (${TASK_STATUS_LABELS[entry.next.status].toLowerCase()})`}
+                        </p>
+                      )}
                     </div>
                     {canChangeAction(me, isAdmin, entry.action) && (
                       <Button size="sm" variant="ghost" aria-label="Archivar acción" onClick={() => void archive(entry.action)}>
@@ -307,6 +312,18 @@ function Timeline({ actions, closedTasks, names }: { actions: CrmAction[]; close
   )
 }
 
+function BackLink() {
+  const fromAgenda = (useLocation().state as { from?: string } | null)?.from === "agenda"
+  return (
+    <Link
+      to={fromAgenda ? "/crm/agenda" : "/crm"}
+      className="text-sm inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="w-4 h-4" /> {fromAgenda ? "Agenda" : "Empresas"}
+    </Link>
+  )
+}
+
 export function CrmCompanyScreen() {
   const { taxId = "" } = useParams()
   const detail = useCrmCompany(taxId)
@@ -317,9 +334,7 @@ export function CrmCompanyScreen() {
   if (detail.error || !detail.data) {
     return (
       <div className="space-y-2">
-        <Link to="/crm" className="text-sm inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Empresas
-        </Link>
+        <BackLink />
         <p className="text-destructive text-sm">{getErrorMessage(detail.error, "No se pudo cargar la empresa")}</p>
       </div>
     )
@@ -327,7 +342,6 @@ export function CrmCompanyScreen() {
 
   const { company, contacts, actions, tasks } = detail.data
   const openTasks = tasks.filter((task) => task.status === "open")
-  const closedTasks = tasks.filter((task) => task.status !== "open")
   const names: Record<string, string> = Object.fromEntries([
     ...contacts.map((contact) => [contact.id, contact.fullName]),
     ...tasks.map((task) => [task.id, task.description]),
@@ -335,9 +349,7 @@ export function CrmCompanyScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link to="/crm" className="text-sm inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Empresas
-      </Link>
+      <BackLink />
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 justify-between">
@@ -363,7 +375,7 @@ export function CrmCompanyScreen() {
         <ContactsSection taxId={company.taxId} contacts={contacts} />
       </div>
 
-      <Timeline actions={actions} closedTasks={closedTasks} names={names} />
+      <Timeline actions={actions} tasks={tasks} names={names} />
 
       {recording && (
         <RecordActionDialog companyTaxId={company.taxId} contacts={contacts} openTasks={openTasks} onClose={() => setRecording(false)} />

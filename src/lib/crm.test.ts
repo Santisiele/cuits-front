@@ -8,6 +8,8 @@ import {
   TASK_DESCRIPTION_REQUIRED,
   TEXT_TOO_LONG,
   birthdayError,
+  buildTimeline,
+  matchCompanies,
   canChangeAction,
   canChangeTask,
   cancelReasonError,
@@ -146,16 +148,67 @@ describe("userColor", () => {
     { username: "Flavia", color: "teal" },
     { username: "raul", color: null },
     { username: "mati", color: "#ff0000" },
+    { username: "ana", color: null },
   ]
 
   it("uses the color an admin picked, whatever the case of the name", () => {
     expect(userColor("flavia", users)).toBe("teal")
   })
 
-  it("derives a stable palette color for anyone without a valid one", () => {
-    expect(userColor("raul", users)).toBe(userColor("RAUL", []))
-    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("raul", users))
-    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("mati", users))
+  it("gives everyone else a different color, skipping the ones already picked", () => {
+    const derived = ["ana", "mati", "raul"].map((name) => userColor(name, users))
+    expect(new Set(derived).size).toBe(3)
+    expect(derived).not.toContain("teal")
+    expect(userColor("RAUL", users)).toBe(userColor("raul", users))
+  })
+
+  it("still answers for someone missing from the list", () => {
+    expect(TRUST_LEVEL_COLOR_KEYS).toContain(userColor("nadie", users))
+  })
+})
+
+describe("buildTimeline", () => {
+  const task = (id: string, status: CrmTask["status"], closedAt: string | null = null): CrmTask => ({ ...TASK, id, status, closedAt })
+  const action = (id: string, date: string, completedTaskIds: string[], createdTaskId: string | null): CrmAction => ({
+    ...ACTION,
+    id,
+    date,
+    completedTaskIds,
+    createdTaskId,
+  })
+
+  it("puts fulfilled tasks under the action that fulfilled them instead of on the closing day", () => {
+    const tasks = [task("t1", "done", "2026-10-29T12:00:00.000Z"), task("t2", "open")]
+    const entries = buildTimeline([action("a1", "2026-10-20", ["t1"], "t2")], tasks)
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({ kind: "action", day: "2026-10-20", fulfilled: [{ id: "t1" }], next: { id: "t2" } })
+  })
+
+  it("keeps tasks closed by hand as entries of their own, newest first", () => {
+    const tasks = [task("t1", "cancelled", "2026-10-25T12:00:00.000Z"), task("t2", "done", "2026-10-21T12:00:00.000Z")]
+    const entries = buildTimeline([action("a1", "2026-10-22", [], null)], tasks)
+    expect(entries.map((entry) => entry.day)).toEqual(["2026-10-25", "2026-10-22", "2026-10-21"])
+  })
+})
+
+describe("matchCompanies", () => {
+  const companies = [
+    { taxId: "30712345678", businessName: "Acmé SA" },
+    { taxId: "30798765432", businessName: "Zeta SA" },
+    { taxId: "30711111111", businessName: "Acme Norte SA" },
+  ]
+
+  it("finds by name ignoring case and accents, sorted", () => {
+    expect(matchCompanies(companies, "ACME").map((company) => company.businessName)).toEqual(["Acme Norte SA", "Acmé SA"])
+  })
+
+  it("finds by part of the CUIT, dashes allowed", () => {
+    expect(matchCompanies(companies, "30-7987").map((company) => company.taxId)).toEqual(["30798765432"])
+  })
+
+  it("shows nothing until something is typed, and caps the list", () => {
+    expect(matchCompanies(companies, " ")).toEqual([])
+    expect(matchCompanies(companies, "sa", 2)).toHaveLength(2)
   })
 })
 
