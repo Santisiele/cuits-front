@@ -230,7 +230,7 @@ describe("ResearchService", () => {
   it("turns an archived research into Spanish", async () => {
     fetchMock.mockResolvedValue(answer(409, { error: "already_archived", message: "Already archived" }))
     const error = await ResearchService.archive("r1").catch((e: unknown) => e)
-    expect((error as Error).message).toBe("La búsqueda ya estaba archivada")
+    expect((error as Error).message).toBe("Ya estaba archivado")
   })
 })
 
