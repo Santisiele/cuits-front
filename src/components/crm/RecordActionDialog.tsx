@@ -1,3 +1,4 @@
+import { keepOpenWhileDirty } from "@/lib/dialogGuard"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
@@ -81,7 +82,7 @@ export function RecordActionDialog({
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto" {...keepOpenWhileDirty(description.trim() !== "" || nextTask.description.trim() !== "")}>
         <DialogHeader>
           <DialogTitle>Registrar acción</DialogTitle>
         </DialogHeader>

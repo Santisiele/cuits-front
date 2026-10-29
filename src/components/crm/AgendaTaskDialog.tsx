@@ -1,3 +1,4 @@
+import { keepOpenWhileDirty } from "@/lib/dialogGuard"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -38,7 +39,7 @@ export function AgendaTaskDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto" {...keepOpenWhileDirty(draft.description.trim() !== "")}>
         <DialogHeader>
           <DialogTitle>Nueva tarea</DialogTitle>
         </DialogHeader>

@@ -58,7 +58,7 @@ export function ContactDialog({ companyTaxId, contact, onClose }: { companyTaxId
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{contact ? "Editar contacto" : "Nuevo contacto"}</DialogTitle>
         </DialogHeader>
@@ -70,7 +70,7 @@ export function ContactDialog({ companyTaxId, contact, onClose }: { companyTaxId
             <Input id="crm-contact-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
           <Field id="crm-contact-email" label="Email" error={emailProblem}>
-            <Input id="crm-contact-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="crm-contact-email" type="text" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field id="crm-contact-birthday" label="Cumpleaños" error={birthdayProblem} hint="dd/mm/aaaa">
             <Input id="crm-contact-birthday" value={birthday} onChange={(e) => setBirthday(e.target.value)} placeholder="dd/mm/aaaa" />

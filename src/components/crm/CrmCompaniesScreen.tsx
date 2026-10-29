@@ -60,7 +60,7 @@ export function CrmCompaniesScreen() {
         ) : companies.error ? (
           <p className="text-destructive text-sm">{getErrorMessage(companies.error, "Error al cargar las empresas")}</p>
         ) : rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{search.trim() ? "Ninguna empresa coincide." : "Todavía no hay empresas en el CRM."}</p>
+          <p className="text-muted-foreground text-sm">{all.length === 0 ? "Todavía no hay empresas en el CRM." : "Ninguna empresa coincide con la búsqueda o el filtro."}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

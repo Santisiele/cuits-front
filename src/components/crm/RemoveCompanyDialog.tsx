@@ -35,7 +35,7 @@ export function RemoveCompanyDialog({ taxId, businessName, onClose }: { taxId: s
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Sacar del CRM</DialogTitle>
           <DialogDescription>{businessName}</DialogDescription>

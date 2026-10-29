@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { hasErrors, taskChanges, taskDraftErrors, type TaskDraft } from "@/lib/crm"
 import type { CrmContact, CrmTask } from "@/types"
 import { DialogButtons } from "./CrmFields"
+import { keepOpenWhileDirty } from "@/lib/dialogGuard"
 import { TaskFields } from "./TaskFields"
 
 export function TaskDialog({
@@ -52,7 +53,10 @@ export function TaskDialog({
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="sm:max-w-lg max-h-[90dvh] overflow-y-auto"
+        {...keepOpenWhileDirty(task ? Object.keys(taskChanges(task, draft)).length > 0 : draft.description.trim() !== "")}
+      >
         <DialogHeader>
           <DialogTitle>{task ? "Editar tarea" : "Nueva tarea"}</DialogTitle>
         </DialogHeader>

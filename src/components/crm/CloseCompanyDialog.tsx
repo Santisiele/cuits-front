@@ -29,7 +29,7 @@ export function CloseCompanyDialog({ taxId, businessName, onClose }: { taxId: st
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>La empresa no va más</DialogTitle>
           <DialogDescription>

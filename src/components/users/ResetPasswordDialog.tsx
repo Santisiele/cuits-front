@@ -30,7 +30,7 @@ export function ResetPasswordDialog({ username, onClose }: { username: string; o
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Resetear la contraseña de {username}</DialogTitle>
         </DialogHeader>

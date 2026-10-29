@@ -115,8 +115,10 @@ export function useCrmMutations() {
       onSuccess: refresh,
     }),
     archiveContact: useMutation({ mutationFn: (id: string) => CrmApiService.archiveContact(id), onSuccess: refresh }),
+    restoreContact: useMutation({ mutationFn: (id: string) => CrmApiService.restoreContact(id), onSuccess: refresh }),
     recordAction: useMutation({ mutationFn: (input: CrmActionInput) => CrmApiService.recordAction(input), onSuccess: refresh }),
     archiveAction: useMutation({ mutationFn: (id: string) => CrmApiService.archiveAction(id), onSuccess: refresh }),
+    restoreAction: useMutation({ mutationFn: (id: string) => CrmApiService.restoreAction(id), onSuccess: refresh }),
     createTask: useMutation({ mutationFn: (input: CrmTaskInput) => CrmApiService.createTask(input), onSuccess: refresh }),
     updateTask: useMutation({
       mutationFn: ({ id, input }: { id: string; input: CrmTaskInput }) => CrmApiService.updateTask(id, input),

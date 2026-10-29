@@ -525,6 +525,9 @@ export const CrmApiService = {
   archiveContact: (id: string) =>
     apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts/${encodeURIComponent(id)}`, json("DELETE")),
 
+  restoreContact: (id: string) =>
+    apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts/${encodeURIComponent(id)}/restore`, json("POST")),
+
   recordAction: (input: CrmActionInput) =>
     apiFetch<{ action: CrmAction; closedTasks: CrmTask[]; nextTask: CrmTask | null }>(
       `${API_BASE_URL}/crm/actions`,
@@ -533,6 +536,9 @@ export const CrmApiService = {
 
   archiveAction: (id: string) =>
     apiFetch<CrmAction>(`${API_BASE_URL}/crm/actions/${encodeURIComponent(id)}`, json("DELETE")),
+
+  restoreAction: (id: string) =>
+    apiFetch<CrmAction>(`${API_BASE_URL}/crm/actions/${encodeURIComponent(id)}/restore`, json("POST")),
 
   createTask: (input: CrmTaskInput) => apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks`, json("POST", input)),
 

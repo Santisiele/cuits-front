@@ -41,6 +41,15 @@ import { RecordActionDialog } from "./RecordActionDialog"
 import { RemoveCompanyDialog } from "./RemoveCompanyDialog"
 import { TaskDialog } from "./TaskDialog"
 
+async function undo(restore: () => Promise<unknown>): Promise<void> {
+  try {
+    await restore()
+    toast.success("Se deshizo")
+  } catch (err) {
+    toast.error(getErrorMessage(err))
+  }
+}
+
 function CompanyData({ company }: { company: CrmCompany }) {
   const { updateCompany } = useCrmMutations()
   const [editing, setEditing] = useState(false)
@@ -49,6 +58,14 @@ function CompanyData({ company }: { company: CrmCompany }) {
   const [origin, setOrigin] = useState<OriginDraft>(() => originDraftOf(company))
   const [error, setError] = useState("")
   const problems = [crmBrand, crmProduct, origin.mode === "text" ? origin.text : ""].map(optionalNameError)
+
+  function startEditing(): void {
+    setCrmBrand(company.crmBrand ?? "")
+    setCrmProduct(company.crmProduct ?? "")
+    setOrigin(originDraftOf(company))
+    setError("")
+    setEditing(true)
+  }
 
   async function save(): Promise<void> {
     if (problems.some(Boolean)) return
@@ -75,7 +92,7 @@ function CompanyData({ company }: { company: CrmCompany }) {
           <dt className="text-muted-foreground">Origen</dt>
           <dd>{originLabel(company)}</dd>
         </dl>
-        <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+        <Button variant="outline" size="sm" onClick={startEditing}>
           <Pencil className="w-4 h-4 mr-1" />
           Editar datos
         </Button>
@@ -106,13 +123,15 @@ function CompanyData({ company }: { company: CrmCompany }) {
 }
 
 function ContactsSection({ taxId, contacts }: { taxId: string; contacts: CrmContact[] }) {
-  const { archiveContact } = useCrmMutations()
+  const { archiveContact, restoreContact } = useCrmMutations()
   const [editing, setEditing] = useState<CrmContact | "new" | null>(null)
 
   async function archive(contact: CrmContact): Promise<void> {
     try {
       await archiveContact.mutateAsync(contact.id)
-      toast.success(`Se archivó a ${contact.fullName}`)
+      toast.success(`Se archivó a ${contact.fullName}`, {
+        action: { label: "Deshacer", onClick: () => void undo(() => restoreContact.mutateAsync(contact.id)) },
+      })
     } catch (err) {
       toast.error(getErrorMessage(err))
     }
@@ -149,7 +168,7 @@ function ContactsSection({ taxId, contacts }: { taxId: string; contacts: CrmCont
                   <Button size="sm" variant="ghost" aria-label={`Editar ${contact.fullName}`} onClick={() => setEditing(contact)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" aria-label={`Archivar ${contact.fullName}`} onClick={() => void archive(contact)}>
+                  <Button size="sm" variant="ghost" aria-label={`Archivar ${contact.fullName}`} disabled={archiveContact.isPending} onClick={() => void archive(contact)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -239,7 +258,7 @@ function OpenTasks({
 }
 
 function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmTask[]; names: Record<string, string> }) {
-  const { archiveAction } = useCrmMutations()
+  const { archiveAction, restoreAction } = useCrmMutations()
   const me = useAuthStore((state) => state.username)
   const isAdmin = useIsAdmin()
   const mine = responsiblesOf(useCrmResponsibles().data ?? [], me)
@@ -248,7 +267,9 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
   async function archive(action: CrmAction): Promise<void> {
     try {
       await archiveAction.mutateAsync(action.id)
-      toast.success("Se archivó la acción")
+      toast.success("Se archivó la acción", {
+        action: { label: "Deshacer", onClick: () => void undo(() => restoreAction.mutateAsync(action.id)) },
+      })
     } catch (err) {
       toast.error(getErrorMessage(err))
     }
@@ -287,7 +308,7 @@ function Timeline({ actions, tasks, names }: { actions: CrmAction[]; tasks: CrmT
                       )}
                     </div>
                     {canChangeAction(me, isAdmin, entry.action, mine) && (
-                      <Button size="sm" variant="ghost" aria-label="Archivar acción" onClick={() => void archive(entry.action)}>
+                      <Button size="sm" variant="ghost" aria-label="Archivar acción" disabled={archiveAction.isPending} onClick={() => void archive(entry.action)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     )}

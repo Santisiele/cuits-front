@@ -45,7 +45,7 @@ export function AddCompanyDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Agregar empresa</DialogTitle>
         </DialogHeader>

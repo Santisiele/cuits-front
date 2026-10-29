@@ -53,6 +53,7 @@ export function CrmAgendaScreen() {
       passesFilter([task.businessName], new Set(hiddenCompanies))
   )
   const overdueCount = tasks.filter((task) => task.overdue).length
+  const emptyText = tasks.length === 0 ? "No hay tareas abiertas." : "Ninguna tarea coincide con los filtros."
 
   return (
     <Card className="overflow-visible pt-0">
@@ -94,7 +95,7 @@ export function CrmAgendaScreen() {
         ) : agenda.error ? (
           <p className="text-destructive text-sm">{getErrorMessage(agenda.error, "Error al cargar la agenda")}</p>
         ) : phone ? (
-          <AgendaCards tasks={rows} responsibles={responsibleList} onOpen={open} />
+          <AgendaCards tasks={rows} responsibles={responsibleList} emptyText={emptyText} onOpen={open} />
         ) : (
           <div>
             <table className="w-full text-sm">
@@ -127,7 +128,7 @@ export function CrmAgendaScreen() {
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-3 text-muted-foreground">No hay tareas abiertas.</td>
+                    <td colSpan={8} className="py-3 text-muted-foreground">{emptyText}</td>
                   </tr>
                 ) : (
                   rows.map((task) => {
@@ -183,8 +184,18 @@ function DueDate({ task }: { task: CrmAgendaItem }) {
   )
 }
 
-function AgendaCards({ tasks, responsibles, onOpen }: { tasks: CrmAgendaItem[]; responsibles: CrmResponsible[]; onOpen: (task: CrmAgendaItem) => void }) {
-  if (tasks.length === 0) return <p className="py-3 text-sm text-muted-foreground">No hay tareas abiertas.</p>
+function AgendaCards({
+  tasks,
+  responsibles,
+  emptyText,
+  onOpen,
+}: {
+  tasks: CrmAgendaItem[]
+  responsibles: CrmResponsible[]
+  emptyText: string
+  onOpen: (task: CrmAgendaItem) => void
+}) {
+  if (tasks.length === 0) return <p className="py-3 text-sm text-muted-foreground">{emptyText}</p>
   return (
     <ul className="flex flex-col gap-2">
       {tasks.map((task) => {

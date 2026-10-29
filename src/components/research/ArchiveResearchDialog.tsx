@@ -22,7 +22,7 @@ export function ArchiveResearchDialog({ researchId, onClose }: { researchId: str
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>¿Archivar esta búsqueda?</DialogTitle>
           <DialogDescription>
