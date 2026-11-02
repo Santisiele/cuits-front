@@ -97,6 +97,7 @@ export const API_ERROR_CODES: Record<string, string> = {
   invalid_status: "La tarea solo se puede marcar hecha o cancelada",
   task_not_open: "La tarea ya no está abierta",
   task_changed: "La tarea cambió mientras la editabas. Volvé a abrirla",
+  not_later: "Solo se puede posponer a una fecha posterior a la actual",
   task_other_company: "La tarea es de otra empresa",
   action_not_found: "La acción no existe",
   task_not_found: "La tarea no existe",

@@ -42,6 +42,7 @@ const OPEN_TASKS: CrmTask[] = [
     createdAt: "",
     closedAt: null,
     archivedAt: null,
+    postponements: [],
   },
 ]
 

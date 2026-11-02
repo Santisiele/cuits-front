@@ -542,6 +542,9 @@ export const CrmApiService = {
 
   createTask: (input: CrmTaskInput) => apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks`, json("POST", input)),
 
+  postponeTask: (id: string, input: { dueDate: string; reason: string | null }) =>
+    apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks/${encodeURIComponent(id)}/postpone`, json("POST", input)),
+
   updateTask: (id: string, input: CrmTaskInput) =>
     apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks/${encodeURIComponent(id)}`, json("PATCH", input)),
 

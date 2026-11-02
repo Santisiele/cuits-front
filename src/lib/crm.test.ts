@@ -11,6 +11,9 @@ import {
   responsibleNameError,
   splitLastAction,
   companyMatches,
+  agendaNote,
+  postponeErrors,
+  NOT_LATER,
   filterAgenda,
   recordedForSomeoneElse,
   sameResponsible,
@@ -60,6 +63,7 @@ const TASK: CrmTask = {
   createdAt: "",
   closedAt: null,
   archivedAt: null,
+  postponements: [],
 }
 
 const ACTION: CrmAction = {
@@ -322,6 +326,7 @@ describe("taskChanges", () => {
     createdAt: "",
     closedAt: null,
     archivedAt: null,
+    postponements: [],
   }
 
   it("sends only what the edit changed", () => {
@@ -372,5 +377,22 @@ describe("filterAgenda", () => {
   it("hides the responsibles and companies filtered out", () => {
     expect(filterAgenda(tasks, "all", ["Luchi"], []).map((task) => task.id)).toEqual(["b"])
     expect(filterAgenda(tasks, "all", [], ["OTRA"]).map((task) => task.id)).toEqual(["a"])
+  })
+})
+
+describe("postponing", () => {
+  it("asks for a valid date later than the current one", () => {
+    expect(postponeErrors({ dueDate: "2026-11-02" }, "2026-11-09", "")).toEqual({ dueDate: null, reason: null })
+    expect(postponeErrors({ dueDate: "2026-11-02" }, "2026-11-02", "").dueDate).toBe(NOT_LATER)
+    expect(postponeErrors({ dueDate: "2026-11-02" }, "", "").dueDate).not.toBeNull()
+    expect(postponeErrors({ dueDate: "2026-11-02" }, "2026-11-09", "x".repeat(2001)).reason).not.toBeNull()
+  })
+})
+
+describe("agendaNote", () => {
+  it("tells who else has a task on the company and how many earlier ones are folded in", () => {
+    expect(agendaNote({ otherTasks: [], hiddenTasks: 0 })).toBeNull()
+    expect(agendaNote({ otherTasks: [{ assignee: "Raul", dueDate: "2026-11-20" }], hiddenTasks: 0 })).toBe("También hay una tarea de Raul (20/11/2026)")
+    expect(agendaNote({ otherTasks: [], hiddenTasks: 2 })).toBe("y 2 tareas anteriores del mismo responsable")
   })
 })

@@ -3,6 +3,7 @@ import { responsiblePalette } from "@/lib/responsibleColors"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import type { CrmAgendaItem, CrmResponsible } from "@/types"
+import { AgendaNote } from "./AgendaNote"
 import { DueDate } from "./DueDate"
 
 export function AgendaCards({
@@ -36,6 +37,7 @@ export function AgendaCards({
                   <span>{task.assignee}</span>
                 </span>
                 <span className="break-words">{task.description}</span>
+                <AgendaNote task={task} />
               </span>
               {task.lastAction && (
                 <span className="text-xs text-muted-foreground break-words">

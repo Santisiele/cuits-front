@@ -5,6 +5,7 @@ import { responsiblePalette } from "@/lib/responsibleColors"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import type { CrmAgendaItem, CrmResponsible } from "@/types"
+import { AgendaNote } from "./AgendaNote"
 import { DueDate } from "./DueDate"
 
 const HEAD = "sticky z-10 bg-card text-left align-bottom py-1.5 px-2 font-medium"
@@ -91,7 +92,10 @@ export function AgendaTable({
                 <td className={cn(CELL, "font-medium", palette.badge)}>
                   <DueDate task={task} />
                 </td>
-                <td className={cn(CELL, "break-words")}>{task.description}</td>
+                <td className={cn(CELL, "break-words")}>
+                  {task.description}
+                  <AgendaNote task={task} />
+                </td>
                 <td className={cn(CELL, "pr-0")}>
                   <span className={cn("inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-medium", palette.badge)}>
                     <span className={cn("h-2 w-2 shrink-0", palette.swatch)} />

@@ -35,6 +35,7 @@ const CRM_OPERATIONS: Record<string, string> = {
   cancelled: "canceló",
   complete: "completó",
   done: "completó",
+  postpone: "pospuso",
 }
 
 const REMOVAL_OUTCOMES: Record<string, string> = {
@@ -72,6 +73,8 @@ function crmSentence(user: string, details: Details): string {
     operation === "close" && details["reason"] && `motivo: ${quoted(details["reason"])}`,
     operation === "close" && details["inservible"] === true && "pasó a Inservible",
     (operation === "cancel" || operation === "cancelled") && details["cancelReason"] && `motivo: ${quoted(details["cancelReason"])}`,
+    operation === "postpone" && details["from"] && `antes vencía el ${formatDay(text(details["from"]))}`,
+    operation === "postpone" && details["reason"] && `motivo: ${quoted(details["reason"])}`,
   ].filter(Boolean)
   return `${user} ${verb} ${crmEntity(details)}${extras.length > 0 ? ` (${extras.join(", ")})` : ""}`
 }

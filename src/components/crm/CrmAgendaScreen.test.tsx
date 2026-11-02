@@ -41,6 +41,9 @@ function item(id: string, dueDate: string, overdue: boolean, businessName = "ACM
     createdAt: "",
     closedAt: null,
     archivedAt: null,
+    postponements: [],
+    otherTasks: [],
+    hiddenTasks: 0,
     lastAction: id === "t1" ? { date: "2026-10-20", description: "Con Ana: mandó propuesta", doneBy: "Luchi", contacts: [] } : null,
     overdue,
   }
@@ -83,6 +86,12 @@ describe("CrmAgendaScreen", () => {
     expect(row.getByText("Luchi")).toBeInTheDocument()
     expect(row.getByText("28/10/2026")).toBeInTheDocument()
     expect(within(screen.getByTestId("agenda-t2")).getAllByText("—")).toHaveLength(4)
+  })
+
+  it("tells when the company has another task with another responsable", async () => {
+    agenda.mockResolvedValue([{ ...item("t1", "2026-10-28", true), otherTasks: [{ assignee: "pedro", dueDate: "2026-11-20" }], hiddenTasks: 1 }])
+    await show()
+    expect(screen.getByTestId("agenda-note-t1")).toHaveTextContent("También hay una tarea de pedro (20/11/2026) · y 1 tarea anterior del mismo responsable")
   })
 
   it("marks the overdue ones", async () => {

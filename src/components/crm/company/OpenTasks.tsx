@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pencil, Plus, X } from "lucide-react"
+import { CalendarClock, Pencil, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCrmResponsibles } from "@/hooks/useCrm"
@@ -9,6 +9,8 @@ import { canChangeTask, formatDay, isOverdue, responsiblesOf, todayInBuenosAires
 import { cn } from "@/lib/utils"
 import type { CrmContact, CrmTask } from "@/types"
 import { CancelTaskDialog } from "../CancelTaskDialog"
+import { PostponeTaskDialog } from "../PostponeTaskDialog"
+import { Postponements } from "../Postponements"
 import { ChangeHistory } from "../ChangeHistory"
 import { TaskDialog } from "../TaskDialog"
 
@@ -30,6 +32,7 @@ export function OpenTasks({
   const mine = responsiblesOf(useCrmResponsibles().data ?? [], me)
   const [editing, setEditing] = useState<CrmTask | "new" | null>(null)
   const [cancelling, setCancelling] = useState<CrmTask | null>(null)
+  const [postponing, setPostponing] = useState<CrmTask | null>(null)
   const today = todayInBuenosAires()
 
   return (
@@ -62,10 +65,15 @@ export function OpenTasks({
                       {overdue && " · vencida"} · {task.assignee}
                       {task.contactIds.length > 0 && ` · con ${task.contactIds.map((id) => names[id] ?? "?").join(", ")}`}
                     </p>
+                    <Postponements postponements={task.postponements} />
                     <ChangeHistory entityType="Task" entityId={task.id} names={names} />
                   </div>
                   {allowed && (
                     <div className="flex gap-2 shrink-0 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => setPostponing(task)}>
+                        <CalendarClock className="w-4 h-4 mr-1" />
+                        Posponer
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => setCancelling(task)}>
                         <X className="w-4 h-4 mr-1" />
                         Cancelar
@@ -83,6 +91,7 @@ export function OpenTasks({
       </CardContent>
       {editing && <TaskDialog companyTaxId={taxId} task={editing === "new" ? null : editing} contacts={contacts} onClose={() => setEditing(null)} />}
       {cancelling && <CancelTaskDialog task={cancelling} onClose={() => setCancelling(null)} />}
+      {postponing && <PostponeTaskDialog task={postponing} onClose={() => setPostponing(null)} />}
     </Card>
   )
 }

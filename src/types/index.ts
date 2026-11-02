@@ -435,6 +435,14 @@ export interface CrmAction {
 
 export type CrmTaskStatus = "open" | "done" | "cancelled"
 
+export interface CrmPostponement {
+  from: string
+  to: string
+  reason: string | null
+  by: string
+  at: string
+}
+
 export interface CrmTask {
   id: string
   companyTaxId: string
@@ -448,6 +456,7 @@ export interface CrmTask {
   createdAt: string
   closedAt: string | null
   archivedAt: string | null
+  postponements: CrmPostponement[]
 }
 
 export interface CrmLastAction {
@@ -461,6 +470,8 @@ export interface CrmAgendaItem extends CrmTask {
   businessName: string
   lastAction: CrmLastAction | null
   overdue: boolean
+  otherTasks: { assignee: string; dueDate: string }[]
+  hiddenTasks: number
 }
 
 export interface CrmCompanyDetail {
