@@ -88,6 +88,13 @@ describe("CrmAgendaScreen", () => {
     expect(within(screen.getByTestId("agenda-t2")).getAllByText("—")).toHaveLength(4)
   })
 
+  it("paints only the overdue tasks with their responsable's color", async () => {
+    await show()
+    await screen.findByRole("option", { name: "pedro" })
+    expect(screen.getByTestId("agenda-t1").className).toContain("bg-green-500/10")
+    expect(screen.getByTestId("agenda-t2").className).not.toContain("bg-sky-500/10")
+  })
+
   it("tells when the company has another task with another responsable", async () => {
     agenda.mockResolvedValue([{ ...item("t1", "2026-10-28", true), otherTasks: [{ assignee: "pedro", dueDate: "2026-11-20" }], hiddenTasks: 1 }])
     await show()
