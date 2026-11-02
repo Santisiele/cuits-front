@@ -103,6 +103,8 @@ const MANUAL_SCRIPTS: Record<string, string> = {
   "migrate:crmSource": "sacar la fuente CRM Excel",
   "migrate:responsibles": "migrar los responsables",
   "crm:fix-action": "corregir una acción del historial del CRM",
+  "crm:import-found": "cargar al CRM las empresas que no tenían CUIT",
+  "crm:import-contacts": "importar los contactos de Listas al CRM",
 }
 
 const MANUAL_STATUS: Record<string, string> = {
