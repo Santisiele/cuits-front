@@ -24,6 +24,12 @@ import { UsersTable } from "@/components/UsersTable"
 import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
 import { ArchivedResearchScreen } from "@/components/research/ArchivedResearchScreen"
 import { BirthdayProgressScreen } from "@/components/birthdays/BirthdayProgressScreen"
+import { CrmAgendaScreen } from "@/components/crm/CrmAgendaScreen"
+import { CrmCompaniesScreen } from "@/components/crm/CrmCompaniesScreen"
+import { CrmCompanyScreen } from "@/components/crm/CrmCompanyScreen"
+import { NosisPendingScreen } from "@/components/crm/NosisPendingScreen"
+import { ActivityScreen } from "@/components/activity/ActivityScreen"
+import { ResponsiblesScreen } from "@/components/crm/ResponsiblesScreen"
 import { Toaster } from "@/components/ui/sonner"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { AdminRoute } from "@/components/layout/AdminRoute"
@@ -36,6 +42,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { Button } from "@/components/ui/button"
 import { useCuitSearch, usePathSearch } from "@/hooks/useGraphQueries"
 import { useSessionRole } from "@/hooks/useSessionRole"
+import { appTitle } from "@/lib/appTitle"
 import { useState, useEffect, useRef } from "react"
 import type { CuitSearchResponse, PathResponse } from "@/types"
 
@@ -237,7 +244,7 @@ export default function App() {
           <div className="flex items-center gap-2 min-w-0">
             <AppSidebar />
             <div className="min-w-0">
-              <h1 className="text-base sm:text-3xl font-bold leading-tight">Buscador de CUIT</h1>
+              <h1 className="text-base sm:text-3xl font-bold leading-tight">{appTitle()}</h1>
               <p className="text-muted-foreground text-xs sm:text-sm hidden sm:block">Buscar y explorar relaciones entre CUITs</p>
             </div>
           </div>
@@ -292,6 +299,12 @@ export default function App() {
             <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
             <Route path="/birthday-progress" element={<CreatorRoute><BirthdayProgressScreen /></CreatorRoute>} />
             <Route path="/archived-research" element={<CreatorRoute><ArchivedResearchScreen /></CreatorRoute>} />
+            <Route path="/crm"            element={<CrmCompaniesScreen />} />
+            <Route path="/crm/agenda"     element={<CrmAgendaScreen />} />
+            <Route path="/crm/:taxId"     element={<CrmCompanyScreen />} />
+            <Route path="/responsibles"   element={<AdminRoute><ResponsiblesScreen /></AdminRoute>} />
+            <Route path="/activity"       element={<CreatorRoute><ActivityScreen /></CreatorRoute>} />
+            <Route path="/nosis-pending"  element={<CreatorRoute><NosisPendingScreen /></CreatorRoute>} />
           </Routes>
         </div>
 

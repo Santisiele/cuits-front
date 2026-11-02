@@ -70,7 +70,7 @@ export function TrustLevelDialog({ open, onClose, level }: TrustLevelDialogProps
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{level ? `Editar "${level.label}"` : "Nuevo nivel"}</DialogTitle>
         </DialogHeader>

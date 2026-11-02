@@ -41,7 +41,8 @@ function found(cuit: string, businessName: string): FakeQuery {
 
 async function search(text: string) {
   const user = userEvent.setup()
-  await user.type(screen.getByPlaceholderText(/Un CUIT por línea/i), text)
+  await user.click(screen.getByPlaceholderText(/Un CUIT por línea/i))
+  await user.paste(text)
   await user.click(screen.getByRole("button", { name: "Buscar" }))
   return user
 }
@@ -80,7 +81,8 @@ describe("MultiSearch", () => {
     it("warns when the list runs past the cap", async () => {
       const many = Array.from({ length: 22 }, (_, i) => `20461235${String(i).padStart(3, "0")}`)
       const user = userEvent.setup()
-      await user.type(screen.getByPlaceholderText(/Un CUIT por línea/i), many.join(" "))
+      await user.click(screen.getByPlaceholderText(/Un CUIT por línea/i))
+      await user.paste(many.join(" "))
       expect(screen.getByText(/Se buscan los primeros 20/)).toBeInTheDocument()
     })
   })

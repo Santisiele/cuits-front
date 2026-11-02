@@ -22,7 +22,7 @@ export function UsersTable() {
   const [resetting, setResetting] = useState<string | null>(null)
   const [actionError, setActionError] = useState("")
 
-  async function change(user: AppUser, changes: { role?: string; disabled?: boolean }): Promise<void> {
+  async function change(user: AppUser, changes: { role?: string; disabled?: boolean; color?: string | null }): Promise<void> {
     setActionError("")
     try {
       await update.mutateAsync({ username: user.username, changes })

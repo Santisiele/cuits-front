@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest"
 import { act } from "react"
-import { screen } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { render } from "@/tests/render"
@@ -8,12 +8,12 @@ import { AppSidebar } from "@/components/layout/AppSidebar"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { Role } from "@/lib/roles"
 
-const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Créditos IA"]
+const ADMIN_ITEMS = ["Manejar relación", "Fuentes", "Niveles de confianza", "Usuarios", "Responsables", "Créditos IA"]
 
-async function openMenu(role: Role): Promise<void> {
+async function openMenu(role: Role, path = "/"): Promise<void> {
   act(() => useAuthStore.getState().setAuth("t1", "santi", role))
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AppSidebar />
     </MemoryRouter>
   )
@@ -36,6 +36,32 @@ describe("AppSidebar", () => {
     await openMenu("member")
     expect(screen.getByRole("link", { name: "Buscar CUIT" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Editar persona" })).toBeInTheDocument()
+  })
+
+  it("shows a member the CRM agenda and companies", async () => {
+    await openMenu("member")
+    expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("href", "/crm/agenda")
+    expect(screen.getByRole("link", { name: "Empresas" })).toHaveAttribute("href", "/crm")
+  })
+
+  it("marks only the agenda while on it", async () => {
+    await openMenu("member", "/crm/agenda")
+    expect(screen.getByRole("link", { name: "Agenda" })).toHaveAttribute("aria-current", "page")
+    expect(screen.getByRole("link", { name: "Empresas" })).not.toHaveAttribute("aria-current")
+  })
+
+  it("groups the menu into CRM, Edición, Administración and Info", async () => {
+    await openMenu("creator")
+    const sections = ["CRM", "Edición", "Administración", "Info"].map((label) => screen.getByText(label))
+    const crm = sections[0]!.closest("div")!.parentElement!
+    expect(within(crm).getByRole("link", { name: "Responsables" })).toBeInTheDocument()
+  })
+
+  it("shows a member no admin or creator section", async () => {
+    await openMenu("member")
+    expect(screen.getByText("Edición")).toBeInTheDocument()
+    expect(screen.queryByText("Administración")).not.toBeInTheDocument()
+    expect(screen.queryByText("Info")).not.toBeInTheDocument()
   })
 
   it("shows an admin every admin item", async () => {
@@ -86,5 +112,25 @@ describe("AppSidebar creator items", () => {
   it("hides the archived research from a member", async () => {
     await openMenu("member")
     expect(screen.queryByRole("link", { name: "Búsquedas archivadas" })).not.toBeInTheDocument()
+  })
+
+  it("shows the creator the Nosis queue and nobody else", async () => {
+    await openMenu("creator")
+    expect(screen.getByRole("link", { name: "Pendientes de Nosis" })).toHaveAttribute("href", "/nosis-pending")
+  })
+
+  it("shows the activity log to the creator only", async () => {
+    await openMenu("creator")
+    expect(screen.getByRole("link", { name: "Registro de actividad" })).toHaveAttribute("href", "/activity")
+  })
+
+  it("hides the activity log from an admin", async () => {
+    await openMenu("admin")
+    expect(screen.queryByRole("link", { name: "Registro de actividad" })).not.toBeInTheDocument()
+  })
+
+  it("hides the Nosis queue from an admin", async () => {
+    await openMenu("admin")
+    expect(screen.queryByRole("link", { name: "Pendientes de Nosis" })).not.toBeInTheDocument()
   })
 })

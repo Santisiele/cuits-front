@@ -20,7 +20,25 @@ import type {
   RecentWebResearch,
   ArchivedWebResearch,
   ResearchBudget,
-  BirthdayProgress
+  BirthdayProgress,
+  ActivityPage,
+  CrmAction,
+  CrmActionInput,
+  CrmAgendaItem,
+  CrmChange,
+  CrmCloseResult,
+  CrmCompany,
+  CrmCompanyDetail,
+  CrmSource,
+  CrmCompanyInput,
+  CrmContact,
+  CrmContactInput,
+  CrmRemovalResult,
+  CrmResponsible,
+  CrmTask,
+  CrmTaskInput,
+  CrmUser,
+  NosisPendingQueue
 } from "@/types"
 import { useAuthStore } from "@/store/useAuthStore"
 import { translateApiFailure } from "@/lib/errors"
@@ -420,7 +438,7 @@ export const UsersService = {
       body: JSON.stringify({ username, password, role }),
     }),
 
-  update: (username: string, changes: { role?: string; disabled?: boolean }) =>
+  update: (username: string, changes: { role?: string; disabled?: boolean; color?: string | null }) =>
     apiFetch<AppUser>(`${API_BASE_URL}/users/${encodeURIComponent(username)}`, {
       method: "PATCH",
       body: JSON.stringify(changes),
@@ -461,6 +479,102 @@ export const ResearchService = {
       method: "PATCH",
       body: JSON.stringify({ monthlyLimitUsd }),
     }),
+}
+
+const json = (method: string, body?: unknown): RequestInit => ({
+  method,
+  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+})
+
+export const CrmApiService = {
+  companies: () =>
+    apiFetch<{ companies: CrmCompany[] }>(`${API_BASE_URL}/crm/companies`).then((res) => res.companies),
+
+  company: (taxId: string) =>
+    apiFetch<CrmCompanyDetail>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}`),
+
+  addCompany: (input: CrmCompanyInput) =>
+    apiFetch<{ taxId: string; created: boolean; restored: boolean; nosisPending: boolean }>(
+      `${API_BASE_URL}/crm/companies`,
+      json("POST", input)
+    ),
+
+  updateCompany: (taxId: string, input: CrmCompanyInput) =>
+    apiFetch<CrmCompany>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}`, json("PATCH", input)),
+
+  closeCompany: (taxId: string, reason: string) =>
+    apiFetch<CrmCloseResult>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}/close`, json("POST", { reason })),
+
+  reopenCompany: (taxId: string) =>
+    apiFetch<CrmCompany>(`${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}/reopen`, json("POST")),
+
+  sources: () => apiFetch<{ sources: CrmSource[] }>(`${API_BASE_URL}/crm/sources`).then((res) => res.sources),
+
+  removeCompany: (taxId: string, dryRun: boolean) =>
+    apiFetch<CrmRemovalResult>(
+      `${API_BASE_URL}/crm/companies/${encodeURIComponent(taxId)}?dryRun=${dryRun}`,
+      json("DELETE")
+    ),
+
+  createContact: (input: CrmContactInput) =>
+    apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts`, json("POST", input)),
+
+  updateContact: (id: string, input: CrmContactInput) =>
+    apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts/${encodeURIComponent(id)}`, json("PATCH", input)),
+
+  archiveContact: (id: string) =>
+    apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts/${encodeURIComponent(id)}`, json("DELETE")),
+
+  restoreContact: (id: string) =>
+    apiFetch<CrmContact>(`${API_BASE_URL}/crm/contacts/${encodeURIComponent(id)}/restore`, json("POST")),
+
+  recordAction: (input: CrmActionInput) =>
+    apiFetch<{ action: CrmAction; closedTasks: CrmTask[]; nextTask: CrmTask | null }>(
+      `${API_BASE_URL}/crm/actions`,
+      json("POST", input)
+    ),
+
+  archiveAction: (id: string) =>
+    apiFetch<CrmAction>(`${API_BASE_URL}/crm/actions/${encodeURIComponent(id)}`, json("DELETE")),
+
+  restoreAction: (id: string) =>
+    apiFetch<CrmAction>(`${API_BASE_URL}/crm/actions/${encodeURIComponent(id)}/restore`, json("POST")),
+
+  createTask: (input: CrmTaskInput) => apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks`, json("POST", input)),
+
+  updateTask: (id: string, input: CrmTaskInput) =>
+    apiFetch<CrmTask>(`${API_BASE_URL}/crm/tasks/${encodeURIComponent(id)}`, json("PATCH", input)),
+
+  agenda: (assignee: string) =>
+    apiFetch<{ tasks: CrmAgendaItem[] }>(`${API_BASE_URL}/crm/agenda?assignee=${encodeURIComponent(assignee)}`).then(
+      (res) => res.tasks
+    ),
+
+  users: () => apiFetch<{ users: CrmUser[] }>(`${API_BASE_URL}/crm/users`).then((res) => res.users),
+
+  responsibles: () =>
+    apiFetch<{ responsibles: CrmResponsible[] }>(`${API_BASE_URL}/crm/responsibles`).then((res) => res.responsibles),
+
+  createResponsible: (input: { name: string; color: string; users: string[] }) =>
+    apiFetch<CrmResponsible>(`${API_BASE_URL}/crm/responsibles`, json("POST", input)),
+
+  updateResponsible: (name: string, input: Partial<CrmResponsible>) =>
+    apiFetch<CrmResponsible>(`${API_BASE_URL}/crm/responsibles/${encodeURIComponent(name)}`, json("PATCH", input)),
+
+  nosisPending: () => apiFetch<NosisPendingQueue>(`${API_BASE_URL}/crm/nosis-pending`),
+
+  changes: (entityType: string, entityId: string) =>
+    apiFetch<{ changes: CrmChange[] }>(
+      `${API_BASE_URL}/crm/changes?entityType=${encodeURIComponent(entityType)}&entityId=${encodeURIComponent(entityId)}`
+    ).then((res) => res.changes),
+}
+
+export const ActivityService = {
+  read: (filters: { before?: string; seen?: number; username?: string; event?: string }) => {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(filters)) if (value) params.set(key, String(value))
+    return apiFetch<ActivityPage>(`${API_BASE_URL}/activity?${params.toString()}`)
+  },
 }
 
 export const BirthdayProgressService = {

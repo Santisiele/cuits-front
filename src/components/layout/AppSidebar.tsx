@@ -7,7 +7,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, Search, Database, Settings } from "lucide-react"
+import { Briefcase, Info, Menu, Pencil, Search, Database, Settings } from "lucide-react"
 import { SidebarGroup } from "./SidebarGroup"
 import type { NavGroup } from "./SidebarGroup"
 import { useIsAdmin, useIsCreator } from "@/hooks/useSessionRole"
@@ -38,17 +38,40 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Administración",
-    icon: Settings,
+    label: "CRM",
+    icon: Briefcase,
+    items: [
+      { path: "/crm/agenda", label: "Agenda" },
+      { path: "/crm", label: "Empresas", exact: true },
+      { path: "/nosis-pending", label: "Pendientes de Nosis", creatorOnly: true },
+      { path: "/responsibles", label: "Responsables", adminOnly: true },
+    ],
+  },
+  {
+    label: "Edición",
+    icon: Pencil,
     items: [
       { path: "/add", label: "Manejar relación", adminOnly: true },
       { path: "/edit", label: "Editar persona" },
-      { path: "/sources", label: "Fuentes", adminOnly: true },
-      { path: "/trust-levels", label: "Niveles de confianza", adminOnly: true },
+    ],
+  },
+  {
+    label: "Administración",
+    icon: Settings,
+    items: [
       { path: "/users", label: "Usuarios", adminOnly: true },
+      { path: "/trust-levels", label: "Niveles de confianza", adminOnly: true },
+      { path: "/sources", label: "Fuentes", adminOnly: true },
       { path: "/ai-credits", label: "Créditos IA", adminOnly: true },
+    ],
+  },
+  {
+    label: "Info",
+    icon: Info,
+    items: [
       { path: "/birthday-progress", label: "Carga de cumpleaños", creatorOnly: true },
       { path: "/archived-research", label: "Búsquedas archivadas", creatorOnly: true },
+      { path: "/activity", label: "Registro de actividad", creatorOnly: true },
     ],
   },
 ]

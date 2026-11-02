@@ -93,8 +93,8 @@ describe("translateApiFailure", () => {
 
   it("translates the archive refusals", () => {
     expect(translateApiFailure("research_not_found", "That research does not exist")).toBe("La búsqueda no existe")
-    expect(translateApiFailure("already_archived", "Already archived")).toBe("La búsqueda ya estaba archivada")
-    expect(translateApiFailure("not_archived", "Not archived")).toBe("La búsqueda no está archivada")
+    expect(translateApiFailure("already_archived", "Already archived")).toBe("Ya estaba archivado")
+    expect(translateApiFailure("not_archived", "Not archived")).toBe("No está archivado")
   })
 
   it("ignores codes inherited from Object", () => {

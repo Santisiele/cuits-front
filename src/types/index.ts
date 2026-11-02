@@ -318,6 +318,32 @@ export interface AppUser {
   role: "creator" | "admin" | "member"
   createdAt: string
   disabled: boolean
+  color?: string | null
+}
+
+export interface ActivityEntry {
+  time: string
+  level: "info" | "warn" | "error"
+  event: string
+  username: string | null
+  details: Record<string, unknown>
+}
+
+export interface ActivityPage {
+  entries: ActivityEntry[]
+  hasMore: boolean
+}
+
+export interface CrmResponsible {
+  name: string
+  color: string
+  users: string[]
+  disabled: boolean
+}
+
+export interface CrmUser {
+  username: string
+  color: string | null
 }
 
 export interface WebResearchSource {
@@ -350,6 +376,168 @@ export interface ResearchBudget {
   monthlyLimitUsd: number
   spentThisMonthUsd: number
   researchCountThisMonth: number
+}
+
+export interface CrmCompany {
+  taxId: string
+  businessName: string
+  crmBrand: string | null
+  crmProduct: string | null
+  crmOrigin: string | null
+  originSource: string | null
+  nosisPending: boolean
+  addedAt: string | null
+  addedBy: string | null
+  lastActionDate: string | null
+  nextDueDate: string | null
+  openTaskCount: number
+  closedAt: string | null
+  closedReason: string | null
+  closedBy: string | null
+}
+
+export interface CrmSource {
+  name: string
+  category: string
+}
+
+export interface CrmCloseResult {
+  company: CrmCompany
+  cancelledTaskCount: number
+  inservible: boolean
+}
+
+export interface CrmContact {
+  id: string
+  fullName: string
+  phone: string | null
+  email: string | null
+  birthday: string | null
+  cuil: string | null
+  companyTaxIds: string[]
+  createdAt: string
+  archivedAt: string | null
+}
+
+export interface CrmAction {
+  id: string
+  companyTaxId: string
+  date: string
+  description: string
+  doneBy: string
+  recordedBy: string
+  contactIds: string[]
+  createdTaskId: string | null
+  completedTaskIds: string[]
+  createdAt: string
+  archivedAt: string | null
+}
+
+export type CrmTaskStatus = "open" | "done" | "cancelled"
+
+export interface CrmTask {
+  id: string
+  companyTaxId: string
+  description: string
+  dueDate: string
+  status: CrmTaskStatus
+  cancelReason: string | null
+  assignee: string
+  createdBy: string
+  contactIds: string[]
+  createdAt: string
+  closedAt: string | null
+  archivedAt: string | null
+}
+
+export interface CrmLastAction {
+  date: string
+  description: string
+  doneBy: string
+  contacts: string[]
+}
+
+export interface CrmAgendaItem extends CrmTask {
+  businessName: string
+  lastAction: CrmLastAction | null
+  overdue: boolean
+}
+
+export interface CrmCompanyDetail {
+  company: CrmCompany
+  contacts: CrmContact[]
+  actions: CrmAction[]
+  tasks: CrmTask[]
+}
+
+export type CrmRemovalOutcome = "unlinked" | "archived" | "deleted"
+
+export interface CrmRemovalResult {
+  outcome: CrmRemovalOutcome
+  cancelledTaskCount: number
+  dryRun: boolean
+}
+
+export interface CrmChange {
+  id: string
+  at: string
+  by: string
+  entityType: string
+  entityId: string
+  operation: string
+  before: Record<string, unknown>
+  after: Record<string, unknown>
+}
+
+export interface NosisPendingItem {
+  taxId: string
+  businessName: string
+  sources: string[]
+  addedBy: string | null
+  addedAt: string | null
+}
+
+export interface NosisPendingQueue {
+  command: string
+  items: NosisPendingItem[]
+}
+
+export interface CrmCompanyInput {
+  taxId?: string
+  businessName?: string | null
+  crmBrand?: string | null
+  crmProduct?: string | null
+  crmOrigin?: string | null
+  originSource?: string | null
+}
+
+export interface CrmContactInput {
+  fullName?: string
+  companyTaxIds?: string[]
+  phone?: string | null
+  email?: string | null
+  birthday?: string | null
+  cuil?: string | null
+}
+
+export interface CrmTaskInput {
+  companyTaxId?: string
+  description?: string
+  dueDate?: string
+  assignee?: string | null
+  contactIds?: string[]
+  status?: "done" | "cancelled"
+  cancelReason?: string | null
+}
+
+export interface CrmActionInput {
+  companyTaxId: string
+  doneBy: string | null
+  date: string
+  description: string
+  contactIds: string[]
+  completesTaskIds: string[]
+  nextTask: CrmTaskInput | null
 }
 
 export interface BirthdaySourceProgress {
