@@ -119,3 +119,22 @@ describe("manual runs", () => {
     )
   })
 })
+
+describe("postponed tasks", () => {
+  it("says when it was due before and why it moved", () => {
+    expect(
+      describeActivity(
+        entry("crm_operation", {
+          operation: "postpone",
+          entityType: "Task",
+          description: "Llamar",
+          assignee: "Raul",
+          dueDate: "2026-11-09",
+          companyTaxId: "30712345678",
+          from: "2026-11-02",
+          reason: "De viaje",
+        })
+      )
+    ).toBe("sol pospuso la tarea “Llamar” de Raul (vence 09/11/2026) en 30-71234567-8 (antes vencía el 02/11/2026, motivo: “De viaje”)")
+  })
+})

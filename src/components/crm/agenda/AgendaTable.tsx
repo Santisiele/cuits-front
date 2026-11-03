@@ -5,6 +5,7 @@ import { responsiblePalette } from "@/lib/responsibleColors"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import type { CrmAgendaItem, CrmResponsible } from "@/types"
+import { AgendaNote } from "./AgendaNote"
 import { DueDate } from "./DueDate"
 
 const HEAD = "sticky z-10 bg-card text-left align-bottom py-1.5 px-2 font-medium"
@@ -78,7 +79,7 @@ export function AgendaTable({
                 data-testid={`agenda-${task.id}`}
                 data-color={color}
                 onClick={() => onOpen(task)}
-                className={cn("border-b border-border last:border-0 cursor-pointer transition-colors align-top", palette.row)}
+                className={cn("border-b border-border last:border-0 cursor-pointer transition-colors align-top", task.overdue ? palette.row : "hover:bg-muted/50")}
               >
                 <td className={cn(CELL, "pl-0")}>
                   <div className="font-medium">{task.businessName || "—"}</div>
@@ -88,10 +89,13 @@ export function AgendaTable({
                 <td className={cn(CELL, "whitespace-nowrap")}>{formatDay(task.lastAction?.date ?? null)}</td>
                 <td className={cn(CELL, "break-words")}>{last.what || "—"}</td>
                 <td className={CELL}>{task.lastAction?.doneBy || "—"}</td>
-                <td className={cn(CELL, "font-medium", palette.badge)}>
+                <td className={cn(CELL, "font-medium", task.overdue && palette.badge)}>
                   <DueDate task={task} />
                 </td>
-                <td className={cn(CELL, "break-words")}>{task.description}</td>
+                <td className={cn(CELL, "break-words")}>
+                  {task.description}
+                  <AgendaNote task={task} />
+                </td>
                 <td className={cn(CELL, "pr-0")}>
                   <span className={cn("inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-medium", palette.badge)}>
                     <span className={cn("h-2 w-2 shrink-0", palette.swatch)} />

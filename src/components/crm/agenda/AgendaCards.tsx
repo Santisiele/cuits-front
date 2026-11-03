@@ -3,6 +3,7 @@ import { responsiblePalette } from "@/lib/responsibleColors"
 import { formatTaxId } from "@/lib/cuit"
 import { cn } from "@/lib/utils"
 import type { CrmAgendaItem, CrmResponsible } from "@/types"
+import { AgendaNote } from "./AgendaNote"
 import { DueDate } from "./DueDate"
 
 export function AgendaCards({
@@ -25,17 +26,18 @@ export function AgendaCards({
         const last = splitLastAction(task.lastAction)
         return (
           <li key={task.id} data-testid={`agenda-${task.id}`} data-color={color}>
-            <button type="button" onClick={() => onOpen(task)} className={cn("w-full text-left border border-border p-3 text-sm flex flex-col gap-2", palette.row)}>
+            <button type="button" onClick={() => onOpen(task)} className={cn("w-full text-left border border-border p-3 text-sm flex flex-col gap-2", task.overdue ? palette.row : "hover:bg-muted/50")}>
               <span>
                 <span className="block font-medium">{task.businessName || "—"}</span>
                 <span className="block text-xs text-muted-foreground font-mono">{formatTaxId(task.companyTaxId)}</span>
               </span>
-              <span className={cn("flex flex-col gap-1 px-2 py-1.5", palette.badge)}>
+              <span className={cn("flex flex-col gap-1 px-2 py-1.5", task.overdue ? palette.badge : "bg-muted/40")}>
                 <span className="flex flex-wrap items-center justify-between gap-2 font-medium">
                   <DueDate task={task} />
                   <span>{task.assignee}</span>
                 </span>
                 <span className="break-words">{task.description}</span>
+                <AgendaNote task={task} />
               </span>
               {task.lastAction && (
                 <span className="text-xs text-muted-foreground break-words">

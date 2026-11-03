@@ -38,6 +38,7 @@ export const CHANGE_OPERATION_LABELS: Record<string, string> = {
   crm_remove: "Sacó del CRM",
   close: "Cerró la empresa",
   reopen: "Reabrió la empresa",
+  postpone: "Pospuso",
 }
 
 export const CHANGE_FIELD_LABELS: Record<string, string> = {
@@ -363,4 +364,23 @@ export function filterAgenda<T extends { overdue: boolean; assignee: string; bus
       passesFilter([task.assignee], new Set(hiddenAssignees)) &&
       passesFilter([task.businessName], new Set(hiddenCompanies))
   )
+}
+
+export const NOT_LATER = "Elegí una fecha posterior a la actual"
+
+export function postponeErrors(task: Pick<CrmTask, "dueDate">, dueDate: string, reason: string): { dueDate: string | null; reason: string | null } {
+  const invalid = dateError(dueDate)
+  return {
+    dueDate: invalid ?? (dueDate <= task.dueDate ? NOT_LATER : null),
+    reason: reason.trim().length > MAX_TEXT_LENGTH ? TEXT_TOO_LONG : null,
+  }
+}
+
+export function agendaNote(item: { otherTasks?: readonly { assignee: string; dueDate: string }[]; hiddenTasks?: number }): string | null {
+  const hidden = item.hiddenTasks ?? 0
+  const notes = [
+    ...(item.otherTasks ?? []).map((other) => `También hay una tarea de ${other.assignee} (${formatDay(other.dueDate)})`),
+    hidden > 0 && (hidden === 1 ? "y 1 tarea anterior del mismo responsable" : `y ${hidden} tareas anteriores del mismo responsable`),
+  ].filter(Boolean)
+  return notes.length === 0 ? null : notes.join(" · ")
 }
