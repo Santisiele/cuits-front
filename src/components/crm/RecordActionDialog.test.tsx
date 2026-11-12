@@ -48,12 +48,12 @@ const OPEN_TASKS: CrmTask[] = [
 
 const onClose = vi.fn()
 
-function show(): void {
+function show(completing: CrmTask | null = null, openTasks: CrmTask[] = OPEN_TASKS): void {
   act(() => useAuthStore.getState().setAuth("token", "flavia", "member"))
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <RecordActionDialog companyTaxId={COMPANY} contacts={CONTACTS} openTasks={OPEN_TASKS} onClose={onClose} />
+      <RecordActionDialog companyTaxId={COMPANY} contacts={CONTACTS} openTasks={openTasks} completing={completing} onClose={onClose} />
     </QueryClientProvider>
   )
 }
@@ -126,6 +126,26 @@ describe("RecordActionDialog", () => {
       completesTaskIds: ["t1"],
       nextTask: { description: "Mandar propuesta", dueDate: "2026-11-02", assignee: "Flavia", contactIds: [] },
     })
+  })
+
+  it("opened from a task, fulfils only that one and keeps its contacts and responsible", async () => {
+    const other = { ...OPEN_TASKS[0]!, id: "t2", description: "Mandar mail", assignee: "Raul" }
+    const task = { ...OPEN_TASKS[0]!, assignee: "Flavia", contactIds: ["c1"] }
+    show(task, [task, other])
+    await screen.findAllByRole("option", { name: "Raul" })
+    expect(screen.getByLabelText(/Llamar a Ana/)).toBeChecked()
+    expect(screen.getByLabelText(/Mandar mail/)).not.toBeChecked()
+    await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamé")
+    await userEvent.type(screen.getByLabelText("Tarea"), "Seguir")
+    await userEvent.type(screen.getByLabelText("Vence"), "2026-11-20")
+    await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
+    expect(recordAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactIds: ["c1"],
+        completesTaskIds: ["t1"],
+        nextTask: { description: "Seguir", dueDate: "2026-11-20", assignee: "Flavia", contactIds: ["c1"] },
+      })
+    )
   })
 
   it("shows what the API answered when it refuses", async () => {

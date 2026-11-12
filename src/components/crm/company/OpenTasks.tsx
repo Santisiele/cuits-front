@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CalendarClock, Pencil, Plus, X } from "lucide-react"
+import { CalendarClock, NotebookPen, Pencil, Plus, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCrmResponsibles } from "@/hooks/useCrm"
@@ -13,6 +13,7 @@ import { PostponeTaskDialog } from "../PostponeTaskDialog"
 import { Postponements } from "../Postponements"
 import { ChangeHistory } from "../ChangeHistory"
 import { TaskDialog } from "../TaskDialog"
+import { RecordActionDialog } from "../RecordActionDialog"
 
 export function OpenTasks({
   taxId,
@@ -33,6 +34,7 @@ export function OpenTasks({
   const [editing, setEditing] = useState<CrmTask | "new" | null>(null)
   const [cancelling, setCancelling] = useState<CrmTask | null>(null)
   const [postponing, setPostponing] = useState<CrmTask | null>(null)
+  const [recording, setRecording] = useState<CrmTask | null>(null)
   const today = todayInBuenosAires()
 
   return (
@@ -70,6 +72,12 @@ export function OpenTasks({
                   </div>
                   {allowed && (
                     <div className="flex gap-2 shrink-0 flex-wrap">
+                      {!closed && (
+                        <Button size="sm" onClick={() => setRecording(task)}>
+                          <NotebookPen className="w-4 h-4 mr-1" />
+                          Qué se hizo
+                        </Button>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => setPostponing(task)}>
                         <CalendarClock className="w-4 h-4 mr-1" />
                         Posponer
@@ -78,8 +86,9 @@ export function OpenTasks({
                         <X className="w-4 h-4 mr-1" />
                         Cancelar
                       </Button>
-                      <Button size="sm" variant="ghost" aria-label="Editar tarea" onClick={() => setEditing(task)}>
-                        <Pencil className="w-4 h-4" />
+                      <Button size="sm" variant="outline" onClick={() => setEditing(task)}>
+                        <Pencil className="w-4 h-4 mr-1" />
+                        Editar tarea
                       </Button>
                     </div>
                   )}
@@ -92,6 +101,7 @@ export function OpenTasks({
       {editing && <TaskDialog companyTaxId={taxId} task={editing === "new" ? null : editing} contacts={contacts} onClose={() => setEditing(null)} />}
       {cancelling && <CancelTaskDialog task={cancelling} onClose={() => setCancelling(null)} />}
       {postponing && <PostponeTaskDialog task={postponing} onClose={() => setPostponing(null)} />}
+      {recording && <RecordActionDialog companyTaxId={taxId} contacts={contacts} openTasks={tasks} completing={recording} onClose={() => setRecording(null)} />}
     </Card>
   )
 }
