@@ -300,6 +300,21 @@ export function toggleId(list: readonly string[], id: string, checked: boolean):
   return list.filter((other) => other !== id)
 }
 
+export function defaultActionContactIds(
+  contactIds: readonly string[],
+  task: CrmTask | null,
+  actions: readonly CrmAction[]
+): string[] {
+  const listed = (ids: readonly string[]) => ids.filter((id) => contactIds.includes(id))
+  if (task) {
+    const fromTask = listed(task.contactIds)
+    if (fromTask.length > 0) return fromTask
+    const fromAction = listed(actions.find((action) => action.createdTaskId === task.id)?.contactIds ?? [])
+    if (fromAction.length > 0) return fromAction
+  }
+  return contactIds.length === 1 ? [...contactIds] : []
+}
+
 export function responsibleColor(name: string, responsibles: readonly CrmResponsible[]): string {
   return responsibles.find((responsible) => sameResponsible(responsible.name, name))?.color ?? "slate"
 }

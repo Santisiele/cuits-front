@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import {
+  defaultActionContactIds,
   BIRTHDAY_ERROR,
   CANCEL_REASON_REQUIRED,
   CUIT_ERROR,
@@ -394,5 +395,28 @@ describe("agendaNote", () => {
     expect(agendaNote({ otherTasks: [], hiddenTasks: 0 })).toBeNull()
     expect(agendaNote({ otherTasks: [{ assignee: "Raul", dueDate: "2026-11-20" }], hiddenTasks: 0 })).toBe("También hay una tarea de Raul (20/11/2026)")
     expect(agendaNote({ otherTasks: [], hiddenTasks: 2 })).toBe("y 2 tareas anteriores del mismo responsable")
+  })
+})
+
+describe("defaultActionContactIds", () => {
+  const task = { id: "t1", contactIds: ["c1", "gone"] } as CrmTask
+  const created = { createdTaskId: "t1", contactIds: ["c2"] } as CrmAction
+
+  it("takes the task's contacts that are still listed", () => {
+    expect(defaultActionContactIds(["c1", "c2"], task, [created])).toEqual(["c1"])
+  })
+
+  it("falls back to the people of the action that created the task", () => {
+    expect(defaultActionContactIds(["c1", "c2"], { ...task, contactIds: [] }, [created])).toEqual(["c2"])
+  })
+
+  it("ticks the only contact of the company when nothing else says who", () => {
+    expect(defaultActionContactIds(["c9"], { ...task, contactIds: [] }, [])).toEqual(["c9"])
+    expect(defaultActionContactIds(["c9"], null, [])).toEqual(["c9"])
+  })
+
+  it("ticks nobody when the company has several contacts and nothing says who", () => {
+    expect(defaultActionContactIds(["c1", "c2"], null, [created])).toEqual([])
+    expect(defaultActionContactIds(["c1", "c2"], { ...task, contactIds: [] }, [{ ...created, contactIds: ["gone"] }])).toEqual([])
   })
 })
