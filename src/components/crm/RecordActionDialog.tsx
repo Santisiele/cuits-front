@@ -40,9 +40,10 @@ export function RecordActionDialog({
   const [doneBy, setDoneBy] = useState("")
   const [date, setDate] = useState(() => todayInBuenosAires())
   const [description, setDescription] = useState("")
-  const [contactIds, setContactIds] = useState<string[]>(() => completing?.contactIds ?? [])
+  const [taskContactIds] = useState(() => (completing?.contactIds ?? []).filter((id) => contacts.some((contact) => contact.id === id)))
+  const [contactIds, setContactIds] = useState<string[]>(taskContactIds)
   const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => (completing ? [completing.id] : openTasks.map((task) => task.id)))
-  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: completing?.assignee ?? "", contactIds: completing?.contactIds ?? [] })
+  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: completing?.assignee ?? "", contactIds: taskContactIds })
   const [error, setError] = useState("")
 
   const errors = {

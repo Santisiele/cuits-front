@@ -148,6 +148,22 @@ describe("RecordActionDialog", () => {
     )
   })
 
+  it("opened from a task, leaves out a contact of that task that is no longer listed", async () => {
+    const task = { ...OPEN_TASKS[0]!, assignee: "Flavia", contactIds: ["c1", "archived"] }
+    show(task, [task])
+    await screen.findAllByRole("option", { name: "Raul" })
+    await userEvent.type(screen.getByLabelText("Qué se hizo"), "Lo llamé")
+    await userEvent.type(screen.getByLabelText("Tarea"), "Seguir")
+    await userEvent.type(screen.getByLabelText("Vence"), "2026-11-20")
+    await userEvent.click(screen.getByRole("button", { name: "Registrar" }))
+    expect(recordAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactIds: ["c1"],
+        nextTask: expect.objectContaining({ contactIds: ["c1"] }),
+      })
+    )
+  })
+
   it("shows what the API answered when it refuses", async () => {
     recordAction.mockRejectedValue(apiError("La tarea ya no está abierta"))
     show()
