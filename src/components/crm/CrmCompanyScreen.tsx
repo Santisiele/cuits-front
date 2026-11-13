@@ -92,14 +92,14 @@ export function CrmCompanyScreen() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <OpenTasks taxId={company.taxId} tasks={openTasks} contacts={contacts} names={names} closed={company.closedAt !== null} />
+        <OpenTasks taxId={company.taxId} tasks={openTasks} contacts={contacts} actions={actions} names={names} closed={company.closedAt !== null} />
         <ContactsSection taxId={company.taxId} contacts={contacts} />
       </div>
 
       <Timeline actions={actions} tasks={tasks} names={names} />
 
       {recording && (
-        <RecordActionDialog companyTaxId={company.taxId} contacts={contacts} openTasks={openTasks} onClose={() => setRecording(false)} />
+        <RecordActionDialog companyTaxId={company.taxId} contacts={contacts} openTasks={openTasks} actions={actions} onClose={() => setRecording(false)} />
       )}
       {closing && <CloseCompanyDialog taxId={company.taxId} businessName={company.businessName} onClose={() => setClosing(false)} />}
       {removing && <RemoveCompanyDialog taxId={company.taxId} businessName={company.businessName} onClose={() => setRemoving(false)} />}

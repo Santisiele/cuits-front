@@ -7,7 +7,7 @@ import { useIsAdmin } from "@/hooks/useSessionRole"
 import { useAuthStore } from "@/store/useAuthStore"
 import { canChangeTask, formatDay, isOverdue, responsiblesOf, todayInBuenosAires } from "@/lib/crm"
 import { cn } from "@/lib/utils"
-import type { CrmContact, CrmTask } from "@/types"
+import type { CrmAction, CrmContact, CrmTask } from "@/types"
 import { CancelTaskDialog } from "../CancelTaskDialog"
 import { PostponeTaskDialog } from "../PostponeTaskDialog"
 import { Postponements } from "../Postponements"
@@ -19,12 +19,14 @@ export function OpenTasks({
   taxId,
   tasks,
   contacts,
+  actions,
   names,
   closed,
 }: {
   taxId: string
   tasks: CrmTask[]
   contacts: CrmContact[]
+  actions: CrmAction[]
   names: Record<string, string>
   closed: boolean
 }) {
@@ -101,7 +103,7 @@ export function OpenTasks({
       {editing && <TaskDialog companyTaxId={taxId} task={editing === "new" ? null : editing} contacts={contacts} onClose={() => setEditing(null)} />}
       {cancelling && <CancelTaskDialog task={cancelling} onClose={() => setCancelling(null)} />}
       {postponing && <PostponeTaskDialog task={postponing} onClose={() => setPostponing(null)} />}
-      {recording && <RecordActionDialog companyTaxId={taxId} contacts={contacts} openTasks={tasks} completing={recording} onClose={() => setRecording(null)} />}
+      {recording && <RecordActionDialog companyTaxId={taxId} contacts={contacts} openTasks={tasks} actions={actions} completing={recording} onClose={() => setRecording(null)} />}
     </Card>
   )
 }

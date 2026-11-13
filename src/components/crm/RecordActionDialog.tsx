@@ -15,10 +15,11 @@ import {
   requiredTextError,
   taskDraftErrors,
   todayInBuenosAires,
+  defaultActionContactIds,
   toggleId,
   type TaskDraft,
 } from "@/lib/crm"
-import type { CrmContact, CrmTask } from "@/types"
+import type { CrmAction, CrmContact, CrmTask } from "@/types"
 import { CheckRow, DialogButtons, Field } from "./CrmFields"
 import { TaskFields } from "./TaskFields"
 import { ResponsibleSelect } from "./ResponsibleSelect"
@@ -27,12 +28,14 @@ export function RecordActionDialog({
   companyTaxId,
   contacts,
   openTasks,
+  actions = [],
   completing = null,
   onClose,
 }: {
   companyTaxId: string
   contacts: CrmContact[]
   openTasks: CrmTask[]
+  actions?: CrmAction[]
   completing?: CrmTask | null
   onClose: () => void
 }) {
@@ -40,10 +43,17 @@ export function RecordActionDialog({
   const [doneBy, setDoneBy] = useState("")
   const [date, setDate] = useState(() => todayInBuenosAires())
   const [description, setDescription] = useState("")
-  const [taskContactIds] = useState(() => (completing?.contactIds ?? []).filter((id) => contacts.some((contact) => contact.id === id)))
-  const [contactIds, setContactIds] = useState<string[]>(taskContactIds)
+  const [initialContactIds] = useState(() =>
+    defaultActionContactIds(
+      contacts.map((contact) => contact.id),
+      completing,
+      actions
+    )
+  )
+  const [contactIds, setContactIds] = useState<string[]>(initialContactIds)
   const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => (completing ? [completing.id] : openTasks.map((task) => task.id)))
-  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: completing?.assignee ?? "", contactIds: taskContactIds })
+  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: completing?.assignee ?? "", contactIds: initialContactIds })
+  const [nextContactsChosen, setNextContactsChosen] = useState(false)
   const [error, setError] = useState("")
 
   const errors = {
@@ -53,6 +63,17 @@ export function RecordActionDialog({
   }
   const nextTaskErrors = taskDraftErrors(nextTask)
   const canSubmit = !hasErrors(errors) && !hasErrors(nextTaskErrors)
+
+  function toggleActionContact(id: string, checked: boolean): void {
+    const next = toggleId(contactIds, id, checked)
+    setContactIds(next)
+    if (!nextContactsChosen) setNextTask((draft) => ({ ...draft, contactIds: next }))
+  }
+
+  function changeNextTask(draft: TaskDraft): void {
+    if (draft.contactIds !== nextTask.contactIds) setNextContactsChosen(true)
+    setNextTask(draft)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
@@ -105,7 +126,7 @@ export function RecordActionDialog({
                 <CheckRow
                   key={contact.id}
                   checked={contactIds.includes(contact.id)}
-                  onChange={(checked) => setContactIds((ids) => toggleId(ids, contact.id, checked))}
+                  onChange={(checked) => toggleActionContact(contact.id, checked)}
                 >
                   {contact.fullName}
                 </CheckRow>
@@ -113,7 +134,7 @@ export function RecordActionDialog({
             </fieldset>
           )}
 
-          {openTasks.length > 0 && (
+          {!completing && openTasks.length > 0 && (
             <fieldset className="space-y-1.5">
               <legend className="text-sm font-medium">Tareas que cumple</legend>
               {openTasks.map((task) => (
@@ -130,7 +151,7 @@ export function RecordActionDialog({
 
           <div className="space-y-3 border-t border-border pt-4">
             <p className="text-sm font-medium">Próxima tarea</p>
-            <TaskFields idPrefix="crm-next-task" draft={nextTask} errors={nextTaskErrors} contacts={contacts} onChange={setNextTask} />
+            <TaskFields idPrefix="crm-next-task" draft={nextTask} errors={nextTaskErrors} contacts={contacts} onChange={changeNextTask} />
           </div>
 
           {error && <p className="text-destructive text-sm">{error}</p>}
