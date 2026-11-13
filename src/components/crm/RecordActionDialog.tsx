@@ -3,7 +3,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useCrmMutations } from "@/hooks/useCrm"
 import { getErrorMessage } from "@/lib/errors"
 import {
@@ -27,20 +27,23 @@ export function RecordActionDialog({
   companyTaxId,
   contacts,
   openTasks,
+  completing = null,
   onClose,
 }: {
   companyTaxId: string
   contacts: CrmContact[]
   openTasks: CrmTask[]
+  completing?: CrmTask | null
   onClose: () => void
 }) {
   const { recordAction } = useCrmMutations()
   const [doneBy, setDoneBy] = useState("")
   const [date, setDate] = useState(() => todayInBuenosAires())
   const [description, setDescription] = useState("")
-  const [contactIds, setContactIds] = useState<string[]>([])
-  const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => openTasks.map((task) => task.id))
-  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: "", contactIds: [] })
+  const [taskContactIds] = useState(() => (completing?.contactIds ?? []).filter((id) => contacts.some((contact) => contact.id === id)))
+  const [contactIds, setContactIds] = useState<string[]>(taskContactIds)
+  const [completesTaskIds, setCompletesTaskIds] = useState<string[]>(() => (completing ? [completing.id] : openTasks.map((task) => task.id)))
+  const [nextTask, setNextTask] = useState<TaskDraft>({ description: "", dueDate: "", assignee: completing?.assignee ?? "", contactIds: taskContactIds })
   const [error, setError] = useState("")
 
   const errors = {
@@ -82,6 +85,7 @@ export function RecordActionDialog({
       <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto" {...keepOpenWhileDirty(description.trim() !== "" || nextTask.description.trim() !== "")}>
         <DialogHeader>
           <DialogTitle>Registrar acción</DialogTitle>
+          {completing && <DialogDescription>{completing.description} · vence {formatDay(completing.dueDate)}</DialogDescription>}
         </DialogHeader>
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           <Field id="crm-action-done-by" label="Quién lo hizo" error={errors.doneBy}>
