@@ -376,6 +376,46 @@ export interface ResearchBudget {
   monthlyLimitUsd: number
   spentThisMonthUsd: number
   researchCountThisMonth: number
+  researchSpentThisMonthUsd: number
+  chatSpentThisMonthUsd: number
+  chatAnswerCountThisMonth: number
+}
+
+export interface AiChat {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  archivedAt: string | null
+}
+
+export interface AiChatTable {
+  resultId: string
+  title: string
+  columns: string[]
+  rows: unknown[][]
+  truncated: boolean
+}
+
+export type AiChatMessageStatus = "running" | "done" | "failed" | "budget_exhausted"
+
+export interface AiChatMessage {
+  id: string
+  chatId: string
+  role: "user" | "assistant"
+  createdAt: string
+  text: string
+  status: AiChatMessageStatus
+  sources: WebResearchSource[]
+  tables: AiChatTable[]
+  model: string
+  costUsd: number
+  webSearches: number
+}
+
+export interface AiChatWithMessages {
+  chat: AiChat
+  messages: AiChatMessage[]
 }
 
 export interface CrmCompany {

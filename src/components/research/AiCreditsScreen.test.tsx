@@ -28,7 +28,14 @@ const { AiCreditsScreen } = await import("@/components/research/AiCreditsScreen"
 const { useStore } = await import("@/store/useStore")
 const { useAuthStore } = await import("@/store/useAuthStore")
 
-const BUDGET: ResearchBudget = { monthlyLimitUsd: 20, spentThisMonthUsd: 5, researchCountThisMonth: 3 }
+const BUDGET: ResearchBudget = {
+  monthlyLimitUsd: 20,
+  spentThisMonthUsd: 5,
+  researchCountThisMonth: 3,
+  researchSpentThisMonthUsd: 1.5,
+  chatSpentThisMonthUsd: 3.5,
+  chatAnswerCountThisMonth: 4,
+}
 
 const RECENT: RecentWebResearch[] = [
   {
@@ -102,7 +109,8 @@ describe("AiCreditsScreen", () => {
     expect(screen.getByText("US$ 5,00")).toBeInTheDocument()
     expect(screen.getByText(/de US\$ 20,00/)).toBeInTheDocument()
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "25")
-    expect(screen.getByText("3 búsquedas este mes")).toBeInTheDocument()
+    expect(screen.getByText("Investigación web: US$ 1,50 en 3 búsquedas")).toBeInTheDocument()
+    expect(screen.getByText("Asistente IA: US$ 3,50 en 4 respuestas")).toBeInTheDocument()
   })
 
   it("reminds that the console limit still matters", async () => {
@@ -164,10 +172,11 @@ describe("AiCreditsScreen", () => {
   })
 
   it("marks a spent budget", async () => {
-    budget.mockResolvedValue({ ...BUDGET, spentThisMonthUsd: 25, researchCountThisMonth: 1 })
+    budget.mockResolvedValue({ ...BUDGET, spentThisMonthUsd: 25, researchCountThisMonth: 1, chatAnswerCountThisMonth: 1 })
     await show()
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100")
-    expect(screen.getByText("1 búsqueda este mes")).toBeInTheDocument()
+    expect(screen.getByText("Investigación web: US$ 1,50 en 1 búsqueda")).toBeInTheDocument()
+    expect(screen.getByText("Asistente IA: US$ 3,50 en 1 respuesta")).toBeInTheDocument()
   })
 
   it("says when there is no research yet", async () => {
