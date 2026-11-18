@@ -22,6 +22,7 @@ import { TrustLevelsTable } from "@/components/TrustLevelsTable"
 import { TrustLevelMembersTable } from "@/components/TrustLevelMembersTable"
 import { UsersTable } from "@/components/UsersTable"
 import { AiCreditsScreen } from "@/components/research/AiCreditsScreen"
+import { AiChatScreen } from "@/components/ai-chat/AiChatScreen"
 import { ArchivedResearchScreen } from "@/components/research/ArchivedResearchScreen"
 import { BirthdayProgressScreen } from "@/components/birthdays/BirthdayProgressScreen"
 import { CrmAgendaScreen } from "@/components/crm/CrmAgendaScreen"
@@ -297,6 +298,8 @@ export default function App() {
             <Route path="/trust-levels/:value" element={<AdminRoute><TrustLevelMembersTable /></AdminRoute>} />
             <Route path="/users"          element={<AdminRoute><UsersTable /></AdminRoute>} />
             <Route path="/ai-credits"     element={<AdminRoute><AiCreditsScreen /></AdminRoute>} />
+            <Route path="/ai-chat"        element={<AdminRoute><AiChatScreen /></AdminRoute>} />
+            <Route path="/ai-chat/:chatId" element={<AdminRoute><AiChatScreen /></AdminRoute>} />
             <Route path="/birthday-progress" element={<CreatorRoute><BirthdayProgressScreen /></CreatorRoute>} />
             <Route path="/archived-research" element={<CreatorRoute><ArchivedResearchScreen /></CreatorRoute>} />
             <Route path="/crm"            element={<CrmCompaniesScreen />} />
