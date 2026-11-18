@@ -100,8 +100,14 @@ export function AiCreditsScreen() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
+                  Investigación web: {formatUsd(budget.data.researchSpentThisMonthUsd)} en{" "}
                   {budget.data.researchCountThisMonth}{" "}
-                  {budget.data.researchCountThisMonth === 1 ? "búsqueda" : "búsquedas"} este mes
+                  {budget.data.researchCountThisMonth === 1 ? "búsqueda" : "búsquedas"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Asistente IA: {formatUsd(budget.data.chatSpentThisMonthUsd)} en{" "}
+                  {budget.data.chatAnswerCountThisMonth}{" "}
+                  {budget.data.chatAnswerCountThisMonth === 1 ? "respuesta" : "respuestas"}
                 </p>
               </div>
               {isCreator && <LimitForm key={budget.data.monthlyLimitUsd} current={budget.data.monthlyLimitUsd} />}

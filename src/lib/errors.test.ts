@@ -88,7 +88,14 @@ describe("translateApiFailure", () => {
   it("translates the web research refusals", () => {
     expect(translateApiFailure("budget_exhausted", "Monthly budget reached")).toBe("Se alcanzó el tope de gasto del mes")
     expect(translateApiFailure("cuit_not_found", "That CUIT is not in the graph")).toBe("Ese CUIT no existe en la base")
-    expect(translateApiFailure("research_off", "No API key")).toBe("La investigación web no está configurada")
+    expect(translateApiFailure("research_off", "No API key")).toBe("La IA no está configurada")
+  })
+
+  it("translates the AI chat refusals", () => {
+    expect(translateApiFailure("invalid_question", "x")).toBe("Escribí una pregunta de hasta 4000 caracteres")
+    expect(translateApiFailure("chat_not_found", "x")).toBe("Esa conversación no existe")
+    expect(translateApiFailure("message_not_found", "x")).toBe("Esa respuesta no existe")
+    expect(translateApiFailure("chat_busy", "x")).toBe("Esperá a que termine la respuesta anterior")
   })
 
   it("translates the archive refusals", () => {
