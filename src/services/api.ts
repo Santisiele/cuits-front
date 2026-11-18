@@ -20,6 +20,9 @@ import type {
   RecentWebResearch,
   ArchivedWebResearch,
   ResearchBudget,
+  AiChat,
+  AiChatMessage,
+  AiChatWithMessages,
   BirthdayProgress,
   ActivityPage,
   CrmAction,
@@ -479,6 +482,27 @@ export const ResearchService = {
       method: "PATCH",
       body: JSON.stringify({ monthlyLimitUsd }),
     }),
+}
+
+export const AiChatApiService = {
+  list: () => apiFetch<{ chats: AiChat[] }>(`${API_BASE_URL}/ai-chat`).then((res) => res.chats),
+
+  open: (chatId: string) => apiFetch<AiChatWithMessages>(`${API_BASE_URL}/ai-chat/${encodeURIComponent(chatId)}`),
+
+  start: (question: string) =>
+    apiFetch<AiChatWithMessages>(`${API_BASE_URL}/ai-chat`, { method: "POST", body: JSON.stringify({ question }) }),
+
+  ask: (chatId: string, question: string) =>
+    apiFetch<AiChatWithMessages>(`${API_BASE_URL}/ai-chat/${encodeURIComponent(chatId)}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
+
+  message: (messageId: string) =>
+    apiFetch<AiChatMessage>(`${API_BASE_URL}/ai-chat/messages/${encodeURIComponent(messageId)}`),
+
+  archive: (chatId: string) =>
+    apiFetch<AiChat>(`${API_BASE_URL}/ai-chat/${encodeURIComponent(chatId)}/archive`, { method: "POST" }),
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({
