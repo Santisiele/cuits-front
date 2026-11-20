@@ -167,6 +167,7 @@ export interface BaseNode {
   /** Trust level for this CUIT. See `TRUST_LEVELS`. */
   levelOfTrust?: number
   relatedSources?: string[]
+  financieraNames?: string[]
 }
 
 /**
