@@ -110,3 +110,80 @@ describe("FullBaseTable — filtering by source from the header", () => {
     expect(useStore.getState().fullBaseTable.hiddenValues.sources).toEqual(["Bolsa"])
   })
 })
+
+describe("FullBaseTable — filtering Deudores por financiera by lender", () => {
+  const FINANCIERA = "Deudores por financiera"
+  const lenders = Array.from({ length: 9 }, (_, i) => `FINANCIERA ${i + 1} S.A.`)
+
+  function lent(taxId: string, businessName: string, financieraNames: string[]): BaseNode {
+    return { ...node(taxId, businessName, [FINANCIERA]), financieraNames }
+  }
+
+  function pick(source: string): void {
+    act(() => {
+      useStore.getState().setFullBaseTable({ selectedSources: [source], hiddenTrustLevels: [], hiddenValues: {}, search: "" })
+    })
+  }
+
+  function openLenderFilter(): HTMLElement {
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /^Financieras/ }))
+    })
+    return screen.getByRole("dialog", { name: "Filtro de Financieras" })
+  }
+
+  beforeEach(() => {
+    rows = [
+      lent("30500000001", "UNO SA", [lenders[0]!, lenders[1]!]),
+      lent("30500000002", "DOS SA", [lenders[1]!]),
+      lent("30500000003", "TRES SA", lenders.slice(2)),
+      lent("30500000004", "CUATRO SA", []),
+    ]
+  })
+
+  it("only offers the lender filter for Deudores por financiera", () => {
+    pick("Bolsa")
+    render(<FullBaseTable />)
+    expect(screen.queryByRole("button", { name: /^Financieras/ })).not.toBeInTheDocument()
+  })
+
+  it("lists every lender once, plus the rows without one", () => {
+    pick(FINANCIERA)
+    render(<FullBaseTable />)
+    const labels = within(openLenderFilter()).getAllByRole("button").map((b) => b.textContent)
+    expect(labels).toEqual(["Seleccionar todos", ...lenders, "(Sin financiera)"])
+  })
+
+  it("finds lenders with the search box", () => {
+    pick(FINANCIERA)
+    render(<FullBaseTable />)
+    const list = openLenderFilter()
+    act(() => {
+      fireEvent.change(within(list).getByPlaceholderText("Buscar..."), { target: { value: "financiera 9" } })
+    })
+    const labels = within(list).getAllByRole("button").map((b) => b.textContent)
+    expect(labels).toEqual(["Seleccionar todos", "FINANCIERA 9 S.A."])
+  })
+
+  it("keeps a CUIT while any of its lenders is ticked", () => {
+    pick(FINANCIERA)
+    render(<FullBaseTable />)
+    const list = openLenderFilter()
+    act(() => {
+      fireEvent.click(within(list).getByRole("button", { name: "FINANCIERA 2 S.A." }))
+    })
+    expect(screen.getAllByText("UNO SA").length).toBeGreaterThan(0)
+    expect(screen.queryAllByText("DOS SA")).toHaveLength(0)
+    expect(screen.getByText(`${FINANCIERA} (3 de 4)`)).toBeInTheDocument()
+    expect(useStore.getState().fullBaseTable.hiddenValues.financieras).toEqual(["FINANCIERA 2 S.A."])
+  })
+
+  it("ignores a lender filter left over once another source is picked", () => {
+    act(() => {
+      useStore.getState().setFullBaseTable({ selectedSources: ["Bolsa"], hiddenTrustLevels: [], hiddenValues: { financieras: lenders }, search: "" })
+    })
+    rows = [{ ...node("30500000009", "BOLSA SA", ["Bolsa"]), financieraNames: [lenders[0]!] }]
+    render(<FullBaseTable />)
+    expect(screen.getByText("Bolsa (1)")).toBeInTheDocument()
+  })
+})

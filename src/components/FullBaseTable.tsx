@@ -18,6 +18,8 @@ import { exportNodes } from "@/lib/exportTable"
 import type { BaseNode, SourceCategory } from "@/types"
 
 type SortField = "businessName" | "sources" | "relationshipCount"
+
+const FINANCIERA_SOURCE = "Deudores por financiera"
 type SortDir = "asc" | "desc"
 type CategoryId = SourceCategory
 
@@ -182,10 +184,15 @@ export function FullBaseTable() {
     />
   )
 
+  const byFinanciera = activeSource === FINANCIERA_SOURCE
+  const hiddenFinancieras = byFinanciera ? fullBaseTable.hiddenValues.financieras ?? [] : []
+  const hiddenFinancieraSet = new Set(hiddenFinancieras)
+
   const filtered = activeSource
     ? inSource
         .filter((node) => !hiddenTrustLevels.has(node.levelOfTrust ?? 0))
         .filter((node) => passesFilter(node.sources ?? [], hiddenSourceSet))
+        .filter((node) => passesFilter(node.financieraNames ?? [], hiddenFinancieraSet))
         .filter((node) => {
           if (!search) return true
           return (
@@ -208,7 +215,7 @@ export function FullBaseTable() {
 
   const totalForSource = inSource.length
   const isFiltered =
-    activeSource !== null && (search.length > 0 || hiddenTrustLevels.size > 0 || hiddenSources.length > 0)
+    activeSource !== null && (search.length > 0 || hiddenTrustLevels.size > 0 || hiddenSources.length > 0 || hiddenFinancieras.length > 0)
   const title = activeSource
     ? isFiltered
       ? `${activeSource} (${filtered.length} de ${totalForSource})`
@@ -236,6 +243,15 @@ export function FullBaseTable() {
                   onChange={(next) => setFullBaseTable({ hiddenTrustLevels: next })}
                 />
                 <div className="sm:hidden">{sourceFilter("button")}</div>
+                {byFinanciera && (
+                  <ColumnFilter
+                    label="Financieras"
+                    appearance="button"
+                    options={optionsFrom(inSource, (node) => node.financieraNames ?? [], { emptyLabel: "(Sin financiera)" })}
+                    hidden={hiddenFinancieras}
+                    onChange={(next) => setFullBaseTable({ hiddenValues: { ...fullBaseTable.hiddenValues, financieras: next } })}
+                  />
+                )}
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "csv")}>CSV</Button>
                 <Button variant="outline" size="sm" onClick={() => exportNodes(filtered, FULL_BASE_COLUMNS, `full-base-${activeSource}`, "xlsx")}>XLSX</Button>
               </>
